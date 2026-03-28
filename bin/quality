@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+
+set -e
+
+bin/rails db:prepare
+bin/rails tailwindcss:build
+bin/rubocop
+bin/brakeman -q
+bin/rails test
