@@ -38,6 +38,13 @@ class Entry < ApplicationRecord
     metadata_field_value("rash") == "true" if baby_diaper?
   end
 
+  def feeding_duration_minutes
+    value = metadata_field_value("duration_minutes")
+    return if value.blank?
+
+    value.to_i
+  end
+
   def self.last_feeding_for(person)
     where(person: person).baby_feedings.recent_first.first
   end

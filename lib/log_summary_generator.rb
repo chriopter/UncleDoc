@@ -63,7 +63,47 @@ class LogSummaryGenerator
 
   def self.formatted_entries(entries)
     entries.map do |entry|
-      "- #{I18n.l(entry.date, format: :long)}: #{entry.note}"
+      "- #{I18n.l(entry.date, format: :long)}: #{entry_summary(entry)}"
     end.join("\n")
+  end
+
+  def self.entry_summary(entry)
+    parts = []
+
+    if entry.entry_type.present?
+      parts << EntryTypeService.label_for(entry.entry_type)
+      parts << metadata_summary(entry)
+    end
+
+    parts << entry.note if entry.note.present?
+    parts.compact_blank.join(" - ")
+  end
+
+  def self.metadata_summary(entry)
+    fields = EntryTypeService.fields_for(entry.entry_type)
+    return if fields.blank? || entry.metadata.blank?
+
+    entry.metadata.filter_map do |key, value|
+      next if value.blank? || value == "false"
+
+      field = fields[key.to_s]
+      next unless field
+
+      label = field.dig("label", I18n.locale.to_s) || field.dig("label", "en") || key.to_s.humanize
+      rendered_value = render_metadata_value(field, value)
+      rendered_value.present? ? "#{label}: #{rendered_value}" : label
+    end.join(", ")
+  end
+
+  def self.render_metadata_value(field, value)
+    case field["type"]
+    when "boolean"
+      value == "true" ? I18n.t("helpers.boolean.yes", default: "yes") : nil
+    when "select"
+      option = Array(field["options"]).find { |item| item["value"].to_s == value.to_s }
+      option&.dig("label", I18n.locale.to_s) || option&.dig("label", "en") || value.to_s
+    else
+      value.to_s
+    end
   end
 end
