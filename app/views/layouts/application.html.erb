@@ -24,20 +24,23 @@
   <body class="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.28),_transparent_32%),linear-gradient(180deg,_#f8f4ec_0%,_#f2ede2_100%)] text-slate-900 antialiased">
     <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 md:px-6 md:py-8">
       <header class="mb-6 rounded-[2rem] border border-white/70 bg-white/75 p-4 shadow-sm ring-1 ring-black/5 md:p-5 relative z-50">
-        <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div class="flex items-center gap-4">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-center">
+          <%# Left: UncleDoc branding %>
+          <div class="hidden xl:flex xl:w-32 xl:items-center">
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-700">UncleDoc</p>
+          </div>
+
+          <%# Center: Name dropdown and navigation %>
+          <div class="flex flex-1 flex-col xl:flex-row items-center justify-center gap-4 xl:gap-8">
             <div class="relative" data-controller="dropdown">
               <button type="button" data-action="dropdown#toggle" class="flex items-center gap-3 text-left group">
-                <div>
-                  <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-700">UncleDoc</p>
-                  <h1 class="text-xl font-black tracking-tight text-slate-950 md:text-2xl group-hover:text-amber-700 transition-colors"><%= current_person&.name || "Family" %></h1>
-                </div>
+                <h1 class="text-xl font-black tracking-tight text-slate-950 md:text-2xl group-hover:text-amber-700 transition-colors"><%= current_person&.name || t("family.default_name") %></h1>
                 <svg class="h-5 w-5 text-slate-400 group-hover:text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                 </svg>
               </button>
               
-              <div data-dropdown-target="menu" class="absolute left-0 top-full z-[9999] mt-3 hidden w-56 rounded-2xl border border-amber-200 bg-white p-2 shadow-xl ring-1 ring-black/5">
+              <div data-dropdown-target="menu" class="absolute left-1/2 -translate-x-1/2 top-full z-[9999] mt-3 hidden w-56 rounded-2xl border border-amber-200 bg-white p-2 shadow-xl ring-1 ring-black/5">
                 <% if family_members.any? %>
                   <div class="pb-1">
                     <% family_members.each do |person| %>
@@ -52,16 +55,24 @@
                 <% end %>
               </div>
             </div>
+
+            <%# Desktop navigation next to name %>
+            <nav class="hidden xl:flex min-w-max items-center gap-2">
+              <%= link_to t("nav.home"), root_path(person_slug: current_person&.name), class: shell_menu_item_class(current_page?(root_path)) %>
+              <span class="<%= shell_menu_item_class %>"><%= t("nav.timeline") %></span>
+              <span class="<%= shell_menu_item_class %>"><%= t("nav.reports") %></span>
+            </nav>
           </div>
 
-          <div class="flex items-center gap-3 overflow-x-auto xl:overflow-visible">
-            <nav class="flex min-w-max items-center gap-2">
-              <%= link_to "Home", root_path(person_slug: current_person&.name), class: shell_menu_item_class(current_page?(root_path)) %>
-              <span class="<%= shell_menu_item_class %>">Timeline</span>
-              <span class="<%= shell_menu_item_class %>">Reports</span>
+          <%# Right: Mobile nav + Settings %>
+          <div class="flex items-center gap-3 overflow-x-auto xl:overflow-visible xl:w-32 xl:justify-end">
+            <nav class="flex xl:hidden min-w-max items-center gap-2">
+              <%= link_to t("nav.home"), root_path(person_slug: current_person&.name), class: shell_menu_item_class(current_page?(root_path)) %>
+              <span class="<%= shell_menu_item_class %>"><%= t("nav.timeline") %></span>
+              <span class="<%= shell_menu_item_class %>"><%= t("nav.reports") %></span>
             </nav>
 
-            <%= link_to settings_path, class: shell_menu_item_class(current_page?(settings_path) || request.path.start_with?("/settings")), aria: { label: "Settings" } do %>
+            <%= link_to settings_path_for, class: shell_menu_item_class(request.path.start_with?("/settings")), aria: { label: t("nav.settings") } do %>
               <span class="flex h-5 w-5 items-center justify-center">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317a1.724 1.724 0 0 1 3.35 0 1.724 1.724 0 0 0 2.573 1.066 1.724 1.724 0 0 1 2.899 1.675 1.724 1.724 0 0 0 1.506 2.186 1.724 1.724 0 0 1 0 3.512 1.724 1.724 0 0 0-1.506 2.186 1.724 1.724 0 0 1-2.9 1.675 1.724 1.724 0 0 0-2.572 1.066 1.724 1.724 0 0 1-3.35 0 1.724 1.724 0 0 0-2.573-1.066 1.724 1.724 0 0 1-2.899-1.675 1.724 1.724 0 0 0-1.506-2.186 1.724 1.724 0 0 1 0-3.512 1.724 1.724 0 0 0 1.506-2.186 1.724 1.724 0 0 1 2.9-1.675 1.724 1.724 0 0 0 2.572-1.066Z" />

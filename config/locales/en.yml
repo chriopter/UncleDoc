@@ -25,6 +25,16 @@ en:
     close: "Close"
     back: "Back"
 
+  # ActiveRecord attribute translations
+  activerecord:
+    attributes:
+      person:
+        name: "Name"
+        birth_date: "Birth date"
+      entry:
+        date: "Date"
+        note: "Note"
+
   # Common labels
   labels:
     name: "Name"

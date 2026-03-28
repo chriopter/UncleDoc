@@ -17,7 +17,7 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     get settings_url(section: "users")
 
     assert_response :success
-    assert_select "h2", "Family members"
+    assert_select "h2", "All family members"
     assert_select "p", text: "New User"
   end
 

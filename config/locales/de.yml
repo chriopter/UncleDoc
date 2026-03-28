@@ -1,0 +1,150 @@
+de:
+  # App name
+  app:
+    name: "UncleDoc"
+    tagline: "Familien-Gesundheitstracker"
+
+  # Navigation
+  nav:
+    home: "Startseite"
+    timeline: "Zeitlinie"
+    reports: "Berichte"
+    settings: "Einstellungen"
+    log: "Protokoll"
+    db: "DB"
+
+  # Common actions
+  actions:
+    save: "Speichern"
+    delete: "Löschen"
+    remove: "Entfernen"
+    add: "Hinzufügen"
+    create: "Erstellen"
+    cancel: "Abbrechen"
+    edit: "Bearbeiten"
+    close: "Schließen"
+    back: "Zurück"
+
+  # ActiveRecord attribute translations
+  activerecord:
+    attributes:
+      person:
+        name: "Name"
+        birth_date: "Geburtsdatum"
+      entry:
+        date: "Datum"
+        note: "Notiz"
+
+  # Common labels
+  labels:
+    name: "Name"
+    birth_date: "Geburtsdatum"
+    date: "Datum"
+    note: "Notiz"
+    notes: "Notizen"
+    created: "Erstellt"
+    updated: "Aktualisiert"
+
+  # Common messages
+  messages:
+    confirm_delete: "Sind Sie sicher, dass Sie dies löschen möchten?"
+    success: "Erfolg!"
+    error: "Ein Fehler ist aufgetreten."
+    empty: "Hier ist noch nichts."
+
+  # Dashboard / Log
+  dashboard:
+    welcome:
+      title: "Willkommen"
+      subtitle: "Wählen Sie ein Familienmitglied aus, um sein Protokoll anzuzeigen"
+      description: "Verwenden Sie das Dropdown im Header, um jemanden auszuwählen, oder gehen Sie zu Einstellungen > Benutzer, um Familienmitglieder hinzuzufügen."
+      cta: "Familienmitglieder hinzufügen"
+    new_entry:
+      label: "Neuer Eintrag"
+      title: "Gesundheitsinfo für %{name} protokollieren"
+      subtitle: "Datum und Notizen zu medizinischen Ereignissen erfassen."
+    entries:
+      label: "Protokoll"
+      title: "Einträge für %{name}"
+      count: "%{count} Eintrag"
+      count_plural: "%{count} Einträge"
+      empty: "Noch keine Einträge. Fügen Sie die erste Gesundheitsnotiz links hinzu."
+
+  # Entries
+  entries:
+    form:
+      placeholder: "Was ist heute passiert?"
+      submit: "Eintrag hinzufügen"
+      title: "Gesundheitsinfo für %{name} protokollieren"
+    destroy_confirm: "Diesen Eintrag löschen?"
+    flash:
+      created: "Eintrag hinzugefügt."
+      destroyed: "Eintrag gelöscht."
+
+  # People / Users / Family
+  people:
+    new:
+      label: "Neuer Benutzer"
+      title: "Familienmitglied hinzufügen"
+      subtitle: "Name und Geburtsdatum eingeben, um jemanden hinzuzufügen."
+    list:
+      label: "Aktuelle Benutzer"
+      title: "Alle Familienmitglieder"
+      count: "%{count} Benutzer"
+      count_plural: "%{count} Benutzer"
+      empty: "Noch keine Benutzer. Fügen Sie Ihr erstes Familienmitglied links hinzu."
+    form:
+      placeholder_name: "Mila"
+      label_birth_date: "Geburtsdatum"
+      submit: "Person speichern"
+      error_message: "Bitte korrigieren Sie das Formular."
+    person:
+      birth_date_label: "Geburtsdatum:"
+      created_ago: "Vor %{time} erstellt"
+      delete_confirm: "%{name} löschen?"
+      remove_confirm: "%{name} entfernen?"
+    flash:
+      created: "Person hinzugefügt."
+      destroyed: "Person entfernt."
+
+  # Settings
+  settings:
+    title: "Arbeitsbereich-Einstellungen"
+    subtitle: "Ein einfacher Admin-Bereich für Anzeigeoptionen und den Rohdatenbank-Browser."
+    profile:
+      title: "Profileinstellungen"
+      subtitle: "UI"
+    users:
+      title: "Benutzer"
+      subtitle: "Familie"
+    db:
+      title: "Vollständige DB-Ansicht"
+      subtitle: "SQL"
+    display:
+      title: "Anzeigeeinstellungen"
+      subtitle: "Halten Sie den ersten Admin-Bereich einfach: Wählen Sie Sprache und Datumsformat für Ihre aktuelle Ansicht."
+    language:
+      label: "Sprache"
+      title: "App-Sprache wählen"
+      english: "English"
+      german: "Deutsch"
+    date_format:
+      label: "Datumsformat"
+      title: "Datumsanzeige wählen"
+      long: "Lang"
+      compact: "Kompakt"
+
+  # DB view
+  db:
+    title: "Rohdatenbank-Ansicht"
+    subtitle: "Admin"
+    description: "Dieser Tab zeigt die aktuellen SQLite-Tabellen und bis zu 50 Zeilen pro Tabelle zur schnellen V1-Überprüfung."
+    table:
+      count: "%{count} Zeile"
+      count_plural: "%{count} Zeilen"
+      empty: "Noch keine Zeilen."
+
+  # Family/Header
+  family:
+    default_name: "Familie"
+    members_label: "UncleDoc"

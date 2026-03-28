@@ -23,3 +23,12 @@
 - Avoid extra gems unless Rails already ships the capability.
 - Keep the app easy to self-host and easy to understand.
 - **Use `t()` helper in views for all user-facing text. Never hardcode English strings. Add translations to both `en.yml` and `de.yml`.**
+
+## User Preferences
+
+- User preferences (locale, date format) are stored in the `user_preferences` table.
+- Access via `UserPreference.current` - returns the singleton preference record.
+- Update via `UserPreference.update_locale(locale)` and `UserPreference.update_date_format(format)`.
+- Locale and date format can be set via URL params: `?locale=de&date_format=long`
+- Preferences are automatically saved when visiting `/settings/profile?locale=de&date_format=long`
+- The application automatically sets `I18n.locale` from user preferences on each request.

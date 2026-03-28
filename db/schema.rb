@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_28_224637) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_28_225712) do
   create_table "entries", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.date "date", null: false
@@ -24,6 +24,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_224637) do
     t.date "birth_date"
     t.datetime "created_at", null: false
     t.string "name", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_preferences", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "date_format"
+    t.string "locale"
     t.datetime "updated_at", null: false
   end
 
