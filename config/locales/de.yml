@@ -106,6 +106,8 @@ de:
     flash:
       created: "Person hinzugefügt."
       destroyed: "Person entfernt."
+      updated: "Person aktualisiert."
+      update_error: "Person konnte nicht aktualisiert werden."
 
   # Settings
   settings:
@@ -133,6 +135,8 @@ de:
       title: "Datumsanzeige wählen"
       long: "Lang"
       compact: "Kompakt"
+    flash:
+      saved: "Einstellungen gespeichert."
 
   # DB view
   db:
@@ -148,3 +152,60 @@ de:
   family:
     default_name: "Familie"
     members_label: "UncleDoc"
+
+  # Baby mode
+  baby:
+    feeding:
+      label: "Baby"
+      title: "Fütterung"
+      button: "Fütterung eintragen"
+      default_note: "Baby gefüttert"
+      empty: "Noch keine Fütterungen eingetragen"
+    diaper:
+      label: "Baby"
+      title: "Windelwechsel"
+      button: "Windelwechsel eintragen"
+      default_note: "Windel gewechselt"
+      empty: "Noch keine Windelwechsel eingetragen"
+      consistency: "Konsistenz"
+      consistency_options:
+        solid: "Fest"
+        fluid: "Flüssig"
+        wet_only: "Nur nass"
+        both: "Beides"
+      rash: "Ausschlag vorhanden"
+    log:
+      label: "Protokoll"
+      title: "Protokoll für %{name}"
+      count: "%{count} Ereignis"
+      count_plural: "%{count} Ereignisse"
+      empty: "Noch keine Baby-Ereignisse. Tragen Sie die erste Fütterung oder den ersten Windelwechsel ein."
+    protocol:
+      title: "Baby-Protokoll"
+    last_event: "Letzte"
+    types:
+      feeding: "Fütterung"
+      diaper: "Windel"
+    badge: "Baby-Modus"
+    off: "Aus"
+    toggle: "Baby-Modus umschalten"
+
+  # Person overview page
+  person:
+    overview:
+      family_member: "Familienmitglied"
+      birth_date: "Geboren"
+      years_old: "Jahre alt"
+      birth_date_not_set: "Geburtsdatum nicht festgelegt"
+      stats:
+        entries: "Protokoll-Einträge"
+        entries_subtitle: "Gesundheitsnotizen aufgezeichnet"
+        member_since: "Mitglied seit"
+        last_activity: "Letzte Aktivität"
+        last_activity_short: "Letzte"
+        no_entries: "Keine Einträge"
+        start_logging: "Beginnen Sie mit dem Protokollieren"
+        most_recent: "Letzter Eintrag"
+      recent_activity: "Letzte Aktivität"
+      latest_entries: "Neueste Einträge"
+      view_log: "Protokoll anzeigen"

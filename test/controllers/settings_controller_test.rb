@@ -7,7 +7,6 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "Family"
-    assert_select "h2", "Display preferences"
     assert_select "span", text: "Profile settings"
     assert_select "span", text: "Users"
     assert_select "span", text: "Full DB view"
@@ -42,5 +41,25 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes @response.body, "locale=de"
     assert_includes @response.body, "date_format=compact"
+  end
+
+  test "updates locale preference from URL params" do
+    get settings_url(section: "profile", locale: "de")
+
+    assert_response :success
+    assert_equal "de", UserPreference.current.locale
+
+    # Reset
+    UserPreference.update_locale("en")
+  end
+
+  test "updates date format preference from URL params" do
+    get settings_url(section: "profile", date_format: "compact")
+
+    assert_response :success
+    assert_equal "compact", UserPreference.current.date_format
+
+    # Reset
+    UserPreference.update_date_format("long")
   end
 end

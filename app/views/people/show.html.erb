@@ -1,70 +1,71 @@
 <section class="w-full space-y-6">
-  <%# Profile Card %>
-  <div class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
-    <div class="flex items-center gap-6">
-      <div class="flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-100 text-amber-800 text-3xl font-bold">
-        <%= @person.name.first.upcase %>
-      </div>
-      <div>
-        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">Family Member</p>
-        <h1 class="text-3xl font-black tracking-tight text-slate-950"><%= @person.name %></h1>
-        <p class="mt-1 text-slate-600">
-          <% if @person.birth_date %>
-            Born <%= formatted_date(@person.birth_date) %> · <%= (@person.birth_date - Date.today).abs / 365 %> years old
-          <% else %>
-            Birth date not set
+  <%# Baby Mode Dashboard - Only shown when baby_mode is enabled %>
+  <% if @person.baby_mode? %>
+    <%= render "dashboard/baby_dashboard", person: @person, entry: Entry.new, entries: @person.entries.recent_first %>
+  <% end %>
+
+  <%# Combined Info + Log Widget %>
+  <div class="rounded-[2rem] border border-white/70 bg-white/90 shadow-sm ring-1 ring-black/5 backdrop-blur overflow-hidden">
+    <div class="grid xl:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
+      <%# Left: Basic Info with Baby Toggle %>
+      <div class="p-5 border-b xl:border-b-0 xl:border-r border-slate-200">
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-800 text-lg font-bold">
+              <%= @person.name.first.upcase %>
+            </div>
+            <h2 class="text-lg font-bold text-slate-950"><%= @person.name %></h2>
+          </div>
+          
+          <%# Baby Toggle %>
+          <%= form_with model: @person, method: :patch, local: false, data: { turbo_frame: "_top" }, class: "flex-shrink-0" do |f| %>
+            <%= f.hidden_field :baby_mode, value: !@person.baby_mode %>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <%= f.check_box :baby_mode, class: "sr-only peer", onchange: "this.form.requestSubmit()" %>
+              <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-pink-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-pink-500"></div>
+            </label>
           <% end %>
-        </p>
+        </div>
+        
+        <div class="space-y-1 text-sm">
+          <% if @person.birth_date %>
+            <p class="text-slate-600">
+              <%= formatted_date(@person.birth_date) %> · <%= (@person.birth_date - Date.today).abs / 365 %> <%= t("person.overview.years_old") %>
+            </p>
+          <% else %>
+            <p class="text-slate-500 text-xs"><%= t("person.overview.birth_date_not_set") %></p>
+          <% end %>
+          <% if @entries.any? %>
+            <p class="text-slate-500 text-xs pt-2">
+              <%= t("person.overview.stats.last_activity") %> <%= time_ago_in_words(@entries.first.created_at) %>
+            </p>
+          <% end %>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <%# Stats Grid %>
-  <div class="grid gap-4 md:grid-cols-3">
-    <div class="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm">
-      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Log Entries</p>
-      <p class="mt-1 text-3xl font-black text-slate-950"><%= @entry_count %></p>
-      <p class="text-sm text-slate-600">Health notes recorded</p>
-    </div>
+      <%# Right: Recent Entries %>
+      <div class="bg-slate-950 p-5 text-white">
+        <div class="mb-4 flex items-end justify-between gap-4">
+          <h3 class="text-lg font-bold"><%= t("person.overview.latest_entries") %></h3>
+          <%= link_to t("person.overview.view_log"), person_log_path(person_slug: @person.name), class: "rounded-full bg-amber-500/20 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 transition" %>
+        </div>
 
-    <div class="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm">
-      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Member Since</p>
-      <p class="mt-1 text-lg font-bold text-slate-950"><%= @person.created_at.strftime("%B %Y") %></p>
-      <p class="text-sm text-slate-600"><%= time_ago_in_words(@person.created_at) %> ago</p>
-    </div>
-
-    <div class="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm">
-      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Last Activity</p>
-      <% if @entries.any? %>
-        <p class="mt-1 text-lg font-bold text-slate-950"><%= time_ago_in_words(@entries.first.created_at) %> ago</p>
-        <p class="text-sm text-slate-600">Most recent entry</p>
-      <% else %>
-        <p class="mt-1 text-lg font-bold text-slate-950">No entries</p>
-        <p class="text-sm text-slate-600">Start logging health data</p>
-      <% end %>
-    </div>
-  </div>
-
-  <%# Recent Entries %>
-  <div class="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm ring-1 ring-black/5">
-    <div class="mb-5 flex items-end justify-between gap-4">
-      <div>
-        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">Recent Activity</p>
-        <h2 class="text-2xl font-bold">Latest Entries</h2>
-      </div>
-      <%= link_to "View Log", person_log_path(person_slug: @person.name), class: "rounded-full bg-amber-500/20 px-4 py-2 text-sm font-semibold text-amber-300 hover:bg-amber-500/30 transition" %>
-    </div>
-
-    <% if @entries.any? %>
-      <div class="space-y-3">
-        <% @entries.each do |entry| %>
-          <%= render "entries/entry", entry: entry %>
+        <% if @entries.any? %>
+          <div class="space-y-2">
+            <% @entries.limit(5).each do |entry| %>
+              <% if @person.baby_mode? %>
+                <%= render "entries/baby_entry", entry: entry %>
+              <% else %>
+                <%= render "entries/entry", entry: entry %>
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-8 text-center text-sm text-slate-300">
+            <%= t("baby.log.empty") %>
+          </div>
         <% end %>
       </div>
-    <% else %>
-      <div class="rounded-3xl border border-dashed border-white/20 bg-white/5 px-6 py-10 text-center text-slate-300">
-        No entries yet. <%= link_to "Go to Log", person_log_path(person_slug: @person.name), class: "text-amber-300 hover:text-amber-200 underline" %> to add health notes.
-      </div>
-    <% end %>
+    </div>
   </div>
 </section>

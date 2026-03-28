@@ -1,0 +1,30 @@
+<%= turbo_frame_tag "log_summary_widget" do %>
+  <section class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("log_summary.label") %></p>
+        <h2 class="mt-1 text-2xl font-bold text-slate-950"><%= t("log_summary.title") %></h2>
+        <p class="mt-2 text-sm leading-6 text-slate-600"><%= t("log_summary.subtitle", name: person.name) %></p>
+      </div>
+
+      <%= button_to t("log_summary.button"), person_log_summary_path(person_slug: person.name), method: :post, class: "inline-flex items-center justify-center rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800" %>
+    </div>
+
+    <div class="mt-5 rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-700">
+      <% case state %>
+      <% when :ready %>
+        <p class="whitespace-pre-line"><%= summary %></p>
+      <% when :missing_model %>
+        <p><%= t("log_summary.states.missing_model") %></p>
+      <% when :missing_api_key %>
+        <p><%= t("log_summary.states.missing_api_key") %></p>
+      <% when :no_entries %>
+        <p><%= t("log_summary.states.no_entries") %></p>
+      <% when :request_failed %>
+        <p><%= t("log_summary.states.request_failed") %></p>
+      <% else %>
+        <p><%= t("log_summary.states.idle") %></p>
+      <% end %>
+    </div>
+  </section>
+<% end %>

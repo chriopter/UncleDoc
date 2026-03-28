@@ -1,0 +1,61 @@
+<section class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
+  <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("settings.llm.title") %></p>
+  <h2 class="mt-2 text-3xl font-black tracking-tight text-slate-950"><%= t("settings.llm.heading") %></h2>
+  <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600"><%= t("settings.llm.description") %></p>
+</section>
+
+<section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-black/5">
+  <div class="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"><%= t("settings.llm.provider_label") %></p>
+      <h3 class="mt-1 text-xl font-bold text-slate-950"><%= t("settings.llm.provider_title") %></h3>
+    </div>
+
+    <p class="text-sm text-slate-500"><%= t("settings.llm.current", provider: t("settings.llm.providers.#{current_llm_provider}.name")) %></p>
+  </div>
+
+  <%= form_with url: settings_path(section: :llm), method: :patch, class: "space-y-5", data: { controller: "llm-settings", llm_settings_path_value: settings_llm_models_path, llm_settings_initial_model_value: user_preference.llm_model.to_s } do |form| %>
+    <div class="grid gap-5 lg:grid-cols-3">
+      <div class="space-y-2">
+        <%= form.label :llm_provider, t("settings.llm.provider_title"), class: "text-sm font-semibold text-slate-700" %>
+        <%= form.select :llm_provider, UserPreference::LLM_PROVIDERS.keys.map { |provider| [t("settings.llm.providers.#{provider}.name"), provider] }, { selected: current_llm_provider }, class: "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200", data: { llm_settings_target: "provider", action: "change->llm-settings#lookup" } %>
+      </div>
+
+      <div class="space-y-2 lg:col-span-2">
+        <div class="flex items-center justify-between gap-3">
+          <%= form.label :llm_api_key, t("settings.llm.api_key_title"), class: "text-sm font-semibold text-slate-700" %>
+          <% if user_preference.llm_api_key_configured? %>
+            <span class="text-sm text-emerald-700"><%= t("settings.llm.api_key_saved") %></span>
+          <% else %>
+            <span class="text-sm text-slate-500"><%= t("settings.llm.api_key_missing") %></span>
+          <% end %>
+        </div>
+
+        <%= form.password_field :llm_api_key, autocomplete: "off", placeholder: t("settings.llm.api_key_placeholder"), class: "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-200", data: { llm_settings_target: "apiKey", action: "blur->llm-settings#lookup input->llm-settings#queueLookup" } %>
+      </div>
+    </div>
+
+    <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50/80 p-4">
+      <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <div class="space-y-2">
+          <%= form.label :llm_model, t("settings.llm.model_title"), class: "text-sm font-semibold text-slate-700" %>
+          <%= form.select :llm_model, [], { prompt: t("settings.llm.model_placeholder") }, class: "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200", data: { llm_settings_target: "model" } %>
+        </div>
+
+        <p class="text-sm leading-6 text-slate-500 lg:max-w-sm" data-llm-settings-target="status" data-loading-text="<%= t("settings.llm.model_status.loading") %>" data-failed-text="<%= t("settings.llm.model_status.request_failed") %>"><%= t("settings.llm.model_status.idle") %></p>
+      </div>
+
+      <p class="mt-4 text-sm leading-6 text-slate-500" data-llm-settings-target="credentialsHint" data-template="<%= t("settings.llm.credentials_hint", env_key: "%{env_key}") %>"><%= t("settings.llm.credentials_hint", env_key: user_preference.llm_env_key) %></p>
+
+      <% if user_preference.llm_api_base.present? %>
+        <p class="mt-2 text-sm leading-6 text-slate-500" data-llm-settings-target="endpointHint" data-template="<%= t("settings.llm.endpoint_hint", endpoint: "%{endpoint}") %>"><%= t("settings.llm.endpoint_hint", endpoint: user_preference.llm_api_base) %></p>
+      <% else %>
+        <p class="mt-2 text-sm leading-6 text-slate-500 hidden" data-llm-settings-target="endpointHint" data-template="<%= t("settings.llm.endpoint_hint", endpoint: "%{endpoint}") %>"></p>
+      <% end %>
+    </div>
+
+    <div class="flex justify-end">
+      <%= form.submit t("settings.llm.save"), class: "inline-flex items-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800" %>
+    </div>
+  <% end %>
+</section>

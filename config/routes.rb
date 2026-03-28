@@ -6,7 +6,9 @@ Rails.application.routes.draw do
   # Global routes (no person context)
   root "dashboard#show"
   get "settings(/:section)", to: "settings#show", as: :settings
-  resources :people, only: [ :create, :destroy ] do
+  patch "settings(/:section)", to: "settings#update"
+  post "settings/llm_models", to: "settings#llm_models", as: :settings_llm_models
+  resources :people, only: [ :create, :update, :destroy ] do
     resources :entries, only: [ :create, :destroy ]
   end
 
@@ -15,5 +17,6 @@ Rails.application.routes.draw do
     root "dashboard#show", as: :person_root
     get "overview", to: "people#show", as: :person_overview
     get "log", to: "dashboard#log", as: :person_log
+    post "log_summary", to: "dashboard#summarize_log", as: :person_log_summary
   end
 end

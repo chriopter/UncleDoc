@@ -26,16 +26,20 @@
     </div>
 
     <%# Entries List %>
-    <div class="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm ring-1 ring-black/5">
-      <div class="mb-5 flex items-end justify-between gap-4">
-        <div>
-          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">Log</p>
-          <h2 class="text-2xl font-bold">All Entries</h2>
-        </div>
-        <span class="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-slate-300"><%= pluralize(@entries.count, "entry") %></span>
-      </div>
+    <div class="space-y-6">
+      <%= render "dashboard/log_summary", person: @person, summary: @log_summary, state: @log_summary_state %>
 
-      <%= render "entries/list", entries: @entries %>
+      <div class="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm ring-1 ring-black/5">
+        <div class="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300"><%= t("dashboard.entries.label") %></p>
+            <h2 class="text-2xl font-bold"><%= t("dashboard.entries.title", name: @person.name) %></h2>
+          </div>
+          <span class="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-slate-300"><%= t(@entries.count == 1 ? "dashboard.entries.count" : "dashboard.entries.count_plural", count: @entries.count) %></span>
+        </div>
+
+        <%= render "entries/list", entries: @entries %>
+      </div>
     </div>
   </div>
 </section>
