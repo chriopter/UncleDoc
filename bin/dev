@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+
+set -e
+
+if ! gem list foreman -i --silent; then
+  gem install foreman
+fi
+
+export PORT="${PORT:-3000}"
+export RUBY_DEBUG_OPEN="true"
+export RUBY_DEBUG_LAZY="true"
+
+rm -f tmp/pids/server.pid
+bin/rails db:prepare
+
+exec foreman start -f Procfile.dev "$@"

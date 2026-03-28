@@ -1,0 +1,13 @@
+<%= turbo_frame_tag "people_list" do %>
+  <% if people.any? %>
+    <div class="space-y-3">
+      <% people.each do |person| %>
+        <%= render "people/person", person: person %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="rounded-3xl border border-dashed border-white/20 bg-white/5 px-6 py-10 text-center text-slate-300">
+      No people yet. Add the first family member on the left.
+    </div>
+  <% end %>
+<% end %>

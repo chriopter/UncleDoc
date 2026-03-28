@@ -1,0 +1,22 @@
+<%= turbo_frame_tag "person_form" do %>
+  <%= form_with model: person, class: "space-y-4" do |form| %>
+    <% if person.errors.any? %>
+      <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+        <p class="font-semibold">Please fix the form.</p>
+        <p><%= person.errors.full_messages.to_sentence %></p>
+      </div>
+    <% end %>
+
+    <div class="space-y-2">
+      <%= form.label :name, class: "text-sm font-semibold text-slate-800" %>
+      <%= form.text_field :name, placeholder: "Mila", class: "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100" %>
+    </div>
+
+    <div class="space-y-2">
+      <%= form.label :birth_date, "Birth date", class: "text-sm font-semibold text-slate-800" %>
+      <%= form.date_field :birth_date, class: "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100" %>
+    </div>
+
+    <%= form.submit "Save person", class: "inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-base font-semibold text-white transition hover:bg-slate-800" %>
+  <% end %>
+<% end %>

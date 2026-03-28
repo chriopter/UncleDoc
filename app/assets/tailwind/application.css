@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+:root {
+  --uncledoc-paper: #f8f4ec;
+  --uncledoc-ink: #0f172a;
+}
+
+@layer base {
+  body {
+    background-color: var(--uncledoc-paper);
+    color: var(--uncledoc-ink);
+  }
+
+  ::selection {
+    background: #fde68a;
+    color: #1e293b;
+  }
+}
