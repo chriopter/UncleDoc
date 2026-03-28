@@ -52,7 +52,7 @@
         <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">Recent Activity</p>
         <h2 class="text-2xl font-bold">Latest Entries</h2>
       </div>
-      <%= link_to "View Log", root_path(person_slug: @person.name), class: "rounded-full bg-amber-500/20 px-4 py-2 text-sm font-semibold text-amber-300 hover:bg-amber-500/30 transition" %>
+      <%= link_to "View Log", person_log_path(person_slug: @person.name), class: "rounded-full bg-amber-500/20 px-4 py-2 text-sm font-semibold text-amber-300 hover:bg-amber-500/30 transition" %>
     </div>
 
     <% if @entries.any? %>
@@ -63,7 +63,7 @@
       </div>
     <% else %>
       <div class="rounded-3xl border border-dashed border-white/20 bg-white/5 px-6 py-10 text-center text-slate-300">
-        No entries yet. <%= link_to "Go to Log", root_path(person_slug: @person.name), class: "text-amber-300 hover:text-amber-200 underline" %> to add health notes.
+        No entries yet. <%= link_to "Go to Log", person_log_path(person_slug: @person.name), class: "text-amber-300 hover:text-amber-200 underline" %> to add health notes.
       </div>
     <% end %>
   </div>

@@ -7,7 +7,6 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "button", text: /Family/
-    assert_select "span", text: "Timeline"
     assert_select "a[aria-label='Settings']", 1
   end
 
@@ -26,8 +25,8 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     get root_url
 
     assert_response :success
-    # Verify German translation is displayed
-    assert_select "span", text: "Zeitlinie"
+    # Verify German locale is active by checking Settings translation
+    assert_select "a[aria-label='Einstellungen']", 1
 
     # Reset to English
     UserPreference.update_locale("en")

@@ -60,12 +60,10 @@
             <nav class="hidden xl:flex min-w-max items-center gap-2">
               <% if current_person %>
                 <%= link_to "Overview", person_overview_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/overview")) %>
-                <%= link_to "Log", root_path(person_slug: current_person.name), class: shell_menu_item_class(current_page?(root_path) && !request.path.include?("/overview")) %>
+                <%= link_to "Log", person_log_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/log")) %>
               <% else %>
                 <%= link_to t("nav.home"), root_path, class: shell_menu_item_class(current_page?(root_path)) %>
               <% end %>
-              <span class="<%= shell_menu_item_class %>"><%= t("nav.timeline") %></span>
-              <span class="<%= shell_menu_item_class %>"><%= t("nav.reports") %></span>
             </nav>
           </div>
 
@@ -74,12 +72,10 @@
             <nav class="flex xl:hidden min-w-max items-center gap-2">
               <% if current_person %>
                 <%= link_to "Overview", person_overview_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/overview")) %>
-                <%= link_to "Log", root_path(person_slug: current_person.name), class: shell_menu_item_class(current_page?(root_path) && !request.path.include?("/overview")) %>
+                <%= link_to "Log", person_log_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/log")) %>
               <% else %>
                 <%= link_to t("nav.home"), root_path, class: shell_menu_item_class(current_page?(root_path)) %>
               <% end %>
-              <span class="<%= shell_menu_item_class %>"><%= t("nav.timeline") %></span>
-              <span class="<%= shell_menu_item_class %>"><%= t("nav.reports") %></span>
             </nav>
 
             <%= link_to settings_path_for, class: shell_menu_item_class(request.path.start_with?("/settings")), aria: { label: t("nav.settings") } do %>

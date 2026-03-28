@@ -8,4 +8,10 @@ class DashboardController < ApplicationController
       @entries = current_person.entries.recent_first
     end
   end
+
+  def log
+    @person = Person.find_by!(name: params[:person_slug])
+    @entry = Entry.new
+    @entries = @person.entries.recent_first
+  end
 end
