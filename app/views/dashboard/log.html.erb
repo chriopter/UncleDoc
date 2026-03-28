@@ -1,4 +1,10 @@
 <section class="w-full space-y-6">
+  <% if @person.baby_mode? %>
+    <div class="space-y-6">
+      <%= render "dashboard/log_summary", person: @person, summary: @log_summary, state: @log_summary_state %>
+      <%= render "dashboard/baby_dashboard", person: @person, entry: @entry, entries: @entries %>
+    </div>
+  <% else %>
   <%# Header %>
   <div class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
     <div class="flex items-center gap-4">
@@ -42,4 +48,5 @@
       </div>
     </div>
   </div>
+  <% end %>
 </section>

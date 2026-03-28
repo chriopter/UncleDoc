@@ -9,85 +9,108 @@
     <span class="text-lg font-bold text-pink-700"><%= t("baby.badge") %></span>
   </div>
   
-  <div class="grid gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
-    <%# Left column: Quick actions %>
-    <div class="space-y-6">
-      <%# Feeding tracker %>
-      <div class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
-        <div class="mb-5 space-y-2">
-          <h2 class="text-2xl font-bold text-slate-950"><%= t("baby.feeding.title") %></h2>
-          
-          <% if person.time_since_last_feeding %>
-            <div class="mt-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
-              <p class="text-xs text-amber-700 uppercase tracking-wider font-semibold"><%= t("baby.last_event") %></p>
-              <p class="text-lg font-bold text-amber-900"><%= time_ago_in_words(person.time_since_last_feeding) %></p>
-            </div>
-          <% else %>
-            <p class="text-sm text-slate-500 mt-2"><%= t("baby.feeding.empty") %></p>
-          <% end %>
-        </div>
+  <% feeding_timer_started_at = baby_feeding_timer_started_at_for(person) %>
 
-        <%= button_to person_entries_path(person, entry: { entry_type: "baby_feeding", date: Date.today, note: t("baby.feeding.default_note"), metadata: {} }), 
+  <div class="grid gap-6 xl:grid-cols-3 xl:items-start">
+    <div class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
+      <div class="mb-5 space-y-2">
+        <h2 class="text-2xl font-bold text-slate-950"><%= t("baby.feeding.title") %></h2>
+
+        <% if person.time_since_last_feeding %>
+          <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <p class="text-xs font-semibold uppercase tracking-wider text-amber-700"><%= t("baby.last_event") %></p>
+            <p class="text-lg font-bold text-amber-900"><%= time_ago_in_words(person.time_since_last_feeding) %></p>
+          </div>
+        <% else %>
+          <p class="mt-2 text-sm text-slate-500"><%= t("baby.feeding.empty") %></p>
+        <% end %>
+
+        <% if feeding_timer_started_at %>
+          <div class="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <p class="text-xs font-semibold uppercase tracking-wider text-emerald-700"><%= t("baby.feeding.timer.running") %></p>
+            <p class="text-base font-bold text-emerald-900"><%= l(feeding_timer_started_at, format: :short) %></p>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="space-y-3">
+        <%= button_to person_entries_path(person, entry: { entry_type: "baby_feeding", date: Date.today, note: t("baby.feeding.default_note"), metadata: {} }),
             method: :post,
-            class: "w-full rounded-2xl bg-emerald-500 px-5 py-4 text-base font-semibold text-white transition hover:bg-emerald-600 flex items-center justify-center gap-2" do %>
+            class: "flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-4 text-base font-semibold text-white transition hover:bg-emerald-600" do %>
           <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
           </svg>
           <%= t("baby.feeding.button") %>
         <% end %>
-      </div>
 
-      <%# Diaper tracker with dropdown %>
-      <div class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
-        <div class="mb-5 space-y-2">
-          <h2 class="text-2xl font-bold text-slate-950"><%= t("baby.diaper.title") %></h2>
-          
-          <% if person.time_since_last_diaper %>
-            <div class="mt-3 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3">
-              <p class="text-xs text-blue-700 uppercase tracking-wider font-semibold"><%= t("baby.last_event") %></p>
-              <p class="text-lg font-bold text-blue-900"><%= time_ago_in_words(person.time_since_last_diaper) %></p>
-            </div>
-          <% else %>
-            <p class="text-sm text-slate-500 mt-2"><%= t("baby.diaper.empty") %></p>
+        <% if feeding_timer_started_at %>
+          <%= button_to person_baby_feeding_timer_path(person),
+              method: :delete,
+              class: "flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-base font-semibold text-white transition hover:bg-slate-800" do %>
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10 9v6m4-6v6M5 7h14" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 7h12v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7Z" />
+            </svg>
+            <%= t("baby.feeding.timer.stop") %>
           <% end %>
-        </div>
-
-        <%# Diaper Form with Consistency Dropdown %>
-        <%= form_with model: [person, entry], class: "space-y-4" do |f| %>
-          <%= f.hidden_field :entry_type, value: "baby_diaper" %>
-          <%= f.hidden_field :date, value: Date.today %>
-          <%= f.hidden_field :note, value: t("baby.diaper.default_note") %>
-          
-          <%# Consistency Dropdown %>
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2"><%= t("baby.diaper.consistency") %></label>
-            <%= f.select :consistency, 
-                [
-                  [t("baby.diaper.consistency_options.solid"), "solid"],
-                  [t("baby.diaper.consistency_options.fluid"), "fluid"],
-                  [t("baby.diaper.consistency_options.wet_only"), "none"],
-                  [t("baby.diaper.consistency_options.both"), "both"]
-                ],
-                {},
-                { 
-                  name: "entry[metadata][consistency]",
-                  class: "w-full rounded-xl border-slate-300 bg-white px-4 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
-                } %>
-          </div>
-          
-          <%# Rash Checkbox %>
-          <div class="flex items-center gap-2">
-            <%= f.check_box :rash, { name: "entry[metadata][rash]", class: "rounded border-slate-300 text-blue-600 focus:ring-blue-500" }, "true", "false" %>
-            <label class="text-sm text-slate-700"><%= t("baby.diaper.rash") %></label>
-          </div>
-          
-          <%= f.submit t("baby.diaper.button"), 
-              class: "w-full rounded-2xl bg-blue-500 px-5 py-3 text-base font-semibold text-white transition hover:bg-blue-600 flex items-center justify-center gap-2" %>
+        <% else %>
+          <%= button_to person_baby_feeding_timer_path(person),
+              method: :post,
+              class: "flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-base font-semibold text-emerald-800 transition hover:bg-emerald-100" do %>
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 5v14l11-7-11-7Z" />
+            </svg>
+            <%= t("baby.feeding.timer.start") %>
+          <% end %>
         <% end %>
       </div>
     </div>
 
-    <%# Right column: Log %>
+    <div class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
+      <div class="mb-5 space-y-2">
+        <h2 class="text-2xl font-bold text-slate-950"><%= t("baby.diaper.title") %></h2>
+
+        <% if person.time_since_last_diaper %>
+          <div class="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+            <p class="text-xs font-semibold uppercase tracking-wider text-blue-700"><%= t("baby.last_event") %></p>
+            <p class="text-lg font-bold text-blue-900"><%= time_ago_in_words(person.time_since_last_diaper) %></p>
+          </div>
+        <% else %>
+          <p class="mt-2 text-sm text-slate-500"><%= t("baby.diaper.empty") %></p>
+        <% end %>
+      </div>
+
+      <%= form_with model: [person, entry], class: "space-y-4" do |f| %>
+        <%= f.hidden_field :entry_type, value: "baby_diaper" %>
+        <%= f.hidden_field :date, value: Date.today %>
+        <%= f.hidden_field :note, value: t("baby.diaper.default_note") %>
+
+        <div>
+          <label class="mb-2 block text-sm font-semibold text-slate-700"><%= t("baby.diaper.consistency") %></label>
+          <%= f.select :consistency,
+              [
+                [t("baby.diaper.consistency_options.solid"), "solid"],
+                [t("baby.diaper.consistency_options.fluid"), "fluid"],
+                [t("baby.diaper.consistency_options.wet_only"), "none"],
+                [t("baby.diaper.consistency_options.both"), "both"]
+              ],
+              {},
+              {
+                name: "entry[metadata][consistency]",
+                class: "w-full rounded-xl border-slate-300 bg-white px-4 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+              } %>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <%= f.check_box :rash, { name: "entry[metadata][rash]", class: "rounded border-slate-300 text-blue-600 focus:ring-blue-500" }, "true", "false" %>
+          <label class="text-sm text-slate-700"><%= t("baby.diaper.rash") %></label>
+        </div>
+
+        <%= f.submit t("baby.diaper.button"),
+            class: "w-full rounded-2xl bg-blue-500 px-5 py-3 text-base font-semibold text-white transition hover:bg-blue-600" %>
+      <% end %>
+    </div>
+
     <div class="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm ring-1 ring-black/5">
       <div class="mb-5 flex items-end justify-between gap-4">
         <div>

@@ -39,6 +39,18 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "h2", text: /Entries for|Log for/
   end
 
+  test "shows baby dashboard and ai summary on baby log page" do
+    person = Person.create!(name: "Marlon", birth_date: Date.new(2025, 1, 1), baby_mode: true)
+    person.entries.create!(date: Date.new(2026, 3, 29), note: "Baby fed", entry_type: "baby_feeding", metadata: { "method" => "bottle", "amount_ml" => "120" })
+
+    get person_log_url(person_slug: person.name)
+
+    assert_response :success
+    assert_select "h2", "Log summary"
+    assert_select "h2", "Feeding"
+    assert_select "h2", "Baby protocol"
+  end
+
   test "shows baby mode toggle on person overview" do
     person = Person.create!(name: "BabyUser", birth_date: Date.new(2024, 1, 1))
 

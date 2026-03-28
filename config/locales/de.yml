@@ -70,6 +70,18 @@ de:
       count_plural: "%{count} Einträge"
       empty: "Noch keine Einträge. Fügen Sie die erste Gesundheitsnotiz links hinzu."
 
+  log_summary:
+    label: "KI"
+    title: "Protokoll-Zusammenfassung"
+    subtitle: "Senden Sie alle gespeicherten Einträge für %{name} an das konfigurierte Modell und sehen Sie die Antwort hier an."
+    button: "Protokoll zusammenfassen"
+    states:
+      idle: "Drücken Sie den Button, um das aktuelle Protokoll an das konfigurierte LLM zu senden."
+      missing_model: "Wählen Sie zuerst in den Einstellungen ein LLM-Modell aus."
+      missing_api_key: "Hinterlegen Sie zuerst in den Einstellungen einen API-Schlüssel."
+      no_entries: "Es gibt noch keine Protokolleinträge zum Zusammenfassen."
+      request_failed: "Die Zusammenfassung ist fehlgeschlagen. Prüfen Sie die LLM-Einstellungen und versuchen Sie es erneut."
+
   # Entries
   entries:
     form:
@@ -161,6 +173,16 @@ de:
       button: "Fütterung eintragen"
       default_note: "Baby gefüttert"
       empty: "Noch keine Fütterungen eingetragen"
+      timer:
+        start: "Timer starten"
+        stop: "Stoppen und speichern"
+        running: "Timer läuft seit"
+        started: "Fütterungs-Timer gestartet"
+        stopped: "Fütterungs-Timer gestoppt und gespeichert"
+        missing: "Es läuft kein Fütterungs-Timer"
+        already_running: "Der Fütterungs-Timer läuft bereits"
+        duration: "%{duration} Min"
+        note: "Fütterungs-Timer nach %{duration} Min gestoppt"
     diaper:
       label: "Baby"
       title: "Windelwechsel"

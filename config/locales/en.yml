@@ -70,6 +70,18 @@ en:
       count_plural: "%{count} entries"
       empty: "No entries yet. Add the first health note on the left."
 
+  log_summary:
+    label: "AI"
+    title: "Log summary"
+    subtitle: "Send all saved entries for %{name} to the configured model and review the answer here."
+    button: "Summarize log"
+    states:
+      idle: "Press the button to send the current log to the configured LLM."
+      missing_model: "Choose an LLM model in Settings before requesting a summary."
+      missing_api_key: "Add an API key in Settings before requesting a summary."
+      no_entries: "There are no log entries to summarize yet."
+      request_failed: "The summary request failed. Check your LLM settings and try again."
+
   # Entries
   entries:
     form:
@@ -161,6 +173,16 @@ en:
       button: "Log feeding"
       default_note: "Baby fed"
       empty: "No feedings recorded yet"
+      timer:
+        start: "Start timer"
+        stop: "Stop and save"
+        running: "Timer running since"
+        started: "Feeding timer started"
+        stopped: "Feeding timer stopped and saved"
+        missing: "No feeding timer is running"
+        already_running: "Feeding timer is already running"
+        duration: "%{duration} min"
+        note: "Feeding timer stopped after %{duration} min"
     diaper:
       label: "Baby"
       title: "Diaper change"
