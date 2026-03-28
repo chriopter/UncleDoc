@@ -10,17 +10,21 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_28_225712) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_29_150000) do
   create_table "entries", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.date "date", null: false
+    t.string "entry_type"
+    t.json "metadata", default: {}
     t.text "note", null: false
     t.integer "person_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["metadata"], name: "index_entries_on_metadata"
     t.index ["person_id"], name: "index_entries_on_person_id"
   end
 
   create_table "people", force: :cascade do |t|
+    t.boolean "baby_mode"
     t.date "birth_date"
     t.datetime "created_at", null: false
     t.string "name", null: false
@@ -30,6 +34,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_225712) do
   create_table "user_preferences", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "date_format"
+    t.text "llm_api_key_ciphertext"
+    t.string "llm_model"
+    t.string "llm_provider"
     t.string "locale"
     t.datetime "updated_at", null: false
   end

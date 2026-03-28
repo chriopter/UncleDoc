@@ -1,11 +1,34 @@
 class SettingsController < ApplicationController
   def show
-    save_preferences if params[:locale].present? || params[:date_format].present?
+    save_preferences if params[:locale].present? || params[:date_format].present? || params[:llm_provider].present?
 
-    @section = params[:section].in?(%w[profile db users]) ? params[:section] : "profile"
+    @section = params[:section].in?(%w[profile llm db users]) ? params[:section] : "profile"
     @database_snapshot = database_snapshot if @section == "db"
     @people = Person.recent_first if @section == "users"
     @person = Person.new if @section == "users"
+  end
+
+  def update
+    save_preferences
+
+    redirect_to settings_path(section: resolved_section), notice: t("settings.flash.saved")
+  end
+
+  def llm_models
+    provider = params[:llm_provider].presence || UserPreference.current.llm_provider
+    metadata = UserPreference.provider_metadata(provider)
+    api_key = params[:llm_api_key].presence || UserPreference.current.llm_api_key || ENV[metadata[:env_key]]
+    api_base = metadata[:env_base_key].present? ? ENV[metadata[:env_base_key]].presence || metadata[:api_base] : metadata[:api_base]
+    result = LlmModelCatalog.lookup(provider: provider, api_key: api_key, api_base: api_base)
+
+    render json: {
+      models: result.models,
+      selected_model: selected_llm_model(result.models),
+      env_key: metadata[:env_key],
+      api_base: api_base,
+      status: llm_model_status(provider, result),
+      empty_label: t("settings.llm.model_empty")
+    }
   end
 
   private
@@ -13,6 +36,35 @@ class SettingsController < ApplicationController
   def save_preferences
     UserPreference.update_locale(params[:locale]) if params[:locale].present?
     UserPreference.update_date_format(params[:date_format]) if params[:date_format].present?
+    UserPreference.update_llm_provider(params[:llm_provider]) if params[:llm_provider].present?
+
+    return unless params[:llm_provider].present? || params[:llm_api_key].present? || params[:llm_model].present?
+
+    UserPreference.update_llm_settings(
+      llm_provider: params[:llm_provider].presence || UserPreference.current.llm_provider,
+      llm_api_key: params[:llm_api_key],
+      llm_model: params[:llm_model]
+    )
+  end
+
+  def resolved_section
+    params[:section].in?(%w[profile llm db users]) ? params[:section] : "profile"
+  end
+
+  def selected_llm_model(models)
+    preferred_model = params[:llm_model].presence || UserPreference.current.llm_model
+    return preferred_model if preferred_model.present? && models.include?(preferred_model)
+
+    models.first
+  end
+
+  def llm_model_status(provider, result)
+    return t("settings.llm.model_status.unsupported", provider: t("settings.llm.providers.#{provider}.name")) if result.error == :unsupported_provider
+    return t("settings.llm.model_status.missing_key") if result.error == :missing_api_key
+    return t("settings.llm.model_status.request_failed") if result.error.in?([ :missing_api_base, :request_failed, :unauthorized ])
+    return t("settings.llm.model_status.empty") if result.models.empty?
+
+    t("settings.llm.model_status.loaded", count: result.models.size)
   end
 
   def database_snapshot

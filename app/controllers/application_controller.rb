@@ -10,7 +10,7 @@ class ApplicationController < ActionController::Base
   before_action :set_current_person
   before_action :initialize_entry_for_current_person
 
-  helper_method :current_date_format, :current_locale, :current_person, :family_members, :person_root_path_for, :settings_path_for
+  helper_method :current_date_format, :current_locale, :current_llm_provider, :current_person, :family_members, :person_root_path_for, :settings_path_for, :user_preference
 
   def default_url_options
     {}.tap do |options|
@@ -72,6 +72,14 @@ class ApplicationController < ActionController::Base
       params[:date_format]
     else
       user_preference.date_format
+    end
+  end
+
+  def current_llm_provider
+    if params[:llm_provider].present? && UserPreference::LLM_PROVIDERS.key?(params[:llm_provider])
+      params[:llm_provider]
+    else
+      user_preference.llm_provider
     end
   end
 

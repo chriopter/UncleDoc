@@ -106,6 +106,8 @@ en:
     flash:
       created: "Person added."
       destroyed: "Person removed."
+      updated: "Person updated."
+      update_error: "Failed to update person."
 
   # Settings
   settings:
@@ -133,6 +135,8 @@ en:
       title: "Choose date display"
       long: "Long"
       compact: "Compact"
+    flash:
+      saved: "Settings saved."
 
   # DB view
   db:
@@ -148,3 +152,61 @@ en:
   family:
     default_name: "Family"
     members_label: "UncleDoc"
+
+  # Baby mode
+  baby:
+    feeding:
+      label: "Baby"
+      title: "Feeding"
+      button: "Log feeding"
+      default_note: "Baby fed"
+      empty: "No feedings recorded yet"
+    diaper:
+      label: "Baby"
+      title: "Diaper change"
+      button: "Log diaper change"
+      default_note: "Diaper changed"
+      empty: "No diaper changes recorded yet"
+      consistency: "Consistency"
+      consistency_options:
+        solid: "Solid"
+        fluid: "Fluid"
+        wet_only: "Wet only"
+        both: "Both"
+      rash: "Rash present"
+    log:
+      label: "Log"
+      title: "Log for %{name}"
+      count: "%{count} event"
+      count_plural: "%{count} events"
+      empty: "No baby events yet. Log the first feeding or diaper change."
+    protocol:
+      title: "Baby protocol"
+    last_event: "Last"
+    types:
+      feeding: "Feeding"
+      diaper: "Diaper"
+    badge: "Baby mode"
+    off: "Off"
+    toggle: "Toggle baby mode"
+
+  # Person overview page
+  person:
+    overview:
+      family_member: "Family Member"
+      birth_date: "Born"
+      years_old: "years old"
+      birth_date_not_set: "Birth date not set"
+      stats:
+        entries: "Log Entries"
+        entries_subtitle: "Health notes recorded"
+        member_since: "Member Since"
+        last_activity: "Last Activity"
+        last_activity_short: "Last"
+        no_entries: "No entries"
+        start_logging: "Start logging health data"
+        most_recent: "Most recent entry"
+      recent_activity: "Recent Activity"
+      latest_entries: "Latest Entries"
+      view_log: "View Log"
+      off: "Off"

@@ -37,6 +37,16 @@ class PeopleController < ApplicationController
     end
   end
 
+  def update
+    @person = Person.find(params[:id])
+
+    if @person.update(person_params)
+      redirect_to request.referer || person_overview_path(person_slug: @person.name), notice: t("people.flash.updated")
+    else
+      redirect_to request.referer || settings_path(section: "users"), alert: t("people.flash.update_error")
+    end
+  end
+
   def destroy
     @person = Person.find(params[:id])
     @person.destroy
@@ -54,6 +64,6 @@ class PeopleController < ApplicationController
   private
 
   def person_params
-    params.require(:person).permit(:name, :birth_date)
+    params.require(:person).permit(:name, :birth_date, :baby_mode)
   end
 end

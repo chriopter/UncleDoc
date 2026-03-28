@@ -50,6 +50,6 @@ class EntriesController < ApplicationController
   end
 
   def entry_params
-    params.require(:entry).permit(:date, :note)
+    params.require(:entry).permit(:date, :note, :entry_type, metadata: {})
   end
 end

@@ -15,6 +15,11 @@
         <span class="text-xs uppercase tracking-[0.2em] opacity-70"><%= t("settings.users.subtitle") %></span>
       <% end %>
 
+      <%= link_to settings_path_for(:llm), class: settings_sidebar_item_class(@section == "llm") do %>
+        <span><%= t("settings.llm.title") %></span>
+        <span class="text-xs uppercase tracking-[0.2em] opacity-70"><%= t("settings.llm.subtitle") %></span>
+      <% end %>
+
       <%= link_to settings_path_for(:db), class: settings_sidebar_item_class(@section == "db") do %>
         <span><%= t("settings.db.title") %></span>
         <span class="text-xs uppercase tracking-[0.2em] opacity-70"><%= t("settings.db.subtitle") %></span>
@@ -27,6 +32,8 @@
       <%= render "dashboard/db", database_snapshot: @database_snapshot %>
     <% elsif @section == "users" %>
       <%= render "settings/users", people: @people, person: @person %>
+    <% elsif @section == "llm" %>
+      <%= render "settings/llm" %>
     <% else %>
       <section class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
         <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("settings.profile.title") %></p>
