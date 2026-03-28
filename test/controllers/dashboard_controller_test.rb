@@ -6,13 +6,14 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "Family Health Tracker"
-    assert_select "a", text: "Log"
+    assert_select "span", text: "Timeline"
+    assert_select "a[aria-label='Settings']", 1
   end
 
-  test "shows the db tab" do
-    get root_url(tab: "db")
+  test "keeps the selected locale in the interface" do
+    get root_url(locale: "de")
 
     assert_response :success
-    assert_select "h2", "Raw database view"
+    assert_select "a[href*='locale=de']", minimum: 1
   end
 end

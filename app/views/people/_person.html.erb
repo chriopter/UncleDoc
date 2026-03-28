@@ -4,7 +4,7 @@
       <h3 class="text-lg font-bold text-white"><%= person.name %></h3>
       <p class="mt-1 text-sm text-slate-300">
         Birth date:
-        <%= person.birth_date.present? ? l(person.birth_date, format: :long) : "Unknown" %>
+        <%= formatted_date(person.birth_date) %>
       </p>
       <p class="mt-2 text-xs uppercase tracking-[0.18em] text-slate-400">Created <%= time_ago_in_words(person.created_at) %> ago</p>
     </div>
