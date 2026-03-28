@@ -7,7 +7,7 @@ class PeopleController < ApplicationController
       @fresh_person = Person.new
 
       respond_to do |format|
-        format.html { redirect_to root_path(tab: "log"), notice: "Person added." }
+        format.html { redirect_to root_path(person_slug: @person.name, tab: "log"), notice: "Person added." }
         format.turbo_stream
       end
     else
@@ -15,6 +15,8 @@ class PeopleController < ApplicationController
         format.html do
           @tab = "log"
           @people = Person.recent_first
+          # When validation fails, show empty state - no current person selected
+          @entry = Entry.new
           render "dashboard/show", status: :unprocessable_entity
         end
 
@@ -34,8 +36,11 @@ class PeopleController < ApplicationController
     @person.destroy
     @people = Person.recent_first
 
+    # After deleting a person, switch to another family member or go to root
+    remaining_person = @people.first
+
     respond_to do |format|
-      format.html { redirect_to root_path(tab: "log"), notice: "Person removed." }
+      format.html { redirect_to root_path(person_slug: remaining_person&.name, tab: "log"), notice: "Person removed." }
       format.turbo_stream
     end
   end

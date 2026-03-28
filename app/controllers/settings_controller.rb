@@ -1,7 +1,9 @@
 class SettingsController < ApplicationController
   def show
-    @section = params[:section].in?(%w[profile db]) ? params[:section] : "profile"
+    @section = params[:section].in?(%w[profile db users]) ? params[:section] : "profile"
     @database_snapshot = database_snapshot if @section == "db"
+    @people = Person.recent_first if @section == "users"
+    @person = Person.new if @section == "users"
   end
 
   private

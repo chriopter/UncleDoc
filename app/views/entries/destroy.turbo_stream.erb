@@ -1,0 +1,3 @@
+<%= turbo_stream.replace "entries_list" do %>
+  <%= render "entries/list", entries: @person.entries.recent_first %>
+<% end %>
