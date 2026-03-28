@@ -19,10 +19,17 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "button", text: /MyString/
   end
 
-  test "keeps the selected locale in the interface" do
-    get root_url(locale: "de")
+  test "sets locale from user preferences" do
+    # Set locale to German in preferences
+    UserPreference.update_locale("de")
+
+    get root_url
 
     assert_response :success
-    assert_select "a[href*='locale=de']", minimum: 1
+    # Verify German translation is displayed
+    assert_select "span", text: "Zeitlinie"
+
+    # Reset to English
+    UserPreference.update_locale("en")
   end
 end

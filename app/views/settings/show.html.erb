@@ -44,12 +44,12 @@
           </div>
 
           <div class="grid gap-3">
-            <%= link_to settings_path_for(:profile) + "?locale=en&date_format=#{current_date_format}", class: settings_option_class(current_locale == "en") do %>
+            <%= link_to settings_path_for(:profile) + "?locale=en", class: settings_option_class(current_locale == "en") do %>
               <span><%= t("settings.language.english") %></span>
               <span class="text-xs uppercase tracking-[0.2em] text-slate-500">EN</span>
             <% end %>
 
-            <%= link_to settings_path_for(:profile) + "?locale=de&date_format=#{current_date_format}", class: settings_option_class(current_locale == "de") do %>
+            <%= link_to settings_path_for(:profile) + "?locale=de", class: settings_option_class(current_locale == "de") do %>
               <span><%= t("settings.language.german") %></span>
               <span class="text-xs uppercase tracking-[0.2em] text-slate-500">DE</span>
             <% end %>
@@ -63,12 +63,12 @@
           </div>
 
           <div class="grid gap-3">
-            <%= link_to settings_path_for(:profile) + "?locale=#{current_locale}&date_format=long", class: settings_option_class(current_date_format == "long") do %>
+            <%= link_to settings_path_for(:profile) + "?date_format=long", class: settings_option_class(current_date_format == "long") do %>
               <span><%= t("settings.date_format.long") %></span>
               <span class="text-xs text-slate-500"><%= current_locale == "de" ? "28. März 2026" : "March 28, 2026" %></span>
             <% end %>
 
-            <%= link_to settings_path_for(:profile) + "?locale=#{current_locale}&date_format=compact", class: settings_option_class(current_date_format == "compact") do %>
+            <%= link_to settings_path_for(:profile) + "?date_format=compact", class: settings_option_class(current_date_format == "compact") do %>
               <span><%= t("settings.date_format.compact") %></span>
               <span class="text-xs text-slate-500"><%= current_locale == "de" ? "28.03.2026" : "03/28/2026" %></span>
             <% end %>
