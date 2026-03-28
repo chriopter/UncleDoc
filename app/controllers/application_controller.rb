@@ -5,7 +5,7 @@ class ApplicationController < ActionController::Base
   # Changes to the importmap will invalidate the etag for HTML responses
   stale_when_importmap_changes
 
-  before_action :set_locale_from_params
+  before_action :set_locale_from_preferences
   before_action :load_family_members
   before_action :set_current_person
   before_action :initialize_entry_for_current_person
@@ -14,14 +14,13 @@ class ApplicationController < ActionController::Base
 
   def default_url_options
     {}.tap do |options|
-      options[:locale] = current_locale if current_locale == "de"
       options[:date_format] = current_date_format if current_date_format != "long"
     end
   end
 
   private
 
-  def set_locale_from_params
+  def set_locale_from_preferences
     I18n.locale = current_locale
   end
 
@@ -50,11 +49,7 @@ class ApplicationController < ActionController::Base
   end
 
   def settings_path_for(section = nil)
-    if current_person
-      person_settings_path(person_slug: current_person.name, section: section)
-    else
-      settings_path(section: section)
-    end
+    settings_path(section: section)
   end
 
   def initialize_entry_for_current_person
@@ -65,10 +60,22 @@ class ApplicationController < ActionController::Base
   end
 
   def current_locale
-    params[:locale].in?(%w[en de]) ? params[:locale] : "en"
+    if params[:locale].present? && %w[en de].include?(params[:locale])
+      params[:locale]
+    else
+      user_preference.locale
+    end
   end
 
   def current_date_format
-    params[:date_format].in?(%w[long compact]) ? params[:date_format] : "long"
+    if params[:date_format].present? && %w[long compact].include?(params[:date_format])
+      params[:date_format]
+    else
+      user_preference.date_format
+    end
+  end
+
+  def user_preference
+    @user_preference ||= UserPreference.current
   end
 end
