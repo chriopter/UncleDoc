@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   root "dashboard#show"
+  get "settings(/:section)", to: "settings#show", as: :settings
 
   resources :people, only: [ :create, :destroy ]
 end
