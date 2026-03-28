@@ -7,7 +7,7 @@ class PeopleController < ApplicationController
       @fresh_person = Person.new
 
       respond_to do |format|
-        format.html { redirect_to root_path(person_slug: @person.name, tab: "log"), notice: "Person added." }
+        format.html { redirect_to root_path(person_slug: @person.name, tab: "log"), notice: t("people.flash.created") }
         format.turbo_stream
       end
     else
@@ -40,7 +40,7 @@ class PeopleController < ApplicationController
     remaining_person = @people.first
 
     respond_to do |format|
-      format.html { redirect_to root_path(person_slug: remaining_person&.name, tab: "log"), notice: "Person removed." }
+      format.html { redirect_to root_path(person_slug: remaining_person&.name, tab: "log"), notice: t("people.flash.destroyed") }
       format.turbo_stream
     end
   end

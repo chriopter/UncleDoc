@@ -7,7 +7,7 @@ class EntriesController < ApplicationController
 
     if @entry.save
       respond_to do |format|
-        format.html { redirect_to root_path(person_slug: @person.name, tab: "log"), notice: "Entry added." }
+        format.html { redirect_to root_path(person_slug: @person.name, tab: "log"), notice: t("entries.flash.created") }
         format.turbo_stream
       end
     else
@@ -34,7 +34,7 @@ class EntriesController < ApplicationController
     @entries = @person.entries.recent_first
 
     respond_to do |format|
-      format.html { redirect_to root_path(person_slug: @person.name, tab: "log"), notice: "Entry removed." }
+      format.html { redirect_to root_path(person_slug: @person.name, tab: "log"), notice: t("entries.flash.destroyed") }
       format.turbo_stream
     end
   end
