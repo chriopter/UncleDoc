@@ -10,6 +10,11 @@
         <span class="text-xs uppercase tracking-[0.2em] opacity-70">UI</span>
       <% end %>
 
+      <%= link_to settings_path(:users), class: settings_sidebar_item_class(@section == "users") do %>
+        <span>Users</span>
+        <span class="text-xs uppercase tracking-[0.2em] opacity-70">Family</span>
+      <% end %>
+
       <%= link_to settings_path(:db), class: settings_sidebar_item_class(@section == "db") do %>
         <span>Full DB view</span>
         <span class="text-xs uppercase tracking-[0.2em] opacity-70">SQL</span>
@@ -20,6 +25,8 @@
   <div class="space-y-6">
     <% if @section == "db" %>
       <%= render "dashboard/db", database_snapshot: @database_snapshot %>
+    <% elsif @section == "users" %>
+      <%= render "settings/users", people: @people, person: @person %>
     <% else %>
       <section class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
         <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">Profile settings</p>

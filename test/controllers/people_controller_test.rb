@@ -6,7 +6,7 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
       post people_url, params: { person: { name: "Mila", birth_date: "2024-03-10" } }
     end
 
-    assert_redirected_to root_url(tab: "log")
+    assert_redirected_to root_url(person_slug: "Mila", tab: "log")
   end
 
   test "does not create invalid person" do
@@ -24,6 +24,8 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
       delete person_url(person)
     end
 
-    assert_redirected_to root_url(tab: "log")
+    # After deleting, should redirect to root without a person context
+    # (or to another family member if one exists)
+    assert_redirected_to %r{\A#{root_url}(\?.*)?\z}
   end
 end

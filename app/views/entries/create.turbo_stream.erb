@@ -1,0 +1,7 @@
+<%= turbo_stream.replace "entry_form" do %>
+  <%= render "entries/form", entry: Entry.new, person: @person %>
+<% end %>
+
+<%= turbo_stream.replace "entries_list" do %>
+  <%= render "entries/list", entries: @person.entries.recent_first %>
+<% end %>

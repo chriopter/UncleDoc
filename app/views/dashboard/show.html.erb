@@ -1,41 +1,34 @@
 <section class="w-full space-y-6">
-  <div class="space-y-3">
-    <p class="text-sm font-semibold uppercase tracking-[0.25em] text-amber-700">UncleDoc v1</p>
-    <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-      <div>
-        <h1 class="text-4xl font-black tracking-tight text-slate-950 md:text-5xl">Family Health Tracker</h1>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600 md:text-base">
-          A tiny Rails + Hotwire starting point with one simple model: people.
-        </p>
-      </div>
-
-      <div class="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900">
-        Log
-      </div>
-    </div>
-  </div>
-
-  <div class="grid gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
-    <div class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
-      <div class="mb-5 space-y-2">
-        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">New Person</p>
-        <h2 class="text-2xl font-bold text-slate-950">Add someone to the family log</h2>
-        <p class="text-sm leading-6 text-slate-600">Keep v1 minimal: name and birth date only.</p>
-      </div>
-
-      <%= render "people/form", person: @person %>
-    </div>
-
-    <div class="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm ring-1 ring-black/5">
-      <div class="mb-5 flex items-end justify-between gap-4">
-        <div>
-          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">Log</p>
-          <h2 class="text-2xl font-bold">People</h2>
+  <% if current_person %>
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+      <div class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
+        <div class="mb-5 space-y-2">
+          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">New Entry</p>
+          <h2 class="text-2xl font-bold text-slate-950">Log health info for <%= current_person.name %></h2>
+          <p class="text-sm leading-6 text-slate-600">Record date and notes about medical events.</p>
         </div>
-        <span class="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-slate-300"><%= pluralize(@people.count, "record") %></span>
+
+        <%= render "entries/form", entry: @entry, person: current_person %>
       </div>
 
-      <%= render "people/list", people: @people %>
+      <div class="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm ring-1 ring-black/5">
+        <div class="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">Log</p>
+            <h2 class="text-2xl font-bold">Entries for <%= current_person.name %></h2>
+          </div>
+          <span class="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-slate-300"><%= pluralize(@entries.count, "entry") %></span>
+        </div>
+
+        <%= render "entries/list", entries: @entries %>
+      </div>
     </div>
-  </div>
+  <% else %>
+    <div class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur text-center py-12">
+      <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">Welcome</p>
+      <h2 class="mt-2 text-2xl font-bold text-slate-950">Select a family member to view their log</h2>
+      <p class="mt-4 text-slate-600">Use the dropdown in the header to select someone, or go to Settings &gt; Users to add family members.</p>
+      <%= link_to "Add family members", settings_path(section: "users"), class: "mt-6 inline-flex items-center rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800" %>
+    </div>
+  <% end %>
 </section>

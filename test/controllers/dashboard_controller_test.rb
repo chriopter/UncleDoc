@@ -2,12 +2,21 @@ require "test_helper"
 
 class DashboardControllerTest < ActionDispatch::IntegrationTest
   test "shows the log tab by default" do
+    Person.delete_all
     get root_url
 
     assert_response :success
-    assert_select "h1", "Family Health Tracker"
+    assert_select "button", text: /Family/
     assert_select "span", text: "Timeline"
     assert_select "a[aria-label='Settings']", 1
+  end
+
+  test "shows family member name when people exist" do
+    get root_url
+
+    assert_response :success
+    # When fixtures are loaded, should show the first person's name
+    assert_select "button", text: /MyString/
   end
 
   test "keeps the selected locale in the interface" do
