@@ -1,4 +1,10 @@
 class PeopleController < ApplicationController
+  def show
+    @person = Person.find_by!(name: params[:person_slug])
+    @entries = @person.entries.recent_first.limit(5)
+    @entry_count = @person.entries.count
+  end
+
   def create
     @person = Person.new(person_params)
 

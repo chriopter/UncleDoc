@@ -10,8 +10,9 @@ Rails.application.routes.draw do
     resources :entries, only: [ :create, :destroy ]
   end
 
-  # Stateful person URLs - dashboard only
+  # Stateful person URLs
   scope "/:person_slug", constraints: { person_slug: /(?!settings|up|manifest|service-worker|people)[^\/]+/ } do
     root "dashboard#show", as: :person_root
+    get "overview", to: "people#show", as: :person_overview
   end
 end

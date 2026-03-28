@@ -44,12 +44,12 @@
                 <% if family_members.any? %>
                   <div class="pb-1">
                     <% family_members.each do |person| %>
-                      <button type="button" data-action="dropdown#close" onclick="alert('hello world')" class="w-full text-left block rounded-xl px-3 py-2.5 text-sm font-medium <%= current_person == person ? 'bg-amber-100 text-amber-900' : 'text-slate-700 hover:bg-amber-50' %>">
+                      <%= link_to person_overview_path(person_slug: person.name), class: "w-full text-left block rounded-xl px-3 py-2.5 text-sm font-medium #{current_person == person ? 'bg-amber-100 text-amber-900' : 'text-slate-700 hover:bg-amber-50'}" do %>
                         <%= person.name %>
                         <% if current_person == person %>
                           <span class="ml-2 text-xs text-amber-600">●</span>
                         <% end %>
-                      </button>
+                      <% end %>
                     <% end %>
                   </div>
                 <% end %>
@@ -58,7 +58,12 @@
 
             <%# Desktop navigation next to name %>
             <nav class="hidden xl:flex min-w-max items-center gap-2">
-              <%= link_to t("nav.home"), root_path(person_slug: current_person&.name), class: shell_menu_item_class(current_page?(root_path)) %>
+              <% if current_person %>
+                <%= link_to "Overview", person_overview_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/overview")) %>
+                <%= link_to "Log", root_path(person_slug: current_person.name), class: shell_menu_item_class(current_page?(root_path) && !request.path.include?("/overview")) %>
+              <% else %>
+                <%= link_to t("nav.home"), root_path, class: shell_menu_item_class(current_page?(root_path)) %>
+              <% end %>
               <span class="<%= shell_menu_item_class %>"><%= t("nav.timeline") %></span>
               <span class="<%= shell_menu_item_class %>"><%= t("nav.reports") %></span>
             </nav>
@@ -67,7 +72,12 @@
           <%# Right: Mobile nav + Settings %>
           <div class="flex items-center gap-3 overflow-x-auto xl:overflow-visible xl:w-32 xl:justify-end">
             <nav class="flex xl:hidden min-w-max items-center gap-2">
-              <%= link_to t("nav.home"), root_path(person_slug: current_person&.name), class: shell_menu_item_class(current_page?(root_path)) %>
+              <% if current_person %>
+                <%= link_to "Overview", person_overview_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/overview")) %>
+                <%= link_to "Log", root_path(person_slug: current_person.name), class: shell_menu_item_class(current_page?(root_path) && !request.path.include?("/overview")) %>
+              <% else %>
+                <%= link_to t("nav.home"), root_path, class: shell_menu_item_class(current_page?(root_path)) %>
+              <% end %>
               <span class="<%= shell_menu_item_class %>"><%= t("nav.timeline") %></span>
               <span class="<%= shell_menu_item_class %>"><%= t("nav.reports") %></span>
             </nav>
