@@ -82,50 +82,63 @@ Health data is stored in a PostgreSQL JSONB column (`entries.metadata`), allowin
 - Easy migration of existing data
 - No database migrations when adding new field types
 
-## Free Standards
+## LLM-First Data Plan
 
-UncleDoc can stay flexible at the UI level while still using free health-data standards where they help with consistency, exports, and future interoperability.
+UncleDoc is an end-user app, so the main input model is natural language. Users log freely, the LLM interprets the note, and the app maps that input into a small stable internal vocabulary.
 
-### What To Use For What
+### Core Rule
 
-| Standard | Use it for | Free to use | Notes |
-|---|---|---:|---|
-| `FHIR` | Overall record structure and export/import shape | Yes | Best fit for future interoperability and API design |
-| `LOINC` | Identifying measurable observations | Yes | Good for temperature, pulse, weight, glucose, blood pressure |
-| `UCUM` | Units | Yes | Good for `kg`, `cm`, `Cel`, `mm[Hg]`, `beats/min` |
+- Do not force external healthcare standards into the product flow
+- Do not try to normalize everything upfront
+- Do keep a fixed internal set of event types, metric keys, units, and common values
+- Let the LLM map messy user input into those internal values
 
-### Recommended Rule Of Thumb
+### What Gets Stored
 
-- Use internal UncleDoc keys for family-care events like `baby_diaper`, `baby_feeding`, and `note`
-- Use `LOINC` + `UCUM` for real measurements like temperature, pulse, weight, blood glucose, and blood pressure
-- Use `FHIR` as the export/import structure later, not as the day-to-day form definition layer
+- `raw_input` for the original human note
+- `entry_type` for the main event like `baby_feeding`, `baby_diaper`, `temperature`, or `note`
+- `metadata` for parsed structured values like `amount_ml`, `duration_minutes`, `consistency`, or `rash`
+- optional LLM-generated summary or interpretation for later features
+
+### Internal Vocabulary Examples
+
+- event types: `baby_feeding`, `baby_diaper`, `baby_sleep`, `health_temperature`, `health_pulse`, `note`
+- metric keys: `amount_ml`, `duration_minutes`, `celsius`, `bpm`
+- fixed values: `bottle`, `breast`, `solids`, `mixed`, `solid`, `fluid`, `none`, `both`
 
 ### Example
 
 ```yaml
-health_temperature:
-  icon: "thermometer"
-  color: "red"
+baby_feeding:
+  icon: "baby-bottle"
+  color: "emerald"
   label:
-    en: "Temperature"
-    de: "Temperatur"
-  standard:
-    fhir_resource: "Observation"
-    code_system: "LOINC"
-    code: "8310-5"
+    en: "Feeding"
+    de: "Fütterung"
   fields:
-    celsius:
+    method:
+      type: select
+      options:
+        - value: bottle
+        - value: breast
+        - value: solids
+        - value: mixed
+    amount_ml:
       type: number
-      unit: "Cel"
-      unit_system: "UCUM"
-      required: true
+    duration_minutes:
+      type: number
 ```
 
-### What Not To Force
+### Why This Approach
 
-- Do not block custom family workflows on finding a formal code first
-- Do not require every baby-care event to have a standards mapping
-- Keep standards as optional metadata for custom events, but make them first-class for common measurements
+- simpler than full medical standards
+- stable enough for charts, reminders, and summaries
+- flexible enough for messy family logging
+- well suited for an LLM-driven product
+
+### Future Option
+
+If UncleDoc later needs export or interoperability, standards can be added as a separate mapping layer. They are not required for the core app model.
 
 ## Development
 
