@@ -5,7 +5,7 @@ class Entry < ApplicationRecord
 
   validates :note, presence: true
   validates :occurred_at, presence: true
-  validates :parse_status, inclusion: { in: PARSE_STATUSES }
+  validates :parse_status, inclusion: { in: PARSE_STATUSES }, if: -> { has_attribute?(:parse_status) }
   validate :data_must_be_array
 
   after_initialize :normalize_defaults
@@ -70,15 +70,15 @@ class Entry < ApplicationRecord
   end
 
   def pending_parse?
-    parse_status == "pending"
+    current_parse_status == "pending"
   end
 
   def parsed?
-    parse_status == "parsed"
+    current_parse_status == "parsed"
   end
 
   def failed_parse?
-    parse_status == "failed"
+    current_parse_status == "failed"
   end
 
   def time_since
@@ -92,7 +92,13 @@ class Entry < ApplicationRecord
   def normalize_defaults
     self.data = [] if data.nil?
     self.occurred_at ||= Time.current
-    self.parse_status ||= data.present? ? "parsed" : "pending"
+    self.parse_status ||= data.present? ? "parsed" : "pending" if has_attribute?(:parse_status)
+  end
+
+  def current_parse_status
+    return parse_status if has_attribute?(:parse_status)
+
+    data.present? ? "parsed" : "pending"
   end
 
   def data_items
