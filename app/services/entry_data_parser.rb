@@ -32,15 +32,27 @@ class EntryDataParser
 
   def self.call(note:, preference: UserPreference.current)
     return Result.new(data: [], error: :blank_note) if note.blank?
-    return Result.new(data: [], error: :missing_model) if preference.llm_model.blank?
-    return Result.new(data: [], error: :missing_api_key) if preference.llm_runtime_api_key.blank? && preference.llm_ruby_provider != :ollama
-    return Result.new(data: [], error: :unsupported_provider) unless preference.llm_openai_compatible?
+
+    configuration_error = configuration_error_for(preference)
+    return Result.new(data: [], error: configuration_error) if configuration_error.present?
 
     response_body = request_completion(note, preference)
     Result.new(data: sanitize_data(parse_json_array(response_body)))
   rescue StandardError => error
     Rails.logger.warn("Entry data parse failed: #{error.class}: #{error.message}")
     Result.new(data: [], error: :request_failed)
+  end
+
+  def self.ready?(preference = UserPreference.current)
+    configuration_error_for(preference).nil?
+  end
+
+  def self.configuration_error_for(preference)
+    return :missing_model if preference.llm_model.blank?
+    return :missing_api_key if preference.llm_runtime_api_key.blank? && preference.llm_ruby_provider != :ollama
+    return :unsupported_provider unless preference.llm_openai_compatible?
+
+    nil
   end
 
   def self.request_completion(note, preference)

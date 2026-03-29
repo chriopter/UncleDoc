@@ -129,6 +129,7 @@ en:
       destroyed: "Entry deleted."
     parse_status:
       pending: "Sending note to the LLM..."
+      skipped: "LLM parsing is off until a model is configured in Settings."
       failed: "LLM parse failed. Keep the note and try again later."
     raw_data:
       toggle: "Show raw data"

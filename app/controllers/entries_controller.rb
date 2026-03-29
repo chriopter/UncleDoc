@@ -4,12 +4,20 @@ class EntriesController < ApplicationController
 
   def create
     @entry = @person.entries.build(entry_params)
+    should_enqueue_parse = @entry.data.blank? && EntryDataParser.ready?
+
     if @entry.has_attribute?(:parse_status)
-      @entry.parse_status = @entry.data.blank? ? "pending" : "parsed"
+      @entry.parse_status = if @entry.data.present?
+        "parsed"
+      elsif should_enqueue_parse
+        "pending"
+      else
+        "skipped"
+      end
     end
 
     if @entry.save
-      EntryDataParseJob.perform_later(@entry.id) if @entry.data.blank?
+      EntryDataParseJob.perform_later(@entry.id) if should_enqueue_parse
 
       respond_to do |format|
         format.html { redirect_to root_path(person_slug: @person.name, tab: "log"), notice: t("entries.flash.created") }
