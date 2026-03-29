@@ -35,12 +35,18 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h2", "Raw database view"
   end
 
-  test "preserves locale and date format in settings" do
-    get settings_url(locale: "de", date_format: "compact")
+  test "shows parser prompt in llm settings" do
+    get settings_url(section: "llm")
+
+    assert_response :success
+    assert_includes @response.body, EntryDataParser.system_prompt.lines.first.strip
+  end
+
+  test "preserves locale in settings" do
+    get settings_url(locale: "de")
 
     assert_response :success
     assert_includes @response.body, "locale=de"
-    assert_includes @response.body, "date_format=compact"
   end
 
   test "updates locale preference from URL params" do
@@ -53,10 +59,10 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     UserPreference.update_locale("en")
   end
 
-  test "updates date format preference from URL params" do
-    get settings_url(section: "profile", date_format: "compact")
+  test "updates date format preference via patch" do
+    patch settings_url(section: "profile", date_format: "compact")
 
-    assert_response :success
+    assert_redirected_to settings_path(section: "profile")
     assert_equal "compact", UserPreference.current.date_format
 
     # Reset

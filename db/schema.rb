@@ -10,16 +10,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_29_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_30_082000) do
   create_table "entries", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.date "date", null: false
-    t.string "entry_type"
-    t.json "metadata", default: {}
+    t.json "data", default: []
     t.text "note", null: false
+    t.datetime "occurred_at", null: false
+    t.string "parse_status", default: "parsed", null: false
     t.integer "person_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["metadata"], name: "index_entries_on_metadata"
     t.index ["person_id"], name: "index_entries_on_person_id"
   end
 

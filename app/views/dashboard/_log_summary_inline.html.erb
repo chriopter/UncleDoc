@@ -1,0 +1,23 @@
+<%= turbo_frame_tag "log_summary_output" do %>
+  <% if state == :ready && summary.present? %>
+    <div class="mt-6 rounded-xl border border-white/10 bg-white/5 p-4">
+      <p class="text-sm font-semibold uppercase tracking-[0.15em] text-amber-300 mb-2"><%= t("log_summary.title") %></p>
+      <p class="text-sm leading-relaxed text-white whitespace-pre-line"><%= summary %></p>
+    </div>
+  <% elsif state.in?([:missing_model, :missing_api_key, :no_entries, :request_failed]) %>
+    <div class="mt-6 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+      <p class="text-sm text-amber-300">
+        <% case state %>
+        <% when :missing_model %>
+          <%= t("log_summary.states.missing_model") %>
+        <% when :missing_api_key %>
+          <%= t("log_summary.states.missing_api_key") %>
+        <% when :no_entries %>
+          <%= t("log_summary.states.no_entries") %>
+        <% when :request_failed %>
+          <%= t("log_summary.states.request_failed") %>
+        <% end %>
+      </p>
+    </div>
+  <% end %>
+<% end %>

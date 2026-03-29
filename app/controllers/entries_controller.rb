@@ -4,8 +4,11 @@ class EntriesController < ApplicationController
 
   def create
     @entry = @person.entries.build(entry_params)
+    @entry.parse_status = @entry.data.blank? ? "pending" : "parsed"
 
     if @entry.save
+      EntryDataParseJob.perform_later(@entry.id) if @entry.data.blank?
+
       respond_to do |format|
         format.html { redirect_to root_path(person_slug: @person.name, tab: "log"), notice: t("entries.flash.created") }
         format.turbo_stream
@@ -50,6 +53,17 @@ class EntriesController < ApplicationController
   end
 
   def entry_params
-    params.require(:entry).permit(:date, :note, :entry_type, metadata: {})
+    permitted = params.require(:entry).permit(:note, :occurred_at)
+    permitted[:data] = normalize_data_param(params[:entry][:data]) if params[:entry].key?(:data)
+    permitted
+  end
+
+  def normalize_data_param(raw_data)
+    return [] if raw_data.blank?
+    return raw_data if raw_data.is_a?(Array)
+
+    JSON.parse(raw_data)
+  rescue JSON::ParserError
+    []
   end
 end

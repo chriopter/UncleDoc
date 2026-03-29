@@ -26,9 +26,9 @@ class DashboardController < ApplicationController
     @log_summary_state = result.error || :ready
 
     render turbo_stream: turbo_stream.replace(
-      "log_summary_widget",
-      partial: "dashboard/log_summary",
-      locals: { person: @person, summary: @log_summary, state: @log_summary_state }
+      "log_summary_output",
+      partial: "dashboard/log_summary_inline",
+      locals: { summary: @log_summary, state: @log_summary_state }
     )
   end
 end

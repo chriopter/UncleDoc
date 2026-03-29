@@ -4,7 +4,7 @@ class BabyFeedingTimersControllerTest < ActionDispatch::IntegrationTest
   test "starts a feeding timer" do
     person = Person.create!(name: "Mila", birth_date: Date.new(2024, 3, 10), baby_mode: true)
 
-    post person_baby_feeding_timer_url(person)
+    post person_baby_feeding_timer_url(person), params: { side: "left" }
 
     assert_redirected_to root_url(person_slug: person.name, tab: "log")
 
@@ -18,7 +18,7 @@ class BabyFeedingTimersControllerTest < ActionDispatch::IntegrationTest
     person = Person.create!(name: "Mila", birth_date: Date.new(2024, 3, 10), baby_mode: true)
 
     travel_to Time.zone.local(2026, 3, 29, 10, 0, 0) do
-      post person_baby_feeding_timer_url(person)
+      post person_baby_feeding_timer_url(person), params: { side: "left" }
     end
 
     travel_to Time.zone.local(2026, 3, 29, 10, 17, 0) do
@@ -29,8 +29,9 @@ class BabyFeedingTimersControllerTest < ActionDispatch::IntegrationTest
 
     entry = person.entries.order(:created_at).last
 
-    assert_equal "baby_feeding", entry.entry_type
-    assert_equal 17, entry.metadata["duration_minutes"]
+    assert_equal "breast_feeding", entry.data.first["type"]
+    assert_equal 17, entry.data.first["value"]
+    assert_equal "left", entry.data.first["side"]
     assert_match(/17/, entry.note)
   end
 end

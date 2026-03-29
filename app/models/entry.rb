@@ -1,78 +1,115 @@
 class Entry < ApplicationRecord
   belongs_to :person
 
-  validates :date, presence: true
+  PARSE_STATUSES = %w[pending parsed failed].freeze
+
   validates :note, presence: true
-  validates :entry_type, inclusion: { in: -> { EntryTypeService.all.keys }, allow_blank: true }
-  validate :metadata_matches_definition
+  validates :occurred_at, presence: true
+  validates :parse_status, inclusion: { in: PARSE_STATUSES }
+  validate :data_must_be_array
 
-  # Store metadata fields as accessors
-  store_accessor :metadata
+  after_initialize :normalize_defaults
 
-  scope :recent_first, -> { order(date: :desc, created_at: :desc) }
-  scope :baby_feedings, -> { where(entry_type: "baby_feeding") }
-  scope :baby_diapers, -> { where(entry_type: "baby_diaper") }
-  scope :by_type, ->(type) { where(entry_type: type) }
+  scope :recent_first, -> { order(occurred_at: :desc, created_at: :desc) }
+  scope :by_data_type, ->(type) {
+    where("EXISTS (SELECT 1 FROM json_each(entries.data) WHERE json_extract(value, '$.type') = ?)", type)
+  }
 
-  def baby_feeding?
-    entry_type == "baby_feeding"
+  def data_of_type(type)
+    data_items.select { |item| item["type"] == type }
   end
 
-  def baby_diaper?
-    entry_type == "baby_diaper"
+  def first_data_of_type(type)
+    data_of_type(type).first
   end
 
-  def entry_type_definition
-    EntryTypeService.find(entry_type)
+  def breast_feeding?
+    data_of_type("breast_feeding").any?
   end
 
-  def metadata_field_value(field_name)
-    metadata&.dig(field_name.to_s)
+  def bottle_feeding?
+    data_of_type("bottle_feeding").any?
   end
 
-  def diaper_consistency
-    metadata_field_value("consistency") if baby_diaper?
+  def diaper?
+    data_of_type("diaper").any?
   end
 
-  def diaper_rash?
-    metadata_field_value("rash") == "true" if baby_diaper?
+  def feeding?
+    breast_feeding? || bottle_feeding?
   end
 
   def feeding_duration_minutes
-    value = metadata_field_value("duration_minutes")
-    return if value.blank?
-
-    value.to_i
+    feeding = first_data_of_type("breast_feeding")
+    numeric_value(feeding&.dig("value"))
   end
 
-  def self.last_feeding_for(person)
-    where(person: person).baby_feedings.recent_first.first
+  def bottle_amount_ml
+    bottle = first_data_of_type("bottle_feeding")
+    numeric_value(bottle&.dig("value"))
   end
 
-  def self.last_diaper_for(person)
-    where(person: person).baby_diapers.recent_first.first
+  def diaper_data
+    first_data_of_type("diaper") || {}
+  end
+
+  def diaper_rash?
+    diaper_data["rash"] == true
+  end
+
+  def diaper_wet?
+    diaper_data["wet"] == true
+  end
+
+  def diaper_solid?
+    diaper_data["solid"] == true
+  end
+
+  def display_time
+    occurred_at || created_at
+  end
+
+  def pending_parse?
+    parse_status == "pending"
+  end
+
+  def parsed?
+    parse_status == "parsed"
+  end
+
+  def failed_parse?
+    parse_status == "failed"
   end
 
   def time_since
-    return nil unless created_at
-    Time.current - created_at
+    return nil unless display_time
+
+    Time.current - display_time
   end
 
   private
 
-  def metadata_matches_definition
-    return if entry_type.blank? || metadata.blank?
+  def normalize_defaults
+    self.data = [] if data.nil?
+    self.occurred_at ||= Time.current
+    self.parse_status ||= data.present? ? "parsed" : "pending"
+  end
 
-    definition = entry_type_definition
-    return unless definition
+  def data_items
+    data.is_a?(Array) ? data : []
+  end
 
-    fields = definition["fields"] || {}
+  def data_must_be_array
+    return if data.is_a?(Array)
 
-    # Validate that metadata keys match defined fields
-    metadata.each do |key, value|
-      unless fields.key?(key.to_s)
-        errors.add(:metadata, "contains unknown field: #{key}")
-      end
-    end
+    errors.add(:data, :invalid)
+  end
+
+  def numeric_value(value)
+    return value if value.is_a?(Numeric)
+    return value.to_i if value.to_s.match?(/\A-?\d+\z/)
+    return value.to_f if value.to_s.match?(/\A-?\d+\.\d+\z/)
+
+    nil
   end
 end

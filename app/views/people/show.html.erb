@@ -4,7 +4,7 @@
     <%= render "dashboard/baby_dashboard", person: @person, entry: Entry.new, entries: @person.entries.recent_first %>
   <% end %>
 
-  <%# Combined Info + Log Widget %>
+  <%# Fully Integrated Widget: Info + Add Entry + Recent Activity %>
   <div class="rounded-[2rem] border border-white/70 bg-white/90 shadow-sm ring-1 ring-black/5 backdrop-blur overflow-hidden">
     <div class="grid xl:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
       <%# Left: Basic Info with Baby Toggle %>
@@ -43,28 +43,39 @@
         </div>
       </div>
 
-      <%# Right: Recent Entries %>
-      <div class="bg-slate-950 p-5 text-white">
-        <div class="mb-4 flex items-end justify-between gap-4">
-          <h3 class="text-lg font-bold"><%= t("person.overview.latest_entries") %></h3>
-          <%= link_to t("person.overview.view_log"), person_log_path(person_slug: @person.name), class: "rounded-full bg-amber-500/20 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 transition" %>
+      <%# Right: Add Entry Form + Recent Activity (Integrated) %>
+      <div class="bg-slate-950 text-white">
+        <%# Add Entry Section - Compact %>
+        <div class="px-5 py-3 border-b border-white/10">
+          <%= render "entries/inline_form", entry: @entry || Entry.new, person: @person %>
         </div>
 
-        <% if @entries.any? %>
-          <div class="space-y-2">
-            <% @entries.limit(5).each do |entry| %>
-              <% if @person.baby_mode? %>
-                <%= render "entries/baby_entry", entry: entry %>
-              <% else %>
-                <%= render "entries/entry", entry: entry %>
-              <% end %>
+        <%# Recent Activity Section - Compact, max 5 entries, one line each %>
+        <div class="px-5 pb-5 pt-3">
+          <div class="mb-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300"><%= t("person.overview.recent_activity") %></p>
+              <span class="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-300">
+                <%= t(@entries.count == 1 ? "dashboard.protocol.count" : "dashboard.protocol.count_plural", count: @entries.count) %>
+              </span>
+            </div>
+            <%= link_to person_log_path(person_slug: @person.name), class: "text-[10px] font-medium text-amber-300 hover:text-amber-200 transition" do %>
+              <%= t("person.overview.view_log") %> →
             <% end %>
           </div>
-        <% else %>
-          <div class="rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-8 text-center text-sm text-slate-300">
-            <%= t("baby.log.empty") %>
-          </div>
-        <% end %>
+
+          <% if @entries.any? %>
+            <div class="space-y-0">
+              <% @entries.limit(5).each do |entry| %>
+                <%= render "entries/compact_entry", entry: entry %>
+              <% end %>
+            </div>
+          <% else %>
+            <div class="text-center py-3 text-slate-400 text-xs">
+              <%= t("dashboard.protocol.empty") %>
+            </div>
+          <% end %>
+        </div>
       </div>
     </div>
   </div>
