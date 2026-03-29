@@ -8,6 +8,8 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "creates free text entry and enqueues parsing" do
+    UserPreference.current.update!(llm_provider: "ollama", llm_model: "llama3")
+
     assert_enqueued_with(job: EntryDataParseJob) do
       assert_difference("Entry.count", 1) do
         post person_entries_url(@person), params: {
@@ -24,6 +26,23 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal [], entry.data
     assert_equal "pending", entry.parse_status
     assert_equal Time.zone.parse("2026-03-29T10:15"), entry.occurred_at
+  end
+
+  test "creates free text entry without enqueueing when llm is not configured" do
+    UserPreference.current.update!(llm_provider: "openai", llm_model: nil)
+
+    assert_no_enqueued_jobs only: EntryDataParseJob do
+      assert_difference("Entry.count", 1) do
+        post person_entries_url(@person), params: {
+          entry: {
+            note: "Peter has fever 39.2",
+            occurred_at: "2026-03-29T10:15"
+          }
+        }
+      end
+    end
+
+    assert_equal "skipped", Entry.order(:created_at).last.parse_status
   end
 
   test "creates entry with direct data and skips parsing" do

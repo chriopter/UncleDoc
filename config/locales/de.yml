@@ -129,6 +129,7 @@ de:
       destroyed: "Eintrag gelöscht."
     parse_status:
       pending: "Notiz wird an das LLM gesendet..."
+      skipped: "LLM-Parsing ist aus, bis in den Einstellungen ein Modell konfiguriert ist."
       failed: "LLM-Parsing fehlgeschlagen. Die Notiz bleibt erhalten und kann später erneut verarbeitet werden."
     raw_data:
       toggle: "Rohdaten anzeigen"

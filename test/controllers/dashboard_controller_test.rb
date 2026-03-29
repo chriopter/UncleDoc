@@ -54,6 +54,16 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Sending note to the LLM"
   end
 
+  test "shows llm not configured state for skipped parsing" do
+    person = Person.create!(name: "Alice", birth_date: Date.new(2024, 1, 1))
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 28, 20, 0), note: "Plain note", data: [], parse_status: "skipped")
+
+    get person_log_url(person_slug: person.name)
+
+    assert_response :success
+    assert_includes @response.body, "LLM parsing is off until a model is configured in Settings."
+  end
+
   test "shows baby mode toggle on person overview" do
     person = Person.create!(name: "BabyUser", birth_date: Date.new(2024, 1, 1))
 

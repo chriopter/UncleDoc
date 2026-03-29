@@ -58,4 +58,12 @@ class EntryDataParserTest < ActiveSupport::TestCase
     assert_includes payload["messages"][0]["content"], "Peter diaper wet and solid"
     assert_equal "Note: Peter has fever 39.2", payload["messages"][1]["content"]
   end
+
+  test "ready is false without model" do
+    preference = UserPreference.current
+    preference.update!(llm_provider: "openai", llm_model: nil)
+
+    assert_not EntryDataParser.ready?(preference)
+    assert_equal :missing_model, EntryDataParser.configuration_error_for(preference)
+  end
 end

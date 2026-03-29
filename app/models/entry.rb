@@ -1,7 +1,7 @@
 class Entry < ApplicationRecord
   belongs_to :person
 
-  PARSE_STATUSES = %w[pending parsed failed].freeze
+  PARSE_STATUSES = %w[pending parsed failed skipped].freeze
 
   validates :note, presence: true
   validates :occurred_at, presence: true
@@ -79,6 +79,10 @@ class Entry < ApplicationRecord
 
   def failed_parse?
     current_parse_status == "failed"
+  end
+
+  def skipped_parse?
+    current_parse_status == "skipped"
   end
 
   def time_since
