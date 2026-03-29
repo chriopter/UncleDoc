@@ -7,18 +7,20 @@ class Person < ApplicationRecord
   scope :baby_mode, -> { where(baby_mode: true) }
 
   def last_feeding
-    entries.baby_feedings.recent_first.first
+    entries.where(
+      "EXISTS (SELECT 1 FROM json_each(entries.data) WHERE json_extract(value, '$.type') IN ('breast_feeding', 'bottle_feeding'))"
+    ).recent_first.first
   end
 
   def last_diaper
-    entries.baby_diapers.recent_first.first
+    entries.by_data_type("diaper").recent_first.first
   end
 
   def time_since_last_feeding
-    last_feeding&.created_at
+    last_feeding&.display_time
   end
 
   def time_since_last_diaper
-    last_diaper&.created_at
+    last_diaper&.display_time
   end
 end

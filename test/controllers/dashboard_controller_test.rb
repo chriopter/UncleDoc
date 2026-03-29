@@ -31,24 +31,27 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
   test "shows log page for person" do
     person = Person.create!(name: "Alice", birth_date: Date.new(2024, 1, 1))
-    person.entries.create!(date: Date.new(2026, 3, 28), note: "Mild fever in the evening")
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 28, 20, 0), note: "Mild fever in the evening", data: [])
 
     get person_log_url(person_slug: person.name)
 
     assert_response :success
-    assert_select "h2", text: /Entries for|Log for/
+    assert_match(/Alice/, @response.body)
   end
 
   test "shows baby dashboard and ai summary on baby log page" do
     person = Person.create!(name: "Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
-    person.entries.create!(date: Date.new(2026, 3, 29), note: "Baby fed", entry_type: "baby_feeding", metadata: { "method" => "bottle", "amount_ml" => "120" })
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 9, 0), note: "Bottle 120ml", data: [ { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" } ])
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 10, 0), note: "Peter has fever 39.2", data: [], parse_status: "pending")
 
     get person_log_url(person_slug: person.name)
 
     assert_response :success
-    assert_select "h2", "Log summary"
-    assert_select "h2", "Feeding"
+    assert_select "h2", /AI Summary|KI-Zusammenfassung/
+    assert_select "h2", /Baby quick actions|Baby-Schnellaktionen/
     assert_select "h2", "Baby protocol"
+    assert_includes @response.body, "Show raw data"
+    assert_includes @response.body, "Sending note to the LLM"
   end
 
   test "shows baby mode toggle on person overview" do

@@ -1,4 +1,16 @@
 en:
+  # Date/Time formats
+  date:
+    formats:
+      long_date: "%B %d, %Y"
+      compact_date: "%m/%d/%Y"
+      long: "%B %d, %Y"
+      compact: "%m/%d/%Y"
+  
+  time:
+    formats:
+      default: "%H:%M"
+  
   # App name
   app:
     name: "UncleDoc"
@@ -32,7 +44,7 @@ en:
         name: "Name"
         birth_date: "Birth date"
       entry:
-        date: "Date"
+        occurred_at: "When it happened"
         note: "Note"
 
   # Common labels
@@ -62,19 +74,27 @@ en:
     new_entry:
       label: "New Entry"
       title: "Log health info for %{name}"
-      subtitle: "Record date and notes about medical events."
+      subtitle: "Record when something happened and what you observed."
     entries:
       label: "Log"
       title: "Entries for %{name}"
       count: "%{count} entry"
       count_plural: "%{count} entries"
       empty: "No entries yet. Add the first health note on the left."
+    protocol:
+      label: "Health Protocol"
+      title: "Protocol - %{name}"
+      count: "%{count} entry"
+      count_plural: "%{count} entries"
+      empty: "Protocol is empty"
+      empty_subtitle: "Add your first entry above to start documenting health events."
 
   log_summary:
     label: "AI"
-    title: "Log summary"
+    title: "AI Summary"
     subtitle: "Send all saved entries for %{name} to the configured model and review the answer here."
     button: "Summarize log"
+    button_short: "AI Summary"
     states:
       idle: "Press the button to send the current log to the configured LLM."
       missing_model: "Choose an LLM model in Settings before requesting a summary."
@@ -88,10 +108,30 @@ en:
       placeholder: "What happened today?"
       submit: "Add entry"
       title: "Log health info for %{name}"
+    data_labels:
+      temperature: "Temperature"
+      pulse: "Pulse"
+      weight: "Weight"
+      bottle_feeding: "Bottle"
+      breast_feeding: "Breastfeeding"
+      diaper: "Diaper"
+      sleep: "Sleep"
+      medication: "Medication"
+    data_values:
+      wet: "wet"
+      solid: "solid"
+      rash: "rash"
+      side_left: "left"
+      side_right: "right"
     destroy_confirm: "Delete this entry?"
     flash:
       created: "Entry added."
       destroyed: "Entry deleted."
+    parse_status:
+      pending: "Sending note to the LLM..."
+      failed: "LLM parse failed. Keep the note and try again later."
+    raw_data:
+      toggle: "Show raw data"
 
   # People / Users / Family
   people:
@@ -147,6 +187,56 @@ en:
       title: "Choose date display"
       long: "Long"
       compact: "Compact"
+    llm:
+      title: "LLM"
+      subtitle: "Models"
+      heading: "Language model settings"
+      description: "Configure the parser model UncleDoc uses for note-to-data extraction and summaries."
+      provider_label: "Provider"
+      provider_title: "Model provider"
+      current: "Current provider: %{provider}"
+      api_key_title: "API key"
+      api_key_saved: "Saved in UncleDoc"
+      api_key_missing: "Using env var or missing"
+      api_key_placeholder: "Paste API key"
+      model_title: "Model"
+      model_placeholder: "Choose a model"
+      model_empty: "No models loaded"
+      credentials_hint: "UncleDoc falls back to `%{env_key}` if no key is saved here."
+      endpoint_hint: "API base: %{endpoint}"
+      save: "Save LLM settings"
+      prompt_label: "Parser prompt"
+      prompt_title: "Current structured-data prompt"
+      prompt_description: "This is the exact system prompt UncleDoc sends before each note parse request."
+      model_status:
+        idle: "Choose a provider and key to load available models."
+        loading: "Loading models..."
+        loaded: "%{count} models loaded."
+        empty: "No models returned by this provider."
+        missing_key: "Add an API key before loading models."
+        request_failed: "Model lookup failed. Check the provider settings and try again."
+        unsupported: "%{provider} does not support automatic model lookup yet."
+      providers:
+        openai:
+          name: "OpenAI"
+        fireworks:
+          name: "Fireworks"
+        anthropic:
+          name: "Anthropic"
+        gemini:
+          name: "Gemini"
+        openrouter:
+          name: "OpenRouter"
+        ollama:
+          name: "Ollama"
+        xai:
+          name: "xAI"
+        mistral:
+          name: "Mistral"
+        perplexity:
+          name: "Perplexity"
+        deepseek:
+          name: "DeepSeek"
     flash:
       saved: "Settings saved."
 
@@ -167,35 +257,47 @@ en:
 
   # Baby mode
   baby:
+    quick_actions:
+      title: "Baby quick actions"
+      subtitle: "Quick buttons write structured data directly. Free text below is still available for anything else."
     feeding:
       label: "Baby"
       title: "Feeding"
-      button: "Log feeding"
-      default_note: "Baby fed"
       empty: "No feedings recorded yet"
+      start_side: "Start %{side}"
+      sides:
+        left: "Left"
+        right: "Right"
       timer:
-        start: "Start timer"
         stop: "Stop and save"
         running: "Timer running since"
-        started: "Feeding timer started"
+        started: "%{side} feeding timer started"
         stopped: "Feeding timer stopped and saved"
         missing: "No feeding timer is running"
         already_running: "Feeding timer is already running"
         duration: "%{duration} min"
-        note: "Feeding timer stopped after %{duration} min"
+        note: "Breastfeeding %{side}, %{duration} minutes"
     diaper:
       label: "Baby"
       title: "Diaper change"
-      button: "Log diaper change"
-      default_note: "Diaper changed"
       empty: "No diaper changes recorded yet"
-      consistency: "Consistency"
-      consistency_options:
-        solid: "Solid"
-        fluid: "Fluid"
-        wet_only: "Wet only"
-        both: "Both"
       rash: "Rash present"
+      buttons:
+        wet: "Wet"
+        solid: "Solid"
+        both: "Both"
+      notes:
+        wet: "Diaper: wet"
+        solid: "Diaper: solid"
+        both: "Diaper: wet and solid"
+      saved: "Diaper entry saved"
+    bottle:
+      title: "Bottle"
+      button: "Save bottle"
+      note: "Bottle %{amount}ml"
+      badge: "%{amount} ml"
+      invalid_amount: "Enter a bottle amount greater than 0 ml"
+      saved: "Bottle entry saved"
     log:
       label: "Log"
       title: "Log for %{name}"
@@ -204,11 +306,14 @@ en:
       empty: "No baby events yet. Log the first feeding or diaper change."
     protocol:
       title: "Baby protocol"
-    last_event: "Last"
+    last_feeding: "Last feeding"
+    last_diaper: "Last diaper"
     types:
       feeding: "Feeding"
       diaper: "Diaper"
     badge: "Baby mode"
+    notes:
+      subtitle: "Save the free-text note first. UncleDoc will parse it into badges in the background."
     off: "Off"
     toggle: "Toggle baby mode"
 

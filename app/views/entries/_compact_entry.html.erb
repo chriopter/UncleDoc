@@ -1,0 +1,14 @@
+<%# Compact Entry Line for Overview - One line per entry %>
+<div class="flex items-center gap-3 py-1.5 border-b border-white/5 last:border-0 hover:bg-white/5 transition px-2 -mx-2 rounded">
+  <% display_time = entry.occurred_at || entry.created_at %>
+  
+  <%# Compact Date %>
+  <div class="flex-shrink-0 text-[11px] text-slate-400 w-14">
+    <%= display_time.strftime("%m/%d") %>
+  </div>
+  
+  <%# Note - truncated to one line %>
+  <div class="flex-1 min-w-0">
+    <p class="text-sm text-white truncate leading-tight"><%= entry.note %></p>
+  </div>
+</div>

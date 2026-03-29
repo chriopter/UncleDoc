@@ -69,17 +69,21 @@
             <h3 class="mt-1 text-xl font-bold text-slate-950"><%= t("settings.date_format.title") %></h3>
           </div>
 
-          <div class="grid gap-3">
-            <%= link_to settings_path_for(:profile) + "?date_format=long", class: settings_option_class(current_date_format == "long") do %>
+          <%= form_with url: settings_path(section: "profile"), method: :patch, class: "grid gap-3" do |f| %>
+            <%= f.hidden_field :date_format, value: "long" %>
+            <%= f.button type: :submit, class: settings_option_class(current_date_format == "long") do %>
               <span><%= t("settings.date_format.long") %></span>
               <span class="text-xs text-slate-500"><%= current_locale == "de" ? "28. März 2026" : "March 28, 2026" %></span>
             <% end %>
+          <% end %>
 
-            <%= link_to settings_path_for(:profile) + "?date_format=compact", class: settings_option_class(current_date_format == "compact") do %>
+          <%= form_with url: settings_path(section: "profile"), method: :patch, class: "grid gap-3 mt-3" do |f| %>
+            <%= f.hidden_field :date_format, value: "compact" %>
+            <%= f.button type: :submit, class: settings_option_class(current_date_format == "compact") do %>
               <span><%= t("settings.date_format.compact") %></span>
               <span class="text-xs text-slate-500"><%= current_locale == "de" ? "28.03.2026" : "03/28/2026" %></span>
             <% end %>
-          </div>
+          <% end %>
         </div>
       </section>
     <% end %>

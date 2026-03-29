@@ -1,4 +1,16 @@
 de:
+  # Date/Time formats
+  date:
+    formats:
+      long_date: "%d. %B %Y"
+      compact_date: "%d.%m.%Y"
+      long: "%d. %B %Y"
+      compact: "%d.%m.%Y"
+  
+  time:
+    formats:
+      default: "%H:%M"
+  
   # App name
   app:
     name: "UncleDoc"
@@ -32,7 +44,7 @@ de:
         name: "Name"
         birth_date: "Geburtsdatum"
       entry:
-        date: "Datum"
+        occurred_at: "Wann es passiert ist"
         note: "Notiz"
 
   # Common labels
@@ -62,19 +74,27 @@ de:
     new_entry:
       label: "Neuer Eintrag"
       title: "Gesundheitsinfo für %{name} protokollieren"
-      subtitle: "Datum und Notizen zu medizinischen Ereignissen erfassen."
+      subtitle: "Erfassen Sie, wann etwas passiert ist und was Sie beobachtet haben."
     entries:
       label: "Protokoll"
       title: "Einträge für %{name}"
       count: "%{count} Eintrag"
       count_plural: "%{count} Einträge"
       empty: "Noch keine Einträge. Fügen Sie die erste Gesundheitsnotiz links hinzu."
+    protocol:
+      label: "Gesundheitsprotokoll"
+      title: "Protokoll - %{name}"
+      count: "%{count} Eintrag"
+      count_plural: "%{count} Einträge"
+      empty: "Protokoll ist leer"
+      empty_subtitle: "Fügen Sie oben Ihren ersten Eintrag hinzu, um Gesundheitsereignisse zu dokumentieren."
 
   log_summary:
     label: "KI"
-    title: "Protokoll-Zusammenfassung"
+    title: "KI-Zusammenfassung"
     subtitle: "Senden Sie alle gespeicherten Einträge für %{name} an das konfigurierte Modell und sehen Sie die Antwort hier an."
     button: "Protokoll zusammenfassen"
+    button_short: "KI-Zusammenfassung"
     states:
       idle: "Drücken Sie den Button, um das aktuelle Protokoll an das konfigurierte LLM zu senden."
       missing_model: "Wählen Sie zuerst in den Einstellungen ein LLM-Modell aus."
@@ -88,10 +108,30 @@ de:
       placeholder: "Was ist heute passiert?"
       submit: "Eintrag hinzufügen"
       title: "Gesundheitsinfo für %{name} protokollieren"
+    data_labels:
+      temperature: "Temperatur"
+      pulse: "Puls"
+      weight: "Gewicht"
+      bottle_feeding: "Flasche"
+      breast_feeding: "Stillen"
+      diaper: "Windel"
+      sleep: "Schlaf"
+      medication: "Medikament"
+    data_values:
+      wet: "nass"
+      solid: "fest"
+      rash: "Ausschlag"
+      side_left: "links"
+      side_right: "rechts"
     destroy_confirm: "Diesen Eintrag löschen?"
     flash:
       created: "Eintrag hinzugefügt."
       destroyed: "Eintrag gelöscht."
+    parse_status:
+      pending: "Notiz wird an das LLM gesendet..."
+      failed: "LLM-Parsing fehlgeschlagen. Die Notiz bleibt erhalten und kann später erneut verarbeitet werden."
+    raw_data:
+      toggle: "Rohdaten anzeigen"
 
   # People / Users / Family
   people:
@@ -147,6 +187,56 @@ de:
       title: "Datumsanzeige wählen"
       long: "Lang"
       compact: "Kompakt"
+    llm:
+      title: "LLM"
+      subtitle: "Modelle"
+      heading: "Sprachmodell-Einstellungen"
+      description: "Konfigurieren Sie das Parser-Modell, das UncleDoc für die Umwandlung von Notizen in strukturierte Daten und für Zusammenfassungen nutzt."
+      provider_label: "Anbieter"
+      provider_title: "Modellanbieter"
+      current: "Aktueller Anbieter: %{provider}"
+      api_key_title: "API-Schlüssel"
+      api_key_saved: "In UncleDoc gespeichert"
+      api_key_missing: "Umgebungsvariable oder fehlt"
+      api_key_placeholder: "API-Schlüssel einfügen"
+      model_title: "Modell"
+      model_placeholder: "Modell wählen"
+      model_empty: "Keine Modelle geladen"
+      credentials_hint: "UncleDoc greift auf `%{env_key}` zurück, wenn hier kein Schlüssel gespeichert ist."
+      endpoint_hint: "API-Basis: %{endpoint}"
+      save: "LLM-Einstellungen speichern"
+      prompt_label: "Parser-Prompt"
+      prompt_title: "Aktueller Prompt für strukturierte Daten"
+      prompt_description: "Dies ist der genaue System-Prompt, den UncleDoc vor jeder Notiz-Analyse sendet."
+      model_status:
+        idle: "Wählen Sie Anbieter und Schlüssel, um verfügbare Modelle zu laden."
+        loading: "Modelle werden geladen..."
+        loaded: "%{count} Modelle geladen."
+        empty: "Dieser Anbieter hat keine Modelle zurückgegeben."
+        missing_key: "Fügen Sie vor dem Laden der Modelle einen API-Schlüssel hinzu."
+        request_failed: "Die Modellabfrage ist fehlgeschlagen. Prüfen Sie die Einstellungen und versuchen Sie es erneut."
+        unsupported: "%{provider} unterstützt derzeit keine automatische Modellabfrage."
+      providers:
+        openai:
+          name: "OpenAI"
+        fireworks:
+          name: "Fireworks"
+        anthropic:
+          name: "Anthropic"
+        gemini:
+          name: "Gemini"
+        openrouter:
+          name: "OpenRouter"
+        ollama:
+          name: "Ollama"
+        xai:
+          name: "xAI"
+        mistral:
+          name: "Mistral"
+        perplexity:
+          name: "Perplexity"
+        deepseek:
+          name: "DeepSeek"
     flash:
       saved: "Einstellungen gespeichert."
 
@@ -167,35 +257,47 @@ de:
 
   # Baby mode
   baby:
+    quick_actions:
+      title: "Baby-Schnellaktionen"
+      subtitle: "Die Schnellbuttons schreiben strukturierte Daten direkt. Freitext darunter bleibt fur alles andere sichtbar."
     feeding:
       label: "Baby"
       title: "Fütterung"
-      button: "Fütterung eintragen"
-      default_note: "Baby gefüttert"
       empty: "Noch keine Fütterungen eingetragen"
+      start_side: "%{side} starten"
+      sides:
+        left: "Links"
+        right: "Rechts"
       timer:
-        start: "Timer starten"
         stop: "Stoppen und speichern"
         running: "Timer läuft seit"
-        started: "Fütterungs-Timer gestartet"
+        started: "Still-Timer %{side} gestartet"
         stopped: "Fütterungs-Timer gestoppt und gespeichert"
         missing: "Es läuft kein Fütterungs-Timer"
         already_running: "Der Fütterungs-Timer läuft bereits"
         duration: "%{duration} Min"
-        note: "Fütterungs-Timer nach %{duration} Min gestoppt"
+        note: "Stillen %{side}, %{duration} Minuten"
     diaper:
       label: "Baby"
       title: "Windelwechsel"
-      button: "Windelwechsel eintragen"
-      default_note: "Windel gewechselt"
       empty: "Noch keine Windelwechsel eingetragen"
-      consistency: "Konsistenz"
-      consistency_options:
-        solid: "Fest"
-        fluid: "Flüssig"
-        wet_only: "Nur nass"
-        both: "Beides"
       rash: "Ausschlag vorhanden"
+      buttons:
+        wet: "Nass"
+        solid: "Fest"
+        both: "Beides"
+      notes:
+        wet: "Windel: nass"
+        solid: "Windel: fest"
+        both: "Windel: nass und fest"
+      saved: "Windeleintrag gespeichert"
+    bottle:
+      title: "Flasche"
+      button: "Flasche speichern"
+      note: "Flasche %{amount}ml"
+      badge: "%{amount} ml"
+      invalid_amount: "Geben Sie eine Flaschenmenge groesser als 0 ml ein"
+      saved: "Flascheneintrag gespeichert"
     log:
       label: "Protokoll"
       title: "Protokoll für %{name}"
@@ -204,11 +306,14 @@ de:
       empty: "Noch keine Baby-Ereignisse. Tragen Sie die erste Fütterung oder den ersten Windelwechsel ein."
     protocol:
       title: "Baby-Protokoll"
-    last_event: "Letzte"
+    last_feeding: "Letzte Fütterung"
+    last_diaper: "Letzte Windel"
     types:
       feeding: "Fütterung"
       diaper: "Windel"
     badge: "Baby-Modus"
+    notes:
+      subtitle: "Speichern Sie zuerst die Freitext-Notiz. UncleDoc erzeugt daraus im Hintergrund strukturierte Badges."
     off: "Aus"
     toggle: "Baby-Modus umschalten"
 

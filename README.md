@@ -10,77 +10,34 @@ A small self-hosted family health tracker built with Rails, Hotwire, and Tailwin
 - **Bilingual**: Full English and German support
 - **Self-Hosted**: Your data stays on your server
 
-## Health Data Type System
+## Data Model
 
-UncleDoc uses a flexible YAML-based configuration system for health tracking types. You can add new health metrics without writing code!
+Every health log entry has only two core payloads:
 
-### Configuration File
+- `note`: the original free text from the user; this stays the source of truth
+- `data`: a JSON array with structured facts parsed from the note or written directly by quick actions
 
-All health data types are defined in:
+Each row also stores `occurred_at`, so the timeline can sort, summarize, and chart events correctly.
 
-```
-config/entry_types.yml
-```
+Example entry payload:
 
-### Adding New Health Types
-
-Simply edit `config/entry_types.yml` and add a new entry type:
-
-```yaml
-health_weight:
-  icon: "scale"
-  color: "slate"
-  label:
-    en: "Weight"
-    de: "Gewicht"
-  fields:
-    kg:
-      type: number
-      label:
-        en: "Weight (kg)"
-        de: "Gewicht (kg)"
-      min: 0
-      max: 300
-      step: 0.1
-      required: true
-    body_fat_percent:
-      type: number
-      min: 0
-      max: 100
-      required: false
+```json
+[
+  { "type": "temperature", "value": 39.2, "unit": "C", "flag": "high" },
+  { "type": "medication", "value": "ibuprofen", "dose": "400mg" }
+]
 ```
 
-### Supported Field Types
+### Two Ways Entries Are Created
 
-- **select**: Dropdown with predefined options
-- **number**: Numeric input with min/max/step validation
-- **boolean**: Checkbox (true/false)
-- **text**: Free text input
+1. Free text: save `note` first, then parse into `data` asynchronously via the configured LLM
+2. Quick actions: write `data` directly and auto-generate a matching `note`
 
-### Entry Type Categories
+Both paths end in the same `entries` table and the same UI.
 
-- **Baby tracking**: Types prefixed with `baby_` (feeding, diaper, sleep)
-- **Health metrics**: Types prefixed with `health_` (temperature, pulse, weight)
-- **General**: `note` for free-form entries
+### Querying Structured Data
 
-### Example Types Included
-
-| Type | Fields | Use Case |
-|------|--------|----------|
-| `baby_feeding` | method, amount_ml, duration_minutes | Track bottle/breast feeding |
-| `baby_diaper` | consistency, rash | Track diaper changes with consistency |
-| `baby_sleep` | duration_minutes, quality | Track sleep patterns |
-| `health_temperature` | celsius, location | Track body temperature |
-| `health_pulse` | bpm, activity | Track heart rate |
-| `note` | - | Free-form text entries |
-
-### Data Storage
-
-Health data is stored in a PostgreSQL JSONB column (`entries.metadata`), allowing:
-- Flexible schema-less storage
-- Efficient querying with GIN indexes
-- Easy migration of existing data
-- No database migrations when adding new field types
+`data` is always a JSON array of objects. Common queries use the free-form `type` field, for example `temperature`, `pulse`, `diaper`, `breast_feeding`, or `bottle_feeding`.
 
 ## LLM-First Data Plan
 
@@ -95,39 +52,29 @@ UncleDoc is an end-user app, so the main input model is natural language. Users 
 
 ### What Gets Stored
 
-- `raw_input` for the original human note
-- `entry_type` for the main event like `baby_feeding`, `baby_diaper`, `temperature`, or `note`
-- `metadata` for parsed structured values like `amount_ml`, `duration_minutes`, `consistency`, or `rash`
-- optional LLM-generated summary or interpretation for later features
+- `note` for the original human note
+- `data` for parsed structured values like temperature, pulse, diaper state, bottle amount, medication, or lab values
+- optional LLM-generated summaries for later features
 
-### Internal Vocabulary Examples
+### Parser Examples
 
-- event types: `baby_feeding`, `baby_diaper`, `baby_sleep`, `health_temperature`, `health_pulse`, `note`
-- metric keys: `amount_ml`, `duration_minutes`, `celsius`, `bpm`
-- fixed values: `bottle`, `breast`, `solids`, `mixed`, `solid`, `fluid`, `none`, `both`
+The prompt includes compact examples for both baby tracking and elderly/sick care so the output stays predictable:
 
-### Example
+```text
+Peter breastfed left side for 18 minutes
+[{"type":"breast_feeding","value":18,"unit":"min","side":"left"}]
 
-```yaml
-baby_feeding:
-  icon: "baby-bottle"
-  color: "emerald"
-  label:
-    en: "Feeding"
-    de: "Fütterung"
-  fields:
-    method:
-      type: select
-      options:
-        - value: bottle
-        - value: breast
-        - value: solids
-        - value: mixed
-    amount_ml:
-      type: number
-    duration_minutes:
-      type: number
+Peter diaper wet and solid
+[{"type":"diaper","wet":true,"solid":true}]
+
+Peter got ibuprofen 400mg
+[{"type":"medication","value":"ibuprofen","dose":"400mg"}]
+
+Elderly patient WBC 11.2 G/L and CRP 3.1
+[{"type":"WBC","value":11.2,"unit":"G/L","ref":"4.0-10.0","flag":"high"},{"type":"CRP","value":3.1}]
 ```
+
+After the model responds, UncleDoc sanitizes the JSON before saving it so units, type names, and numeric values stay consistent.
 
 ### Why This Approach
 

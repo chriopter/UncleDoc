@@ -59,3 +59,13 @@
     </div>
   <% end %>
 </section>
+
+<section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-black/5">
+  <div class="mb-4 space-y-2">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"><%= t("settings.llm.prompt_label") %></p>
+    <h3 class="text-xl font-bold text-slate-950"><%= t("settings.llm.prompt_title") %></h3>
+    <p class="text-sm leading-6 text-slate-500"><%= t("settings.llm.prompt_description") %></p>
+  </div>
+
+  <pre class="overflow-x-auto rounded-[1.5rem] border border-slate-200 bg-slate-950 p-4 text-xs leading-6 text-slate-100 whitespace-pre-wrap"><%= EntryDataParser.system_prompt %></pre>
+</section>

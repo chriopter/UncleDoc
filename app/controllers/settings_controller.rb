@@ -1,6 +1,6 @@
 class SettingsController < ApplicationController
   def show
-    save_preferences if params[:locale].present? || params[:date_format].present? || params[:llm_provider].present?
+    save_preferences if params[:locale].present? || params[:llm_provider].present?
 
     @section = params[:section].in?(%w[profile llm db users]) ? params[:section] : "profile"
     @database_snapshot = database_snapshot if @section == "db"
@@ -9,6 +9,7 @@ class SettingsController < ApplicationController
   end
 
   def update
+    UserPreference.update_date_format(params[:date_format]) if params[:date_format].present?
     save_preferences
 
     redirect_to settings_path(section: resolved_section), notice: t("settings.flash.saved")
@@ -35,7 +36,6 @@ class SettingsController < ApplicationController
 
   def save_preferences
     UserPreference.update_locale(params[:locale]) if params[:locale].present?
-    UserPreference.update_date_format(params[:date_format]) if params[:date_format].present?
     UserPreference.update_llm_provider(params[:llm_provider]) if params[:llm_provider].present?
 
     return unless params[:llm_provider].present? || params[:llm_api_key].present? || params[:llm_model].present?

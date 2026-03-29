@@ -1,0 +1,14 @@
+<%= turbo_frame_tag "entries_list" do %>
+  <% if entries.any? %>
+    <div class="space-y-1">
+      <% entries.each do |entry| %>
+        <%= render "entries/protocol_entry", entry: entry %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="rounded-3xl border border-dashed border-white/20 bg-white/5 px-6 py-16 text-center text-slate-300">
+      <p class="text-lg font-medium"><%= t("dashboard.protocol.empty") %></p>
+      <p class="mt-2 text-sm text-slate-400"><%= t("dashboard.protocol.empty_subtitle") %></p>
+    </div>
+  <% end %>
+<% end %>
