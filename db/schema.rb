@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_30_082000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_30_090000) do
   create_table "entries", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.json "data", default: []
@@ -22,9 +22,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_30_082000) do
     t.index ["person_id"], name: "index_entries_on_person_id"
   end
 
+  create_table "llm_logs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "endpoint", null: false
+    t.integer "entry_id"
+    t.text "error_message"
+    t.string "model"
+    t.integer "person_id"
+    t.string "provider", null: false
+    t.string "request_kind", null: false
+    t.text "request_payload", null: false
+    t.text "response_body"
+    t.integer "status_code"
+    t.datetime "updated_at", null: false
+    t.index ["entry_id"], name: "index_llm_logs_on_entry_id"
+    t.index ["person_id"], name: "index_llm_logs_on_person_id"
+  end
+
   create_table "people", force: :cascade do |t|
     t.boolean "baby_mode"
-    t.date "birth_date"
+    t.datetime "birth_date"
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.datetime "updated_at", null: false
@@ -41,4 +58,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_30_082000) do
   end
 
   add_foreign_key "entries", "people"
+  add_foreign_key "llm_logs", "entries"
+  add_foreign_key "llm_logs", "people"
 end

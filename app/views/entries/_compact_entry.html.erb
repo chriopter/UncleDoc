@@ -10,5 +10,12 @@
   <%# Note - truncated to one line %>
   <div class="flex-1 min-w-0">
     <p class="text-sm text-white truncate leading-tight"><%= entry.note %></p>
+    <% if entry.pending_parse? %>
+      <p class="mt-0.5 text-[11px] text-amber-300"><%= t("entries.parse_status.pending") %></p>
+    <% elsif entry.failed_parse? %>
+      <p class="mt-0.5 text-[11px] text-rose-300"><%= t("entries.parse_status.failed") %></p>
+    <% elsif entry.skipped_parse? %>
+      <p class="mt-0.5 text-[11px] text-slate-400"><%= t("entries.parse_status.skipped") %></p>
+    <% end %>
   </div>
 </div>

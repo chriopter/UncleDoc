@@ -1,6 +1,4 @@
 require "json"
-require "net/http"
-require "uri"
 
 class LogSummaryGenerator
   Result = Struct.new(:summary, :error, keyword_init: true)
@@ -18,29 +16,17 @@ class LogSummaryGenerator
   end
 
   def self.request_summary(person, entries, preference)
-    uri = URI.parse("#{preference.llm_api_base.chomp('/')}/chat/completions")
-    request = Net::HTTP::Post.new(uri)
-    request["Content-Type"] = "application/json"
-    request["Authorization"] = "Bearer #{preference.llm_runtime_api_key}" if preference.llm_runtime_api_key.present?
-
-    request.body = {
-      model: preference.llm_model,
+    LlmChatRequest.call(
+      request_kind: "log_summary",
+      preference: preference,
+      person: person,
       messages: [
         {
           role: "user",
           content: summary_prompt(person, entries)
         }
       ]
-    }.to_json
-
-    response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https") do |http|
-      http.request(request)
-    end
-
-    raise "LLM request failed with status #{response.code}" unless response.code.to_i.between?(200, 299)
-
-    body = JSON.parse(response.body)
-    body.dig("choices", 0, "message", "content").to_s
+    ).content
   end
 
   def self.summary_prompt(person, entries)

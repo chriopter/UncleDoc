@@ -1,5 +1,5 @@
 <%= turbo_frame_tag "entry_form" do %>
-  <%= form_with model: [person, entry], class: "flex flex-col sm:flex-row gap-3 items-start" do |f| %>
+  <%= form_with model: [person, entry], class: "space-y-3" do |f| %>
     <% if entry.errors.any? %>
       <div class="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
         <% entry.errors.full_messages.each do |message| %>
@@ -8,13 +8,32 @@
       </div>
     <% end %>
 
-    <%= f.datetime_local_field :occurred_at, value: (entry.occurred_at || Time.current).strftime("%Y-%m-%dT%H:%M"), 
-        class: "w-full sm:w-56 rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-amber-500 focus:ring-amber-500" %>
+    <%= f.text_area :note, rows: 2, placeholder: t("entries.form.placeholder"),
+        class: "block w-full min-h-[88px] rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm focus:border-amber-500 focus:ring-amber-500 resize-y" %>
 
-    <%= f.text_area :note, rows: 1, placeholder: t("entries.form.placeholder"), 
-        class: "flex-1 min-h-[46px] rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-amber-500 focus:ring-amber-500 resize-y" %>
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <details class="group rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+          <summary class="flex cursor-pointer list-none items-center gap-2 font-medium">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-700 shadow-sm" aria-label="<%= t("entries.form.change_time") %>">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+            </span>
+            <span><%= t("entries.form.use_current_time") %></span>
+          </summary>
 
-    <%= f.submit t("entries.form.submit"), 
-        class: "w-full sm:w-auto rounded-xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 whitespace-nowrap" %>
+          <div class="mt-3 min-w-[16rem]">
+            <%= f.label :occurred_at, t("activerecord.attributes.entry.occurred_at"), class: "block text-sm font-semibold text-slate-700" %>
+            <%= f.datetime_local_field :occurred_at, value: (entry.occurred_at || Time.current).strftime("%Y-%m-%dT%H:%M"),
+                class: "mt-1 w-full rounded-xl border-slate-200 bg-white px-4 py-3 text-sm focus:border-amber-500 focus:ring-amber-500" %>
+          </div>
+        </details>
+
+        <%= f.submit t("entries.form.submit"),
+            class: "rounded-xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 whitespace-nowrap" %>
+      </div>
+    </div>
   <% end %>
 <% end %>

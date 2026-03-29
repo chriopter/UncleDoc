@@ -9,7 +9,7 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", "Family"
     assert_select "span", text: "Profile settings"
     assert_select "span", text: "Users"
-    assert_select "span", text: "Full DB view"
+    assert_includes @response.body, "DB View"
   end
 
   test "shows the users section" do
@@ -40,6 +40,28 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes @response.body, EntryDataParser.system_prompt.lines.first.strip
+  end
+
+  test "shows compact llm status when configured" do
+    UserPreference.update_llm_settings(llm_provider: "ollama", llm_model: "llama3")
+
+    get settings_url(section: "llm")
+
+    assert_response :success
+    assert_includes @response.body, "Model: llama3"
+    assert_includes @response.body, "API key"
+    assert_includes @response.body, "Edit"
+  end
+
+  test "shows llm log subnav and llm logs page" do
+    LlmLog.create!(request_kind: "entry_parse", provider: "ollama", model: "llama3", endpoint: "http://localhost:11434/v1/chat/completions", request_payload: "{}", response_body: "[]", status_code: 200)
+
+    get settings_url(section: "llm_logs")
+
+    assert_response :success
+    assert_includes @response.body, "Raw logs"
+    assert_includes @response.body, "Raw LLM request log"
+    assert_includes @response.body, "entry_parse"
   end
 
   test "preserves locale in settings" do

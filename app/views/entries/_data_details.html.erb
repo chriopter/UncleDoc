@@ -1,27 +1,5 @@
-<% if entry.pending_parse? %>
-  <div class="mt-2 inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-medium text-amber-200">
-    <span class="h-2 w-2 animate-pulse rounded-full bg-amber-300"></span>
-    <%= t("entries.parse_status.pending") %>
-  </div>
-<% elsif entry.skipped_parse? %>
-  <div class="mt-2 inline-flex items-center gap-2 rounded-full border border-slate-400/30 bg-slate-400/10 px-3 py-1 text-xs font-medium text-slate-200">
-    <span class="h-2 w-2 rounded-full bg-slate-300"></span>
-    <%= t("entries.parse_status.skipped") %>
-  </div>
-<% elsif entry.failed_parse? %>
-  <div class="mt-2 inline-flex items-center gap-2 rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-1 text-xs font-medium text-rose-200">
-    <span class="h-2 w-2 rounded-full bg-rose-300"></span>
-    <%= t("entries.parse_status.failed") %>
-  </div>
-<% end %>
-
 <% if entry.data.present? %>
-  <div class="mt-2 flex flex-wrap gap-2">
+  <div class="flex flex-wrap gap-2">
     <%= render "entries/data_badges", entry: entry %>
   </div>
-
-  <details class="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-slate-300">
-    <summary class="cursor-pointer font-semibold text-slate-200"><%= t("entries.raw_data.toggle") %></summary>
-    <pre class="mt-2 overflow-x-auto whitespace-pre-wrap break-words text-[11px] leading-5 text-slate-300"><%= JSON.pretty_generate(entry.data) %></pre>
-  </details>
 <% end %>

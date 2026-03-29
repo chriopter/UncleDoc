@@ -45,6 +45,20 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "skipped", Entry.order(:created_at).last.parse_status
   end
 
+  test "defaults occurred_at to current time when omitted" do
+    travel_to Time.zone.local(2026, 3, 29, 11, 45) do
+      assert_difference("Entry.count", 1) do
+        post person_entries_url(@person), params: {
+          entry: {
+            note: "Quick note"
+          }
+        }
+      end
+    end
+
+    assert_equal Time.zone.local(2026, 3, 29, 11, 45), Entry.order(:created_at).last.occurred_at
+  end
+
   test "creates entry with direct data and skips parsing" do
     assert_no_enqueued_jobs only: EntryDataParseJob do
       assert_difference("Entry.count", 1) do
@@ -84,5 +98,42 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :redirect
+  end
+
+  test "updates note and enqueues parsing again" do
+    UserPreference.current.update!(llm_provider: "ollama", llm_model: "llama3")
+    entry = @person.entries.create!(note: "Ate 5 donuts", occurred_at: Time.zone.parse("2026-03-29T09:38"), data: [ { "type" => "food", "value" => "donuts" } ], parse_status: "parsed")
+
+    assert_enqueued_with(job: EntryDataParseJob) do
+      patch person_entry_url(@person, entry), params: {
+        entry: {
+          note: "Ate 5 ibuprofen",
+          occurred_at: "2026-03-29T09:38"
+        }
+      }
+    end
+
+    entry.reload
+    assert_equal "Ate 5 ibuprofen", entry.note
+    assert_equal [], entry.data
+    assert_equal "pending", entry.parse_status
+  end
+
+  test "updates note without enqueueing when llm is not configured" do
+    UserPreference.current.update!(llm_provider: "openai", llm_model: nil)
+    entry = @person.entries.create!(note: "Ate 5 donuts", occurred_at: Time.zone.parse("2026-03-29T09:38"), data: [ { "type" => "food", "value" => "donuts" } ], parse_status: "parsed")
+
+    assert_no_enqueued_jobs only: EntryDataParseJob do
+      patch person_entry_url(@person, entry), params: {
+        entry: {
+          note: "Ate 6 donuts",
+          occurred_at: "2026-03-29T09:38"
+        }
+      }
+    end
+
+    entry.reload
+    assert_equal [], entry.data
+    assert_equal "skipped", entry.parse_status
   end
 end

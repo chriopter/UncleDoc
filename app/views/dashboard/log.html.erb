@@ -1,18 +1,3 @@
-<section class="w-full space-y-6">
-  <% if @person.baby_mode? %>
-    <div class="space-y-6">
-      <%= render "dashboard/log_summary", person: @person, summary: @log_summary, state: @log_summary_state %>
-      <%= render "dashboard/baby_dashboard", person: @person, entry: @entry, entries: @entries %>
-    </div>
-  <% else %>
-    <%# Reusable: Person Header with Inline Entry Form %>
-    <%= render "shared/person_header", person: @person, entry: @entry %>
-
-    <%# Reusable: Entries List with AI Summary %>
-    <%= render "shared/entries_widget", 
-        person: @person, 
-        entries: @entries,
-        log_summary: @log_summary,
-        log_summary_state: @log_summary_state %>
-  <% end %>
+<section class="w-full">
+  <%= render "dashboard/log_feed", person: @person, entries: @entries %>
 </section>

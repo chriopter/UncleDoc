@@ -1,4 +1,8 @@
 en:
+  # Accessibility
+  accessibility:
+    skip_to_content: "Skip to content"
+  
   # Date/Time formats
   date:
     formats:
@@ -104,10 +108,18 @@ en:
 
   # Entries
   entries:
+    edit:
+      label: "Edit"
+      title: "Update note"
+      subtitle: "Saving the note runs parsing again."
+      submit: "Save and reparse"
+      reparse_hint: "The saved note is sent back through the parser."
     form:
       placeholder: "What happened today?"
-      submit: "Add entry"
+      submit: "Add"
       title: "Log health info for %{name}"
+      use_current_time: "Now"
+      change_time: "Change time"
     data_labels:
       temperature: "Temperature"
       pulse: "Pulse"
@@ -126,11 +138,21 @@ en:
     destroy_confirm: "Delete this entry?"
     flash:
       created: "Entry added."
+      updated: "Entry updated."
       destroyed: "Entry deleted."
     parse_status:
+      parsed: "Parsed"
+      pending_short: "Parsing"
+      skipped_short: "No parse"
+      failed_short: "Parse failed"
       pending: "Sending note to the LLM..."
       skipped: "LLM parsing is off until a model is configured in Settings."
       failed: "LLM parse failed. Keep the note and try again later."
+    day_groups:
+      today: "Today"
+    parsed_data:
+      title: "Parsed"
+      empty: "No parsed data yet"
     raw_data:
       toggle: "Show raw data"
 
@@ -150,6 +172,7 @@ en:
       placeholder_name: "Mila"
       label_birth_date: "Birth date"
       submit: "Save person"
+      update: "Save"
       error_message: "Please fix the form."
     person:
       birth_date_label: "Birth date:"
@@ -173,7 +196,7 @@ en:
       title: "Users"
       subtitle: "Family"
     db:
-      title: "Full DB view"
+      title: "DB View"
       subtitle: "SQL"
     display:
       title: "Display preferences"
@@ -206,6 +229,8 @@ en:
       credentials_hint: "UncleDoc falls back to `%{env_key}` if no key is saved here."
       endpoint_hint: "API base: %{endpoint}"
       save: "Save LLM settings"
+      edit: "Edit"
+      setup: "Set up LLM"
       prompt_label: "Parser prompt"
       prompt_title: "Current structured-data prompt"
       prompt_description: "This is the exact system prompt UncleDoc sends before each note parse request."
@@ -238,6 +263,16 @@ en:
           name: "Perplexity"
         deepseek:
           name: "DeepSeek"
+    llm_logs:
+      nav: "Raw logs"
+      label: "LLM logs"
+      title: "Raw LLM request log"
+      description: "Inspect exact requests and raw responses for note parsing and summaries."
+      request: "Request"
+      response: "Response"
+      raw_data:
+        toggle: "Show raw log data"
+      empty: "No LLM requests have been logged yet."
     flash:
       saved: "Settings saved."
 
@@ -322,9 +357,28 @@ en:
   person:
     overview:
       family_member: "Family Member"
+      edit_person: "Edit person"
       birth_date: "Born"
-      years_old: "years old"
       birth_date_not_set: "Birth date not set"
+      pending_parse:
+        one: "1 entry parsing"
+        other: "%{count} entries parsing"
+      failed_parse:
+        one: "1 parse failed"
+        other: "%{count} parses failed"
+      age:
+        days:
+          one: "1 day old"
+          other: "%{count} days old"
+        weeks:
+          one: "1 week old"
+          other: "%{count} weeks old"
+        months:
+          one: "1 month old"
+          other: "%{count} months old"
+        years:
+          one: "1 year old"
+          other: "%{count} years old"
       stats:
         entries: "Log Entries"
         entries_subtitle: "Health notes recorded"

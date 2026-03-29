@@ -20,9 +20,41 @@
         <span class="text-xs uppercase tracking-[0.2em] opacity-70"><%= t("settings.llm.subtitle") %></span>
       <% end %>
 
+      <div class="ml-4 space-y-1 border-l-2 border-slate-200 pl-3">
+        <%= link_to settings_path(section: "llm_logs"), class: settings_subnav_item_class(@section == "llm_logs") do %>
+          <span><%= t("settings.llm_logs.nav") %></span>
+        <% end %>
+      </div>
+
       <%= link_to settings_path_for(:db), class: settings_sidebar_item_class(@section == "db") do %>
         <span><%= t("settings.db.title") %></span>
         <span class="text-xs uppercase tracking-[0.2em] opacity-70"><%= t("settings.db.subtitle") %></span>
+      <% end %>
+      
+      <% if @section == "db" && @database_snapshot.present? %>
+        <div class="mt-2 ml-4 space-y-1 border-l-2 border-slate-200 pl-3">
+          <%# Data Tables Group %>
+          <div class="mb-2">
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Data</p>
+            <% @database_snapshot[:data].each do |table| %>
+              <%= link_to "##{table[:name]}", class: "block py-1 text-xs text-slate-600 hover:text-slate-900 transition" do %>
+                <%= table[:name] %>
+                <span class="text-[10px] text-slate-400">(<%= table[:count] %>)</span>
+              <% end %>
+            <% end %>
+          </div>
+          
+          <%# System Tables Group %>
+          <div>
+            <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">System</p>
+            <% @database_snapshot[:system].each do |table| %>
+              <%= link_to "##{table[:name]}", class: "block py-1 text-xs text-slate-600 hover:text-slate-900 transition" do %>
+                <%= table[:name] %>
+                <span class="text-[10px] text-slate-400">(<%= table[:count] %>)</span>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
       <% end %>
     </nav>
   </aside>
@@ -32,6 +64,8 @@
       <%= render "dashboard/db", database_snapshot: @database_snapshot %>
     <% elsif @section == "users" %>
       <%= render "settings/users", people: @people, person: @person %>
+    <% elsif @section == "llm_logs" %>
+      <%= render "settings/llm_logs" %>
     <% elsif @section == "llm" %>
       <%= render "settings/llm" %>
     <% else %>

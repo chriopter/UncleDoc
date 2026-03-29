@@ -14,7 +14,7 @@
 
     <div class="space-y-2">
       <%= form.label :birth_date, t("activerecord.attributes.person.birth_date"), class: "text-sm font-semibold text-slate-800" %>
-      <%= form.date_field :birth_date, class: "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100" %>
+      <%= form.datetime_local_field :birth_date, value: person.birth_date&.strftime("%Y-%m-%dT%H:%M"), class: "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100" %>
     </div>
 
     <%= form.submit t("people.form.submit"), class: "inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-base font-semibold text-white transition hover:bg-slate-800" %>

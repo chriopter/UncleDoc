@@ -1,18 +1,6 @@
 <section class="w-full space-y-6">
   <% if current_person %>
-    <% if current_person.baby_mode? %>
-      <%= render "dashboard/baby_dashboard", person: current_person, entry: @entry, entries: @entries %>
-    <% else %>
-      <%# Reusable: Person Header with Inline Entry Form %>
-      <%= render "shared/person_header", person: current_person, entry: @entry %>
-
-      <%# Reusable: Entries List Widget %>
-      <%= render "shared/entries_widget", 
-          person: current_person, 
-          entries: @entries,
-          log_summary: nil,
-          log_summary_state: nil %>
-    <% end %>
+    <%= render "shared/overview_grid", person: current_person, entry: @entry, entries: @entries %>
   <% else %>
     <div class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur text-center py-12">
       <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("dashboard.welcome.title") %></p>

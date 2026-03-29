@@ -2,10 +2,11 @@ class SettingsController < ApplicationController
   def show
     save_preferences if params[:locale].present? || params[:llm_provider].present?
 
-    @section = params[:section].in?(%w[profile llm db users]) ? params[:section] : "profile"
+    @section = params[:section].in?(%w[profile llm llm_logs db users]) ? params[:section] : "profile"
     @database_snapshot = database_snapshot if @section == "db"
     @people = Person.recent_first if @section == "users"
     @person = Person.new if @section == "users"
+    @llm_logs = LlmLog.order(created_at: :desc).limit(200) if @section == "llm_logs"
   end
 
   def update
@@ -48,7 +49,7 @@ class SettingsController < ApplicationController
   end
 
   def resolved_section
-    params[:section].in?(%w[profile llm db users]) ? params[:section] : "profile"
+    params[:section].in?(%w[profile llm llm_logs db users]) ? params[:section] : "profile"
   end
 
   def selected_llm_model(models)
@@ -70,7 +71,7 @@ class SettingsController < ApplicationController
   def database_snapshot
     connection = ActiveRecord::Base.connection
 
-    connection.tables.sort.map do |table_name|
+    tables = connection.tables.sort.map do |table_name|
       quoted_table = connection.quote_table_name(table_name)
 
       {
@@ -80,5 +81,15 @@ class SettingsController < ApplicationController
         count: connection.select_value("SELECT COUNT(*) FROM #{quoted_table}").to_i
       }
     end
+
+    # Group tables into data and system tables
+    data_tables = %w[entries people llm_logs]
+    system_tables = %w[ar_internal_metadata schema_migrations user_preferences]
+
+    {
+      all: tables,
+      data: tables.select { |t| data_tables.include?(t[:name]) },
+      system: tables.select { |t| system_tables.include?(t[:name]) }
+    }
   end
 end
