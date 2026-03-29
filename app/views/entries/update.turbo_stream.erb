@@ -1,0 +1,3 @@
+<%= turbo_stream.replace "entries_list" do %>
+  <%= render(@person.baby_mode? ? "entries/baby_list" : "entries/protocol_list", entries: @person.entries.recent_first) %>
+<% end %>

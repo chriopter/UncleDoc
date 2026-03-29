@@ -28,6 +28,6 @@ class EntryDataParseJobTest < ActiveJob::TestCase
     assert_equal "temperature", entry.reload.data.first["type"]
     assert_equal 39.2, entry.data.first["value"]
     assert_equal "parsed", entry.parse_status
-    assert_equal 1, broadcast_calls.size
+    assert_equal 3, broadcast_calls.size
   end
 end

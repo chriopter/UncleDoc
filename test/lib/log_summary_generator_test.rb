@@ -14,4 +14,38 @@ class LogSummaryGeneratorTest < ActiveSupport::TestCase
     assert_includes formatted, "bottle_feeding 120 ml"
     assert_includes formatted, "Baby fed"
   end
+
+  test "stores raw summary llm logs" do
+    preference = UserPreference.current
+    preference.update!(llm_provider: "ollama", llm_model: "llama3")
+    person = Person.create!(name: "Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
+    entry = person.entries.create!(
+      occurred_at: Time.zone.local(2026, 3, 29, 9, 0),
+      note: "Baby fed",
+      data: [ { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" } ]
+    )
+
+    fake_response = Struct.new(:code, :body).new("200", { choices: [ { message: { content: "All good" } } ] }.to_json)
+
+    http_singleton = Net::HTTP.singleton_class
+    http_singleton.alias_method :__original_start_for_test, :start
+    http_singleton.define_method(:start) do |*_args, **_kwargs, &block|
+      http = Object.new
+      http.define_singleton_method(:request) { |_request| fake_response }
+      block.call(http)
+    end
+
+    begin
+      result = LogSummaryGenerator.call(person: person, entries: [ entry ], preference: preference)
+    ensure
+      http_singleton.alias_method :start, :__original_start_for_test
+      http_singleton.remove_method :__original_start_for_test
+    end
+
+    log = LlmLog.order(:created_at).last
+    assert_equal "All good", result.summary
+    assert_equal "log_summary", log.request_kind
+    assert_equal person, log.person
+    assert_includes log.request_payload, "Baby fed"
+  end
 end

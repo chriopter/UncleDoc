@@ -1,4 +1,4 @@
-<section class="space-y-6">
+<section class="space-y-6" data-controller="db-filter">
   <div class="rounded-[2rem] border border-amber-200 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
     <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("db.subtitle") %></p>
     <h2 class="mt-2 text-2xl font-bold text-slate-950"><%= t("db.title") %></h2>
@@ -7,44 +7,46 @@
     </p>
   </div>
 
-  <% database_snapshot.each do |table| %>
-    <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm ring-1 ring-black/5">
-      <div class="flex flex-col gap-3 border-b border-slate-200 bg-slate-950 px-5 py-4 text-white md:flex-row md:items-center md:justify-between">
-        <div>
-          <h3 class="text-lg font-bold"><%= table[:name] %></h3>
-          <p class="text-sm text-slate-300"><%= t("db.table.count", count: table[:count]) %> total</p>
+  <div data-db-filter-target="tables">
+    <% database_snapshot[:all].each do |table| %>
+      <section id="<%= table[:name] %>" data-table="<%= table[:name] %>" class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm ring-1 ring-black/5 mb-6 last:mb-0">
+        <div class="flex flex-col gap-3 border-b border-slate-200 bg-slate-950 px-5 py-4 text-white md:flex-row md:items-center md:justify-between">
+          <div>
+            <h3 class="text-lg font-bold"><%= table[:name] %></h3>
+            <p class="text-sm text-slate-300"><%= t("db.table.count", count: table[:count]) %> total</p>
+          </div>
+          <div class="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-slate-300">
+            <%= table[:columns].join(", ") %>
+          </div>
         </div>
-        <div class="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-slate-300">
-          <%= table[:columns].join(", ") %>
-        </div>
-      </div>
 
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
-          <thead class="bg-slate-50 text-slate-600">
-            <tr>
-              <% table[:columns].each do |column| %>
-                <th class="px-4 py-3 font-semibold"><%= column %></th>
-              <% end %>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 bg-white text-slate-800">
-            <% if table[:rows].any? %>
-              <% table[:rows].each do |row| %>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+            <thead class="bg-slate-50 text-slate-600">
+              <tr>
+                <% table[:columns].each do |column| %>
+                  <th class="px-4 py-3 font-semibold"><%= column %></th>
+                <% end %>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white text-slate-800">
+              <% if table[:rows].any? %>
+                <% table[:rows].each do |row| %>
+                  <tr>
+                    <% table[:columns].each do |column| %>
+                      <td class="max-w-xs px-4 py-3 align-top text-xs leading-5 text-slate-700"><%= row[column].presence || "-" %></td>
+                    <% end %>
+                  </tr>
+                <% end %>
+              <% else %>
                 <tr>
-                  <% table[:columns].each do |column| %>
-                    <td class="max-w-xs px-4 py-3 align-top text-xs leading-5 text-slate-700"><%= row[column].presence || "-" %></td>
-                  <% end %>
+                  <td colspan="<%= table[:columns].size %>" class="px-4 py-8 text-center text-sm text-slate-500"><%= t("db.table.empty") %></td>
                 </tr>
               <% end %>
-            <% else %>
-              <tr>
-                <td colspan="<%= table[:columns].size %>" class="px-4 py-8 text-center text-sm text-slate-500"><%= t("db.table.empty") %></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  <% end %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    <% end %>
+  </div>
 </section>

@@ -12,9 +12,10 @@ class EntryDataParserTest < ActiveSupport::TestCase
     preference = UserPreference.current
     preference.update!(llm_provider: "ollama", llm_model: "llama3")
 
-    parser_singleton = EntryDataParser.singleton_class
-    parser_singleton.alias_method :__original_request_completion_for_test, :request_completion
-    parser_singleton.define_method(:request_completion) { |_note, _preference| "```json\n[{\"type\":\"breastfeeding\",\"value\":\"18\",\"unit\":\"minutes\",\"side\":\"left\"}]\n```" }
+    original_method = EntryDataParser.method(:request_completion)
+    EntryDataParser.define_singleton_method(:request_completion) do |_note, _preference, entry: nil|
+      "```json\n[{\"type\":\"breastfeeding\",\"value\":\"18\",\"unit\":\"minutes\",\"side\":\"left\"}]\n```"
+    end
 
     begin
       result = EntryDataParser.call(note: "Peter breastfed left side for 18 minutes", preference: preference)
@@ -22,8 +23,7 @@ class EntryDataParserTest < ActiveSupport::TestCase
       assert_nil result.error
       assert_equal [ { "type" => "breast_feeding", "value" => 18, "unit" => "min", "side" => "left" } ], result.data
     ensure
-      parser_singleton.alias_method :request_completion, :__original_request_completion_for_test
-      parser_singleton.remove_method :__original_request_completion_for_test
+      EntryDataParser.define_singleton_method(:request_completion, original_method)
     end
   end
 
@@ -31,17 +31,13 @@ class EntryDataParserTest < ActiveSupport::TestCase
     preference = UserPreference.current
     preference.update!(llm_provider: "ollama", llm_model: "llama3")
 
-    captured_request = nil
     fake_response = Struct.new(:code, :body).new("200", { choices: [ { message: { content: "[]" } } ] }.to_json)
 
     http_singleton = Net::HTTP.singleton_class
     http_singleton.alias_method :__original_start_for_test, :start
     http_singleton.define_method(:start) do |*_args, **_kwargs, &block|
       http = Object.new
-      http.define_singleton_method(:request) do |request|
-        captured_request = request
-        fake_response
-      end
+      http.define_singleton_method(:request) { |_request| fake_response }
       block.call(http)
     end
 
@@ -52,7 +48,7 @@ class EntryDataParserTest < ActiveSupport::TestCase
       http_singleton.remove_method :__original_start_for_test
     end
 
-    payload = JSON.parse(captured_request.body)
+    payload = JSON.parse(LlmLog.order(:created_at).last.request_payload)
     assert_equal "llama3", payload["model"]
     assert_equal 0, payload["temperature"]
     assert_includes payload["messages"][0]["content"], "Peter diaper wet and solid"

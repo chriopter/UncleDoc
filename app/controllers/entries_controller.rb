@@ -1,6 +1,18 @@
 class EntriesController < ApplicationController
   before_action :set_person
-  before_action :set_entry, only: [ :destroy ]
+  before_action :set_entry, only: [ :show, :edit, :update, :destroy ]
+
+  def show
+    return redirect_to person_log_path(person_slug: @person.name) unless turbo_frame_request?
+
+    render partial: "entries/entry", locals: { entry: @entry }
+  end
+
+  def edit
+    return redirect_to person_log_path(person_slug: @person.name) unless turbo_frame_request?
+
+    render partial: "entries/edit_form", locals: { entry: @entry }
+  end
 
   def create
     @entry = @person.entries.build(entry_params)
@@ -52,6 +64,27 @@ class EntriesController < ApplicationController
     end
   end
 
+  def update
+    @entry.assign_attributes(entry_params)
+    should_enqueue_parse = prepare_reparse(@entry)
+
+    if @entry.save
+      EntryDataParseJob.perform_later(@entry.id) if should_enqueue_parse
+      @entries = @person.entries.recent_first
+
+      respond_to do |format|
+        format.html { redirect_to person_log_path(person_slug: @person.name), notice: t("entries.flash.updated") }
+        format.turbo_stream
+      end
+    else
+      if turbo_frame_request?
+        render partial: "entries/edit_form", locals: { entry: @entry }, status: :unprocessable_entity
+      else
+        redirect_to person_log_path(person_slug: @person.name), alert: @entry.errors.full_messages.to_sentence
+      end
+    end
+  end
+
   private
 
   def set_person
@@ -75,5 +108,20 @@ class EntriesController < ApplicationController
     JSON.parse(raw_data)
   rescue JSON::ParserError
     []
+  end
+
+  def prepare_reparse(entry)
+    return false unless entry.will_save_change_to_note?
+
+    entry.data = []
+    return false unless entry.has_attribute?(:parse_status)
+
+    if EntryDataParser.ready?
+      entry.parse_status = "pending"
+      true
+    else
+      entry.parse_status = "skipped"
+      false
+    end
   end
 end

@@ -1,4 +1,8 @@
 de:
+  # Accessibility
+  accessibility:
+    skip_to_content: "Zum Inhalt springen"
+  
   # Date/Time formats
   date:
     formats:
@@ -104,10 +108,18 @@ de:
 
   # Entries
   entries:
+    edit:
+      label: "Bearbeiten"
+      title: "Notiz aktualisieren"
+      subtitle: "Beim Speichern wird die Notiz erneut geparst."
+      submit: "Speichern und neu parsen"
+      reparse_hint: "Die gespeicherte Notiz wird erneut an den Parser gesendet."
     form:
       placeholder: "Was ist heute passiert?"
-      submit: "Eintrag hinzufügen"
+      submit: "Eintragen"
       title: "Gesundheitsinfo für %{name} protokollieren"
+      use_current_time: "Jetzt"
+      change_time: "Zeit ändern"
     data_labels:
       temperature: "Temperatur"
       pulse: "Puls"
@@ -126,11 +138,21 @@ de:
     destroy_confirm: "Diesen Eintrag löschen?"
     flash:
       created: "Eintrag hinzugefügt."
+      updated: "Eintrag aktualisiert."
       destroyed: "Eintrag gelöscht."
     parse_status:
+      parsed: "Geparst"
+      pending_short: "Parsing"
+      skipped_short: "Kein Parse"
+      failed_short: "Parse fehlg."
       pending: "Notiz wird an das LLM gesendet..."
       skipped: "LLM-Parsing ist aus, bis in den Einstellungen ein Modell konfiguriert ist."
       failed: "LLM-Parsing fehlgeschlagen. Die Notiz bleibt erhalten und kann später erneut verarbeitet werden."
+    day_groups:
+      today: "Heute"
+    parsed_data:
+      title: "Geparst"
+      empty: "Noch keine geparsten Daten"
     raw_data:
       toggle: "Rohdaten anzeigen"
 
@@ -150,6 +172,7 @@ de:
       placeholder_name: "Mila"
       label_birth_date: "Geburtsdatum"
       submit: "Person speichern"
+      update: "Speichern"
       error_message: "Bitte korrigieren Sie das Formular."
     person:
       birth_date_label: "Geburtsdatum:"
@@ -173,7 +196,7 @@ de:
       title: "Benutzer"
       subtitle: "Familie"
     db:
-      title: "Vollständige DB-Ansicht"
+      title: "DB-Ansicht"
       subtitle: "SQL"
     display:
       title: "Anzeigeeinstellungen"
@@ -206,6 +229,8 @@ de:
       credentials_hint: "UncleDoc greift auf `%{env_key}` zurück, wenn hier kein Schlüssel gespeichert ist."
       endpoint_hint: "API-Basis: %{endpoint}"
       save: "LLM-Einstellungen speichern"
+      edit: "Bearbeiten"
+      setup: "LLM einrichten"
       prompt_label: "Parser-Prompt"
       prompt_title: "Aktueller Prompt für strukturierte Daten"
       prompt_description: "Dies ist der genaue System-Prompt, den UncleDoc vor jeder Notiz-Analyse sendet."
@@ -238,6 +263,16 @@ de:
           name: "Perplexity"
         deepseek:
           name: "DeepSeek"
+    llm_logs:
+      nav: "Roh-Logs"
+      label: "LLM-Logs"
+      title: "Rohes LLM-Anfrageprotokoll"
+      description: "Prufen Sie die genauen Anfragen und rohe Antworten fur Notiz-Parsing und Zusammenfassungen."
+      request: "Anfrage"
+      response: "Antwort"
+      raw_data:
+        toggle: "Rohe Logdaten anzeigen"
+      empty: "Es wurden noch keine LLM-Anfragen protokolliert."
     flash:
       saved: "Einstellungen gespeichert."
 
@@ -322,9 +357,28 @@ de:
   person:
     overview:
       family_member: "Familienmitglied"
+      edit_person: "Person bearbeiten"
       birth_date: "Geboren"
-      years_old: "Jahre alt"
       birth_date_not_set: "Geburtsdatum nicht festgelegt"
+      pending_parse:
+        one: "1 Eintrag wird geparst"
+        other: "%{count} Einträge werden geparst"
+      failed_parse:
+        one: "1 Parsing fehlgeschlagen"
+        other: "%{count} Parsings fehlgeschlagen"
+      age:
+        days:
+          one: "1 Tag alt"
+          other: "%{count} Tage alt"
+        weeks:
+          one: "1 Woche alt"
+          other: "%{count} Wochen alt"
+        months:
+          one: "1 Monat alt"
+          other: "%{count} Monate alt"
+        years:
+          one: "1 Jahr alt"
+          other: "%{count} Jahre alt"
       stats:
         entries: "Protokoll-Einträge"
         entries_subtitle: "Gesundheitsnotizen aufgezeichnet"

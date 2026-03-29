@@ -9,7 +9,7 @@ Rails.application.routes.draw do
   patch "settings(/:section)", to: "settings#update"
   post "settings/llm_models", to: "settings#llm_models", as: :settings_llm_models
   resources :people, only: [ :create, :update, :destroy ] do
-    resources :entries, only: [ :create, :destroy ]
+    resources :entries, only: [ :create, :show, :edit, :update, :destroy ]
     resource :baby_feeding_timer, only: [ :create, :destroy ]
     post "baby_quick_actions/diaper", to: "baby_quick_actions#diaper", as: :baby_diaper_action
     post "baby_quick_actions/bottle", to: "baby_quick_actions#bottle", as: :baby_bottle_action
