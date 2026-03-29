@@ -43,4 +43,27 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "bottle_feeding", entry.data.first["type"]
     assert_equal "parsed", entry.parse_status
   end
+
+  test "creates free text entry even before parse_status migration is loaded" do
+    entry_singleton = Entry.singleton_class
+    original_column_names = Entry.column_names
+    entry_singleton.alias_method :__original_column_names_for_test, :column_names
+    entry_singleton.define_method(:column_names) { original_column_names - [ "parse_status" ] }
+
+    begin
+      assert_difference("Entry.count", 1) do
+        post person_entries_url(@person), params: {
+          entry: {
+            note: "Wate 5 bagel",
+            occurred_at: "2026-03-29T09:03"
+          }
+        }
+      end
+    ensure
+      entry_singleton.alias_method :column_names, :__original_column_names_for_test
+      entry_singleton.remove_method :__original_column_names_for_test
+    end
+
+    assert_response :redirect
+  end
 end
