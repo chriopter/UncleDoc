@@ -104,11 +104,41 @@ cd uncledoc
 bundle install
 
 # Setup database
-bin/rails db:create db:migrate
+bin/rails db:prepare
 
 # Start server
 bin/dev
 ```
+
+### LAN Dev Server
+
+This repository is currently set up to run on a LAN-only server with Rails in `development` mode for fast iteration.
+
+- App directory: `/root/uncledoc`
+- Service name: `uncledoc-dev.service`
+- Bind address: `0.0.0.0:3000`
+- Persistent database: `storage/development.sqlite3`
+
+`Procfile.dev` starts both Rails and the Tailwind watcher. The Rails process is intentionally kept in `development` so code changes reload immediately.
+
+### systemd Service
+
+The server can be managed with:
+
+```bash
+systemctl status uncledoc-dev.service
+systemctl restart uncledoc-dev.service
+systemctl stop uncledoc-dev.service
+journalctl -u uncledoc-dev.service -f
+```
+
+On boot, `systemd` starts `bin/dev`, which in turn:
+
+- prepares the database with `bin/rails db:prepare`
+- starts the Rails server on port `3000`
+- starts the Tailwind watcher for live CSS rebuilds
+
+This setup is intended for trusted LAN use only. It should not be exposed directly to the public internet.
 
 ### Running Tests
 
