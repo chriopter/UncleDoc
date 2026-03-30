@@ -110,6 +110,7 @@ bin/rails db:prepare
 bin/dev
 ```
 
+
 ### LAN Dev Server
 
 This repository is currently set up to run on a LAN-only server with Rails in `development` mode for fast iteration.
