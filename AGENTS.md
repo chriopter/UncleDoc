@@ -24,6 +24,14 @@
 - Keep the app easy to self-host and easy to understand.
 - **Use `t()` helper in views for all user-facing text. Never hardcode English strings. Add translations to both `en.yml` and `de.yml`.**
 
+## Local Deployment
+
+- This app is currently run on a LAN-only server from `/root/uncledoc`.
+- The app is managed by `systemd` via `uncledoc-dev.service`.
+- The service runs `bin/dev`, keeps Rails in `development`, and binds to `0.0.0.0:3000`.
+- Persistent app data for this setup lives in `storage/development.sqlite3`.
+- If operational docs change, keep `README.md` aligned with the live service setup.
+
 ## User Preferences
 
 - User preferences (locale, date format) are stored in the `user_preferences` table.
