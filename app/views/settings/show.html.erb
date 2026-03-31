@@ -5,15 +5,21 @@
     <p class="mt-2 text-sm leading-6 text-slate-600"><%= t("settings.subtitle") %></p>
 
     <nav class="mt-6 space-y-2">
-      <%= link_to settings_path_for(:profile), class: settings_sidebar_item_class(@section == "profile") do %>
-        <span><%= t("settings.profile.title") %></span>
-        <span class="text-xs uppercase tracking-[0.2em] opacity-70"><%= t("settings.profile.subtitle") %></span>
-      <% end %>
+      <div class="space-y-2">
+        <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500"><%= t("settings.user_group.label") %></p>
+        </div>
 
-      <%= link_to settings_path_for(:users), class: settings_sidebar_item_class(@section == "users") do %>
-        <span><%= t("settings.users.title") %></span>
-        <span class="text-xs uppercase tracking-[0.2em] opacity-70"><%= t("settings.users.subtitle") %></span>
-      <% end %>
+        <div class="ml-4 space-y-1 border-l-2 border-slate-200 pl-3">
+          <%= link_to settings_path_for(:profile), class: settings_subnav_item_class(@section == "profile") do %>
+            <span><%= t("settings.profile.nav") %></span>
+          <% end %>
+
+          <%= link_to settings_path_for(:users), class: settings_subnav_item_class(@section == "users") do %>
+            <span><%= t("settings.users.nav") %></span>
+          <% end %>
+        </div>
+      </div>
 
       <%= link_to settings_path_for(:llm), class: settings_sidebar_item_class(@section == "llm") do %>
         <span><%= t("settings.llm.title") %></span>
@@ -21,6 +27,10 @@
       <% end %>
 
       <div class="ml-4 space-y-1 border-l-2 border-slate-200 pl-3">
+        <%= link_to settings_path(section: "llm_prompt"), class: settings_subnav_item_class(@section == "llm_prompt") do %>
+          <span><%= t("settings.llm_prompt.nav") %></span>
+        <% end %>
+
         <%= link_to settings_path(section: "llm_logs"), class: settings_subnav_item_class(@section == "llm_logs") do %>
           <span><%= t("settings.llm_logs.nav") %></span>
         <% end %>
@@ -66,6 +76,8 @@
       <%= render "settings/users", people: @people, person: @person %>
     <% elsif @section == "llm_logs" %>
       <%= render "settings/llm_logs" %>
+    <% elsif @section == "llm_prompt" %>
+      <%= render "settings/llm_prompt" %>
     <% elsif @section == "llm" %>
       <%= render "settings/llm" %>
     <% else %>

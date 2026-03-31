@@ -1,11 +1,11 @@
 require "test_helper"
 
 class EntryDataParseJobTest < ActiveJob::TestCase
-  test "saves parsed data onto the entry" do
+  test "saves parsed parseable_data onto the entry" do
     person = Person.create!(name: "Peter", birth_date: Date.new(2020, 1, 1))
-    entry = person.entries.create!(note: "Peter has fever 39.2", occurred_at: Time.current, data: [], parse_status: "pending")
+    entry = person.entries.create!(input: "Peter has fever 39.2", occurred_at: Time.current, facts: [], parseable_data: [], parse_status: "pending")
 
-    result = EntryDataParser::Result.new(data: [ { "type" => "temperature", "value" => 39.2, "unit" => "C", "flag" => "high" } ])
+    result = EntryDataParser::Result.new(facts: [ "Temperature 39.2 C high" ], parseable_data: [ { "type" => "temperature", "value" => 39.2, "unit" => "C", "flag" => "high" } ], occurred_at: Time.zone.local(2026, 3, 28, 22, 10, 0))
     broadcast_calls = []
 
     parser_singleton = EntryDataParser.singleton_class
@@ -25,9 +25,32 @@ class EntryDataParseJobTest < ActiveJob::TestCase
       channel_singleton.remove_method :__original_broadcast_replace_to_for_test
     end
 
-    assert_equal "temperature", entry.reload.data.first["type"]
-    assert_equal 39.2, entry.data.first["value"]
+    assert_equal [ "Temperature 39.2 C high" ], entry.reload.facts
+    assert_equal "temperature", entry.reload.parseable_data.first["type"]
+    assert_equal 39.2, entry.parseable_data.first["value"]
+    assert_equal Time.zone.local(2026, 3, 28, 22, 10, 0), entry.occurred_at
     assert_equal "parsed", entry.parse_status
     assert_equal 3, broadcast_calls.size
+  end
+
+  test "does not change occurred_at when parser returns no inferred timestamp" do
+    person = Person.create!(name: "Peter", birth_date: Date.new(2020, 1, 1))
+    original_time = Time.zone.local(2024, 6, 2, 9, 30, 0)
+    entry = person.entries.create!(input: "old plain note", occurred_at: original_time, facts: [], parseable_data: [], parse_status: "pending")
+
+    result = EntryDataParser::Result.new(facts: [ "General note seems fine today" ], parseable_data: [], occurred_at: nil)
+
+    parser_singleton = EntryDataParser.singleton_class
+    parser_singleton.alias_method :__original_call_for_test, :call
+    parser_singleton.define_method(:call) { |**| result }
+
+    begin
+      EntryDataParseJob.perform_now(entry.id)
+    ensure
+      parser_singleton.alias_method :call, :__original_call_for_test
+      parser_singleton.remove_method :__original_call_for_test
+    end
+
+    assert_equal original_time, entry.reload.occurred_at
   end
 end

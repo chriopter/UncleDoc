@@ -3,36 +3,38 @@ class Entry < ApplicationRecord
 
   PARSE_STATUSES = %w[pending parsed failed skipped].freeze
 
-  validates :note, presence: true
+  validates :input, presence: true
   validates :occurred_at, presence: true
   validates :parse_status, inclusion: { in: PARSE_STATUSES }, if: -> { has_attribute?(:parse_status) }
-  validate :data_must_be_array
+  validate :parseable_data_must_be_array
+  validate :facts_must_be_array
 
   after_initialize :normalize_defaults
 
   scope :recent_first, -> { order(occurred_at: :desc, created_at: :desc) }
-  scope :by_data_type, ->(type) {
-    where("EXISTS (SELECT 1 FROM json_each(entries.data) WHERE json_extract(value, '$.type') = ?)", type)
+  scope :entered_first, -> { order(created_at: :desc, occurred_at: :desc) }
+  scope :by_parseable_data_type, ->(type) {
+    where("EXISTS (SELECT 1 FROM json_each(entries.parseable_data) WHERE json_extract(value, '$.type') = ?)", type)
   }
 
-  def data_of_type(type)
-    data_items.select { |item| item["type"] == type }
+  def parseable_data_of_type(type)
+    parseable_data_items.select { |item| item["type"] == type }
   end
 
-  def first_data_of_type(type)
-    data_of_type(type).first
+  def first_parseable_data_of_type(type)
+    parseable_data_of_type(type).first
   end
 
   def breast_feeding?
-    data_of_type("breast_feeding").any?
+    parseable_data_of_type("breast_feeding").any?
   end
 
   def bottle_feeding?
-    data_of_type("bottle_feeding").any?
+    parseable_data_of_type("bottle_feeding").any?
   end
 
   def diaper?
-    data_of_type("diaper").any?
+    parseable_data_of_type("diaper").any?
   end
 
   def feeding?
@@ -40,17 +42,17 @@ class Entry < ApplicationRecord
   end
 
   def feeding_duration_minutes
-    feeding = first_data_of_type("breast_feeding")
+    feeding = first_parseable_data_of_type("breast_feeding")
     numeric_value(feeding&.dig("value"))
   end
 
   def bottle_amount_ml
-    bottle = first_data_of_type("bottle_feeding")
+    bottle = first_parseable_data_of_type("bottle_feeding")
     numeric_value(bottle&.dig("value"))
   end
 
   def diaper_data
-    first_data_of_type("diaper") || {}
+    first_parseable_data_of_type("diaper") || {}
   end
 
   def diaper_rash?
@@ -67,6 +69,14 @@ class Entry < ApplicationRecord
 
   def display_time
     occurred_at || created_at
+  end
+
+  def fact_items
+    facts.is_a?(Array) ? facts.filter_map { |item| item.to_s.strip.presence } : []
+  end
+
+  def fact_summary
+    fact_items.join(". ")
   end
 
   def pending_parse?
@@ -93,26 +103,38 @@ class Entry < ApplicationRecord
 
   private
 
+  def self.sorted_by(mode)
+    mode.to_s == "entered" ? entered_first : recent_first
+  end
+
   def normalize_defaults
-    self.data = [] if data.nil?
+    self[:parseable_data] = [] if has_attribute?(:parseable_data) && self[:parseable_data].nil?
+    self[:facts] = [] if has_attribute?(:facts) && self[:facts].nil?
     self.occurred_at ||= Time.current
-    self.parse_status ||= data.present? ? "parsed" : "pending" if has_attribute?(:parse_status)
+    self.parse_status ||= parseable_data_value.present? ? "parsed" : "pending" if has_attribute?(:parse_status)
   end
 
   def current_parse_status
     return parse_status if has_attribute?(:parse_status)
 
-    data.present? ? "parsed" : "pending"
+    parseable_data_value.present? ? "parsed" : "pending"
   end
 
-  def data_items
-    data.is_a?(Array) ? data : []
+  def parseable_data_items
+    parseable_data_value.is_a?(Array) ? parseable_data_value : []
   end
 
-  def data_must_be_array
-    return if data.is_a?(Array)
+  def parseable_data_must_be_array
+    return if parseable_data_value.is_a?(Array)
 
-    errors.add(:data, :invalid)
+    errors.add(:parseable_data, :invalid)
+  end
+
+  def facts_must_be_array
+    return unless has_attribute?(:facts)
+    return if facts.is_a?(Array) && facts.all? { |item| item.is_a?(String) }
+
+    errors.add(:facts, :invalid)
   end
 
   def numeric_value(value)
@@ -121,5 +143,9 @@ class Entry < ApplicationRecord
     return value.to_f if value.to_s.match?(/\A-?\d+\.\d+\z/)
 
     nil
+  end
+
+  def parseable_data_value
+    has_attribute?(:parseable_data) ? self[:parseable_data] : nil
   end
 end

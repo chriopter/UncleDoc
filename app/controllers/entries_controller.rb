@@ -16,10 +16,11 @@ class EntriesController < ApplicationController
 
   def create
     @entry = @person.entries.build(entry_params)
-    should_enqueue_parse = @entry.data.blank? && EntryDataParser.ready?
+    populate_facts_from_parseable_data(@entry)
+    should_enqueue_parse = @entry.parseable_data.blank? && EntryDataParser.ready?
 
     if @entry.has_attribute?(:parse_status)
-      @entry.parse_status = if @entry.data.present?
+      @entry.parse_status = if @entry.parseable_data.present?
         "parsed"
       elsif should_enqueue_parse
         "pending"
@@ -66,6 +67,7 @@ class EntriesController < ApplicationController
 
   def update
     @entry.assign_attributes(entry_params)
+    populate_facts_from_parseable_data(@entry)
     should_enqueue_parse = prepare_reparse(@entry)
 
     if @entry.save
@@ -96,24 +98,35 @@ class EntriesController < ApplicationController
   end
 
   def entry_params
-    permitted = params.require(:entry).permit(:note, :occurred_at)
-    permitted[:data] = normalize_data_param(params[:entry][:data]) if params[:entry].key?(:data)
+    permitted = params.require(:entry).permit(:input, :occurred_at, facts: [])
+    permitted[:parseable_data] = normalize_parseable_data_param(params[:entry][:parseable_data]) if params[:entry].key?(:parseable_data)
+    permitted[:facts] = normalize_facts_param(params[:entry][:facts]) if params[:entry].key?(:facts)
     permitted
   end
 
-  def normalize_data_param(raw_data)
-    return [] if raw_data.blank?
-    return raw_data if raw_data.is_a?(Array)
+  def normalize_parseable_data_param(raw_parseable_data)
+    return [] if raw_parseable_data.blank?
+    return raw_parseable_data if raw_parseable_data.is_a?(Array)
 
-    JSON.parse(raw_data)
+    JSON.parse(raw_parseable_data)
+  rescue JSON::ParserError
+    []
+  end
+
+  def normalize_facts_param(raw_facts)
+    return [] if raw_facts.blank?
+    return raw_facts if raw_facts.is_a?(Array)
+
+    JSON.parse(raw_facts)
   rescue JSON::ParserError
     []
   end
 
   def prepare_reparse(entry)
-    return false unless entry.will_save_change_to_note?
+    return false unless entry.will_save_change_to_input?
 
-    entry.data = []
+    entry.facts = [] if entry.has_attribute?(:facts)
+    entry.parseable_data = []
     return false unless entry.has_attribute?(:parse_status)
 
     if EntryDataParser.ready?
@@ -123,5 +136,12 @@ class EntriesController < ApplicationController
       entry.parse_status = "skipped"
       false
     end
+  end
+
+  def populate_facts_from_parseable_data(entry)
+    return unless entry.has_attribute?(:facts)
+    return if entry.facts.present? || entry.parseable_data.blank?
+
+    entry.facts = EntryFactListBuilder.call(entry.parseable_data)
   end
 end

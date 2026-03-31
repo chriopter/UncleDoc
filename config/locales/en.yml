@@ -49,7 +49,7 @@ en:
         birth_date: "Birth date"
       entry:
         occurred_at: "When it happened"
-        note: "Note"
+        input: "Input"
 
   # Common labels
   labels:
@@ -108,6 +108,23 @@ en:
 
   # Entries
   entries:
+    fact_joiners:
+      and: "and"
+    sort:
+      occurred: "Occurred"
+      entered: "Entered"
+    fact_labels:
+      temperature: "Temperature"
+      pulse: "Pulse"
+      weight: "Weight"
+      bottle_feeding: "Bottle feeding"
+      breast_feeding: "Breast feeding"
+      diaper: "Diaper"
+      sleep: "Sleep"
+      medication: "Medication"
+      symptom: "Symptom"
+    facts:
+      title: "Facts"
     edit:
       label: "Edit"
       title: "Update note"
@@ -145,7 +162,7 @@ en:
       pending_short: "Parsing"
       skipped_short: "No parse"
       failed_short: "Parse failed"
-      pending: "Sending note to the LLM..."
+      pending: "Sending input to the LLM..."
       skipped: "LLM parsing is off until a model is configured in Settings."
       failed: "LLM parse failed. Keep the note and try again later."
     day_groups:
@@ -153,8 +170,13 @@ en:
     parsed_data:
       title: "Parsed"
       empty: "No parsed data yet"
+    raw_input:
+      title: "Input"
+      label: "Raw"
     raw_data:
       toggle: "Show raw data"
+    db_row:
+      toggle: "Show full row"
 
   # People / Users / Family
   people:
@@ -192,9 +214,13 @@ en:
     profile:
       title: "Profile settings"
       subtitle: "UI"
+      nav: "Profile"
     users:
       title: "Users"
       subtitle: "Family"
+      nav: "Members"
+    user_group:
+      label: "User settings"
     db:
       title: "DB View"
       subtitle: "SQL"
@@ -234,6 +260,14 @@ en:
       prompt_label: "Parser prompt"
       prompt_title: "Current structured-data prompt"
       prompt_description: "This is the exact system prompt UncleDoc sends before each note parse request."
+      usage_label: "Usage"
+      usage_title: "Workspace usage"
+      usage_description: "UncleDoc does not track token cost yet, but it does keep a simple count of LLM activity."
+      usage_total: "Total requests"
+      usage_parse: "Parse requests"
+      usage_summary: "Summary requests"
+      latest_request: "Latest request: %{time}"
+      no_requests: "No LLM requests have been logged yet."
       model_status:
         idle: "Choose a provider and key to load available models."
         loading: "Loading models..."
@@ -273,6 +307,11 @@ en:
       raw_data:
         toggle: "Show raw log data"
       empty: "No LLM requests have been logged yet."
+    llm_prompt:
+      nav: "Prompt"
+      label: "LLM prompt"
+      title: "Parser system prompt"
+      description: "Inspect the exact parser system prompt used for entry extraction."
     flash:
       saved: "Settings saved."
 
@@ -299,6 +338,10 @@ en:
     feeding:
       label: "Baby"
       title: "Feeding"
+      combined_title: "Feeding"
+      modes:
+        breast: "Breast"
+        bottle: "Bottle"
       empty: "No feedings recorded yet"
       start_side: "Start %{side}"
       sides:
@@ -312,6 +355,9 @@ en:
         missing: "No feeding timer is running"
         already_running: "Feeding timer is already running"
         duration: "%{duration} min"
+        start_hint: "Tap to start"
+        tap_to_stop: "tap to stop"
+        running_elsewhere: "running"
         note: "Breastfeeding %{side}, %{duration} minutes"
     diaper:
       label: "Baby"

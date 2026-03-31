@@ -1,5 +1,34 @@
-<% if entry.data.present? %>
-  <div class="flex flex-wrap gap-2">
-    <%= render "entries/data_badges", entry: entry %>
+<% if entry.parseable_data.present? %>
+  <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+    <% Array(entry.parseable_data).each_with_index do |item, index| %>
+      <% next unless item.is_a?(Hash) && item["type"].present? %>
+      <% label_key = item["type"].to_s.downcase %>
+      <% label = t("entries.data_labels.#{label_key}", default: item["type"].to_s.humanize) %>
+      <% detail_parts = case item["type"]
+      when "temperature", "pulse", "weight", "bottle_feeding", "sleep"
+        [[item["value"], item["unit"]].compact.join(" ")]
+      when "breast_feeding"
+        side_label = item["side"].present? ? t("entries.data_values.side_#{item['side']}", default: item["side"].to_s.humanize) : nil
+        [[side_label, item["value"], item["unit"]].compact.join(" ")]
+      when "diaper"
+        states = []
+        states << t("entries.data_values.wet") if item["wet"] == true
+        states << t("entries.data_values.solid") if item["solid"] == true
+        states << t("entries.data_values.rash") if item["rash"] == true
+        [states.join(" + ")]
+      when "medication"
+        [[item["value"], item["dose"]].compact.join(" ")]
+      else
+        [item["value"], item["unit"], item["dose"], item["flag"], item["ref"], item["location"], item["quality"]]
+      end.filter_map(&:presence) %>
+      <% next if detail_parts.blank? %>
+
+      <div class="grid gap-3 px-4 py-3 sm:grid-cols-[8rem_minmax(0,1fr)] sm:items-start <%= index.positive? ? 'border-t border-white/10' : '' %>">
+        <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= label %></div>
+        <div class="border-l border-white/10 pl-4 text-sm text-slate-100">
+          <%= detail_parts.join(" • ") %>
+        </div>
+      </div>
+    <% end %>
   </div>
 <% end %>

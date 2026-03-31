@@ -1,5 +1,5 @@
 <%= turbo_frame_tag "entry_form" do %>
-  <%= form_with model: [person, entry], class: "space-y-3" do |f| %>
+  <%= form_with model: [person, entry], class: "space-y-3", data: { controller: "quick-submit" } do |f| %>
     <% if entry.errors.any? %>
       <div class="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
         <% entry.errors.full_messages.each do |message| %>
@@ -8,8 +8,9 @@
       </div>
     <% end %>
 
-    <%= f.text_area :note, rows: 2, placeholder: t("entries.form.placeholder"),
-        class: "block w-full min-h-[88px] rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm focus:border-amber-500 focus:ring-amber-500 resize-y" %>
+    <%= f.text_area :input, rows: 2, placeholder: t("entries.form.placeholder"),
+        class: "block w-full min-h-[88px] rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm focus:border-amber-500 focus:ring-amber-500 resize-y",
+        data: { quick_submit_target: "input", action: "keydown->quick-submit#submitOnEnter" } %>
 
     <div class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-2">

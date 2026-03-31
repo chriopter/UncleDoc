@@ -5,12 +5,14 @@ class LogSummaryGeneratorTest < ActiveSupport::TestCase
     person = Person.create!(name: "Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
     entry = person.entries.create!(
       occurred_at: Time.zone.local(2026, 3, 29, 9, 0),
-      note: "Baby fed",
-      data: [ { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" } ]
+      input: "Baby fed",
+      facts: [ "Bottle feeding 120 ml" ],
+      parseable_data: [ { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" } ]
     )
 
     formatted = LogSummaryGenerator.formatted_entries([ entry ])
 
+    assert_includes formatted, "Bottle feeding 120 ml"
     assert_includes formatted, "bottle_feeding 120 ml"
     assert_includes formatted, "Baby fed"
   end
@@ -21,8 +23,9 @@ class LogSummaryGeneratorTest < ActiveSupport::TestCase
     person = Person.create!(name: "Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
     entry = person.entries.create!(
       occurred_at: Time.zone.local(2026, 3, 29, 9, 0),
-      note: "Baby fed",
-      data: [ { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" } ]
+      input: "Baby fed",
+      facts: [ "Bottle feeding 120 ml" ],
+      parseable_data: [ { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" } ]
     )
 
     fake_response = Struct.new(:code, :body).new("200", { choices: [ { message: { content: "All good" } } ] }.to_json)

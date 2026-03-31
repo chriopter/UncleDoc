@@ -1,58 +1,115 @@
 <% feeding_timer_started_at = baby_feeding_timer_started_at_for(person) %>
 <% feeding_timer_side = baby_feeding_timer_side_for(person) %>
+<% feeding_timer_elapsed = baby_feeding_timer_elapsed_label(feeding_timer_started_at) %>
 
 <div class="rounded-[2rem] border border-pink-200 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
   <div class="mb-5 space-y-2">
     <p class="text-sm font-semibold uppercase tracking-[0.2em] text-pink-600"><%= t("baby.badge") %></p>
     <h2 class="text-2xl font-bold text-slate-950"><%= t("baby.quick_actions.title") %></h2>
-    <p class="text-sm leading-6 text-slate-600"><%= t("baby.quick_actions.subtitle") %></p>
-  </div>
-
-  <div class="mb-4 flex flex-wrap gap-2 text-xs">
-    <% if person.time_since_last_feeding %>
-      <span class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 font-semibold text-amber-800"><%= t("baby.last_feeding") %>: <%= time_ago_in_words(person.time_since_last_feeding) %></span>
-    <% end %>
-    <% if person.time_since_last_diaper %>
-      <span class="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 font-semibold text-blue-800"><%= t("baby.last_diaper") %>: <%= time_ago_in_words(person.time_since_last_diaper) %></span>
-    <% end %>
-    <% if feeding_timer_started_at %>
-      <span class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-semibold text-emerald-800"><%= t("baby.feeding.sides.#{feeding_timer_side}") %></span>
-    <% end %>
   </div>
 
   <div class="space-y-4">
-    <div class="rounded-[1.5rem] border border-emerald-200 bg-emerald-50/60 p-4">
-      <p class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700"><%= t("baby.feeding.title") %></p>
-      <div class="grid grid-cols-2 gap-2">
-        <%= button_to person_baby_feeding_timer_path(person, side: "left"), method: :post, class: "rounded-2xl border border-emerald-200 bg-white px-3 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100" do %>
-          <%= t("baby.feeding.sides.left") %>
+    <div class="rounded-[1.5rem] border border-emerald-200 bg-emerald-50/60 p-4" data-controller="feeding-mode" data-feeding-mode-default-value="breast">
+      <p class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700"><%= t("baby.feeding.combined_title") %></p>
+      <div class="mb-3 flex flex-wrap gap-2 text-xs">
+        <% if person.time_since_last_feeding %>
+          <span class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 font-semibold text-amber-800"><%= t("baby.last_feeding") %>: <%= capped_time_ago_in_words(person.time_since_last_feeding) %></span>
         <% end %>
-        <%= button_to person_baby_feeding_timer_path(person, side: "right"), method: :post, class: "rounded-2xl border border-emerald-200 bg-white px-3 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100" do %>
-          <%= t("baby.feeding.sides.right") %>
+        <% if feeding_timer_started_at %>
+          <span class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-semibold text-emerald-800"><%= t("baby.feeding.sides.#{feeding_timer_side}") %> · <%= feeding_timer_elapsed %></span>
         <% end %>
       </div>
-      <% if feeding_timer_started_at %>
-        <div class="mt-2">
-          <%= button_to t("baby.feeding.timer.stop"), person_baby_feeding_timer_path(person), method: :delete, class: "w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800" %>
+
+      <div data-feeding-mode-target="panel" data-panel="breast">
+        <div class="grid grid-cols-3 gap-2">
+          <% if feeding_timer_started_at && feeding_timer_side == "left" %>
+            <%= button_to person_baby_feeding_timer_path(person), method: :delete, class: "rounded-2xl border border-emerald-300 bg-emerald-100 px-3 py-3 text-left text-sm font-semibold text-emerald-900 transition hover:bg-emerald-200" do %>
+              <span class="block"><%= t("baby.feeding.sides.left") %></span>
+              <span class="mt-1 block text-xs font-medium text-emerald-700"><%= feeding_timer_elapsed %> · <%= t("baby.feeding.timer.tap_to_stop") %></span>
+            <% end %>
+          <% elsif feeding_timer_started_at %>
+            <button type="button" disabled class="rounded-2xl border border-slate-200 bg-slate-100 px-3 py-3 text-left text-sm font-semibold text-slate-400">
+              <span class="block"><%= t("baby.feeding.sides.left") %></span>
+              <span class="mt-1 block text-xs font-medium"><%= t("baby.feeding.timer.running_elsewhere") %></span>
+            </button>
+          <% else %>
+            <%= button_to person_baby_feeding_timer_path(person, side: "left"), method: :post, class: "rounded-2xl border border-emerald-200 bg-white px-3 py-3 text-left text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100" do %>
+              <span class="block"><%= t("baby.feeding.sides.left") %></span>
+              <span class="mt-1 block text-xs font-medium text-emerald-600"><%= t("baby.feeding.timer.start_hint") %></span>
+            <% end %>
+          <% end %>
+
+          <% if feeding_timer_started_at && feeding_timer_side == "right" %>
+            <%= button_to person_baby_feeding_timer_path(person), method: :delete, class: "rounded-2xl border border-emerald-300 bg-emerald-100 px-3 py-3 text-left text-sm font-semibold text-emerald-900 transition hover:bg-emerald-200" do %>
+              <span class="block"><%= t("baby.feeding.sides.right") %></span>
+              <span class="mt-1 block text-xs font-medium text-emerald-700"><%= feeding_timer_elapsed %> · <%= t("baby.feeding.timer.tap_to_stop") %></span>
+            <% end %>
+          <% elsif feeding_timer_started_at %>
+            <button type="button" disabled class="rounded-2xl border border-slate-200 bg-slate-100 px-3 py-3 text-left text-sm font-semibold text-slate-400">
+              <span class="block"><%= t("baby.feeding.sides.right") %></span>
+              <span class="mt-1 block text-xs font-medium"><%= t("baby.feeding.timer.running_elsewhere") %></span>
+            </button>
+          <% else %>
+            <%= button_to person_baby_feeding_timer_path(person, side: "right"), method: :post, class: "rounded-2xl border border-emerald-200 bg-white px-3 py-3 text-left text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100" do %>
+              <span class="block"><%= t("baby.feeding.sides.right") %></span>
+              <span class="mt-1 block text-xs font-medium text-emerald-600"><%= t("baby.feeding.timer.start_hint") %></span>
+            <% end %>
+          <% end %>
+
+          <button type="button" class="rounded-2xl border border-amber-200 bg-white px-3 py-3 text-left text-sm font-semibold text-amber-800 transition hover:bg-amber-50" data-feeding-mode-target="button" data-panel="bottle" data-active-classes="bg-amber-100 border-amber-300 text-amber-900 shadow-sm" data-inactive-classes="bg-white text-amber-800" data-action="feeding-mode#showPanel">
+            <span class="block"><%= t("baby.feeding.modes.bottle") %></span>
+            <span class="mt-1 block text-xs font-medium text-amber-600"><%= t("baby.bottle.button") %></span>
+          </button>
         </div>
-      <% end %>
+      </div>
+
+      <div data-feeding-mode-target="panel" data-panel="bottle" class="hidden">
+        <div class="mb-2 grid grid-cols-3 gap-2">
+          <button type="button" class="rounded-2xl border border-emerald-200 bg-white px-3 py-3 text-left text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50" data-feeding-mode-target="button" data-panel="breast" data-active-classes="bg-emerald-100 border-emerald-300 text-emerald-900 shadow-sm" data-inactive-classes="bg-white text-emerald-800" data-action="feeding-mode#showPanel">
+            <span class="block"><%= t("baby.feeding.sides.left") %></span>
+            <span class="mt-1 block text-xs font-medium text-emerald-600"><%= t("baby.feeding.modes.breast") %></span>
+          </button>
+          <button type="button" class="rounded-2xl border border-emerald-200 bg-white px-3 py-3 text-left text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50" data-feeding-mode-target="button" data-panel="breast" data-active-classes="bg-emerald-100 border-emerald-300 text-emerald-900 shadow-sm" data-inactive-classes="bg-white text-emerald-800" data-action="feeding-mode#showPanel">
+            <span class="block"><%= t("baby.feeding.sides.right") %></span>
+            <span class="mt-1 block text-xs font-medium text-emerald-600"><%= t("baby.feeding.modes.breast") %></span>
+          </button>
+          <button type="button" class="rounded-2xl border border-amber-200 bg-white px-3 py-3 text-left text-sm font-semibold text-amber-800 transition hover:bg-amber-50" data-feeding-mode-target="button" data-panel="bottle" data-active-classes="bg-amber-100 border-amber-300 text-amber-900 shadow-sm" data-inactive-classes="bg-white text-amber-800" data-action="feeding-mode#showPanel">
+            <span class="block"><%= t("baby.feeding.modes.bottle") %></span>
+            <span class="mt-1 block text-xs font-medium text-amber-600"><%= t("baby.bottle.button") %></span>
+          </button>
+        </div>
+
+        <%= form_with url: person_baby_bottle_action_path(person), class: "space-y-3" do |f| %>
+          <div class="flex gap-2">
+            <%= f.number_field :amount_ml, min: 1, step: 1, placeholder: "120", class: "block w-full rounded-2xl border-amber-200 bg-white px-4 py-3 text-sm focus:border-amber-500 focus:ring-amber-500" %>
+            <%= f.submit t("baby.bottle.button"), class: "rounded-2xl bg-amber-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-600" %>
+          </div>
+        <% end %>
+      </div>
     </div>
 
     <div class="rounded-[1.5rem] border border-blue-200 bg-blue-50/60 p-4">
       <p class="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-blue-700"><%= t("baby.diaper.title") %></p>
+      <div class="mb-3 flex flex-wrap gap-2 text-xs">
+        <% if person.time_since_last_diaper %>
+          <span class="rounded-full border border-blue-200 bg-white px-3 py-1 font-semibold text-blue-800"><%= t("baby.last_diaper") %>: <%= capped_time_ago_in_words(person.time_since_last_diaper) %></span>
+        <% end %>
+      </div>
       <div class="grid grid-cols-3 gap-2">
-        <%= button_to t("baby.diaper.buttons.wet"), person_baby_diaper_action_path(person), params: { kind: "wet" }, class: "rounded-2xl bg-blue-500 px-2 py-3 text-sm font-semibold text-white transition hover:bg-blue-600" %>
-        <%= button_to t("baby.diaper.buttons.solid"), person_baby_diaper_action_path(person), params: { kind: "solid" }, class: "rounded-2xl bg-blue-500 px-2 py-3 text-sm font-semibold text-white transition hover:bg-blue-600" %>
-        <%= button_to t("baby.diaper.buttons.both"), person_baby_diaper_action_path(person), params: { kind: "both" }, class: "rounded-2xl bg-blue-500 px-2 py-3 text-sm font-semibold text-white transition hover:bg-blue-600" %>
+        <%= button_to person_baby_diaper_action_path(person), params: { kind: "wet" }, class: "rounded-2xl border border-blue-200 bg-white px-3 py-3 text-left text-sm font-semibold text-blue-900 transition hover:bg-blue-100" do %>
+          <span class="block"><%= t("baby.diaper.buttons.wet") %></span>
+          <span class="mt-1 block text-xs font-medium text-blue-600"><%= t("entries.data_values.wet") %></span>
+        <% end %>
+        <%= button_to person_baby_diaper_action_path(person), params: { kind: "solid" }, class: "rounded-2xl border border-blue-200 bg-white px-3 py-3 text-left text-sm font-semibold text-blue-900 transition hover:bg-blue-100" do %>
+          <span class="block"><%= t("baby.diaper.buttons.solid") %></span>
+          <span class="mt-1 block text-xs font-medium text-blue-600"><%= t("entries.data_values.solid") %></span>
+        <% end %>
+        <%= button_to person_baby_diaper_action_path(person), params: { kind: "both" }, class: "rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-500 to-blue-600 px-3 py-3 text-left text-sm font-semibold text-white transition hover:from-blue-600 hover:to-blue-700" do %>
+          <span class="block"><%= t("baby.diaper.buttons.both") %></span>
+          <span class="mt-1 block text-xs font-medium text-blue-100"><%= t("entries.data_values.wet") %> + <%= t("entries.data_values.solid") %></span>
+        <% end %>
       </div>
     </div>
 
-    <div class="rounded-[1.5rem] border border-amber-200 bg-amber-50/60 p-4">
-      <%= form_with url: person_baby_bottle_action_path(person), class: "space-y-3" do |f| %>
-        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("baby.bottle.title") %></p>
-        <%= f.number_field :amount_ml, min: 1, step: 1, placeholder: "120", class: "block w-full rounded-2xl border-slate-200 bg-white px-4 py-3 text-sm focus:border-amber-500 focus:ring-amber-500" %>
-        <%= f.submit t("baby.bottle.button"), class: "w-full rounded-2xl bg-amber-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-600" %>
-      <% end %>
-    </div>
   </div>
 </div>

@@ -1,6 +1,6 @@
 require "json"
 class EntryDataParser
-  Result = Struct.new(:data, :error, keyword_init: true)
+  Result = Struct.new(:facts, :parseable_data, :occurred_at, :error, keyword_init: true)
 
   TYPE_ALIASES = {
     "temp" => "temperature",
@@ -27,17 +27,22 @@ class EntryDataParser
     "beats/min" => "bpm"
   }.freeze
 
-  def self.call(note:, preference: UserPreference.current, entry: nil)
-    return Result.new(data: [], error: :blank_note) if note.blank?
+  def self.call(input:, preference: UserPreference.current, entry: nil)
+    return Result.new(facts: [], parseable_data: [], occurred_at: nil, error: :blank_input) if input.blank?
 
     configuration_error = configuration_error_for(preference)
-    return Result.new(data: [], error: configuration_error) if configuration_error.present?
+    return Result.new(facts: [], parseable_data: [], occurred_at: nil, error: configuration_error) if configuration_error.present?
 
-    response_body = request_completion(note, preference, entry: entry)
-    Result.new(data: sanitize_data(parse_json_array(response_body)))
+    response_body = request_completion(input, preference, entry: entry)
+    payload = parse_json_object(response_body)
+    Result.new(
+      facts: sanitize_facts(payload["facts"]),
+      parseable_data: sanitize_parseable_data(payload["parseable_data"]),
+      occurred_at: sanitize_occurred_at(payload["occurred_at"])
+    )
   rescue StandardError => error
-    Rails.logger.warn("Entry data parse failed: #{error.class}: #{error.message}")
-    Result.new(data: [], error: :request_failed)
+    Rails.logger.warn("Entry parsing failed: #{error.class}: #{error.message}")
+    Result.new(facts: [], parseable_data: [], occurred_at: nil, error: :request_failed)
   end
 
   def self.ready?(preference = UserPreference.current)
@@ -52,13 +57,13 @@ class EntryDataParser
     nil
   end
 
-  def self.request_completion(note, preference, entry: nil)
+  def self.request_completion(input, preference, entry: nil)
     LlmChatRequest.call(
       request_kind: "entry_parse",
       preference: preference,
       messages: [
         { role: "system", content: system_prompt },
-        { role: "user", content: user_prompt(note) }
+        { role: "user", content: user_prompt(input) }
       ],
       person: entry&.person,
       entry: entry,
@@ -67,25 +72,40 @@ class EntryDataParser
   end
 
   def self.system_prompt
-    @system_prompt ||= File.read(Rails.root.join("config/parsers/entry_data.txt"))
+    File.read(Rails.root.join("config/parsers/entry_data.txt"))
   end
 
-  def self.user_prompt(note)
-    "Note: #{note}"
+  def self.user_prompt(input)
+    <<~PROMPT.strip
+      Current time: #{Time.current.iso8601}
+      Time zone: #{Time.zone.tzinfo.name}
+      Input: #{input}
+    PROMPT
   end
 
-  def self.parse_json_array(response_body)
+  def self.parse_json_object(response_body)
     cleaned = response_body.to_s.strip
     cleaned = cleaned.gsub(/\A```(?:json)?\s*/m, "").gsub(/\s*```\z/m, "")
 
-    start_index = cleaned.index("[")
-    end_index = cleaned.rindex("]")
-    raise JSON::ParserError, "No JSON array found" unless start_index && end_index
+    start_index = cleaned.index("{")
+    end_index = cleaned.rindex("}")
+    raise JSON::ParserError, "No JSON object found" unless start_index && end_index
 
-    JSON.parse(cleaned[start_index..end_index])
+    payload = JSON.parse(cleaned[start_index..end_index])
+    raise JSON::ParserError, "Expected JSON object" unless payload.is_a?(Hash)
+
+    payload
   end
 
-  def self.sanitize_data(value)
+  def self.sanitize_facts(value)
+    return [] unless value.is_a?(Array)
+
+    value.filter_map do |item|
+      item.to_s.strip.presence
+    end
+  end
+
+  def self.sanitize_parseable_data(value)
     return [] unless value.is_a?(Array)
 
     value.filter_map do |item|
@@ -99,8 +119,24 @@ class EntryDataParser
       sanitized["unit"] = normalize_unit(sanitized["unit"]) if sanitized["unit"].present?
       sanitized["flag"] = sanitized["flag"].to_s.downcase if sanitized["flag"].present?
       sanitized.transform_values! { |entry| normalize_value(entry) }
-      sanitized.compact_blank
+      sanitized.reject { |_key, entry| entry.blank? && entry != false }
     end
+  end
+
+  def self.sanitize_occurred_at(value)
+    return if value.blank?
+    return if value.to_s.strip.casecmp("null").zero?
+
+    parsed = case value
+    when Time, DateTime, ActiveSupport::TimeWithZone
+      value.in_time_zone
+    else
+      Time.zone.parse(value.to_s)
+    end
+
+    parsed&.iso8601.present? ? parsed : nil
+  rescue ArgumentError, TypeError
+    nil
   end
 
   def self.normalize_type(type)

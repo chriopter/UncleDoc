@@ -13,7 +13,7 @@ class BabyFeedingTimersController < ApplicationController
       "side" => feeding_side
     }
 
-    redirect_back fallback_location: root_path(person_slug: @person.name, tab: "log"), notice: t("baby.feeding.timer.started", side: t("baby.feeding.sides.#{feeding_side}"))
+    redirect_back fallback_location: root_path(person_slug: @person.name, tab: "log")
   end
 
   def destroy
@@ -29,13 +29,14 @@ class BabyFeedingTimersController < ApplicationController
 
     @person.entries.create!(
       occurred_at: Time.current,
-      note: t("baby.feeding.timer.note", side: t("baby.feeding.sides.#{side}"), duration: duration_minutes),
-      data: [ { "type" => "breast_feeding", "value" => duration_minutes, "unit" => "min", "side" => side } ]
+      input: t("baby.feeding.timer.note", side: t("baby.feeding.sides.#{side}"), duration: duration_minutes),
+      facts: EntryFactListBuilder.call([ { "type" => "breast_feeding", "value" => duration_minutes, "unit" => "min", "side" => side } ]),
+      parseable_data: [ { "type" => "breast_feeding", "value" => duration_minutes, "unit" => "min", "side" => side } ]
     )
 
     session["baby_feeding_timers"].delete(@person.id.to_s)
 
-    redirect_back fallback_location: root_path(person_slug: @person.name, tab: "log"), notice: t("baby.feeding.timer.stopped")
+    redirect_back fallback_location: root_path(person_slug: @person.name, tab: "log")
   end
 
   private

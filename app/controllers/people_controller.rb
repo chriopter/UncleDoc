@@ -1,7 +1,8 @@
 class PeopleController < ApplicationController
   def show
     @person = Person.find_by!(name: params[:person_slug])
-    @entries = @person.entries.recent_first.limit(5)
+    @entry_sort = params[:sort].to_s == "entered" ? "entered" : "occurred"
+    @entries = @person.entries.merge(Entry.sorted_by(@entry_sort)).limit(5)
     @entry_count = @person.entries.count
     @entry = Entry.new
   end
