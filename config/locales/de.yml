@@ -183,6 +183,7 @@ de:
       created: "Eintrag hinzugefügt."
       updated: "Eintrag aktualisiert."
       destroyed: "Eintrag gelöscht."
+      reparse_requested: "Eintrag zum erneuten Parsen vorgemerkt."
     parse_status:
       parsed: "Geparst"
       pending_short: "Parsing"
@@ -201,6 +202,8 @@ de:
       label: "Roh"
     raw_data:
       toggle: "Rohdaten anzeigen"
+    reparse:
+      trigger: "Eintrag neu parsen"
     db_row:
       toggle: "Ganze Zeile anzeigen"
 

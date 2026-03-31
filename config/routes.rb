@@ -10,6 +10,7 @@ Rails.application.routes.draw do
   post "settings/llm_models", to: "settings#llm_models", as: :settings_llm_models
   resources :people, only: [ :create, :update, :destroy ] do
     resources :entries, only: [ :create, :show, :edit, :update, :destroy ] do
+      patch :reparse, on: :member
       patch :toggle_todo, on: :member
     end
     resource :baby_feeding_timer, only: [ :create, :destroy ]

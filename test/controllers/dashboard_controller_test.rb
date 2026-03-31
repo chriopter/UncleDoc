@@ -162,6 +162,22 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Todo"
   end
 
+  test "overview appointment and note widgets prefer facts text" do
+    person = Person.create!(name: "FactsFirst", birth_date: Date.new(2024, 1, 1))
+    person.entries.create!(
+      occurred_at: Time.zone.local(2026, 4, 2, 10, 0),
+      input: "doctor appointment",
+      facts: [ "Doctor appointment with Dr. Meier" ],
+      parseable_data: [ { "type" => "appointment", "value" => "checkup", "location" => "hospital" } ]
+    )
+
+    get person_overview_url(person_slug: person.name)
+
+    assert_response :success
+    assert_includes @response.body, "Doctor appointment with Dr. Meier"
+    assert_not_includes @response.body, ">checkup<"
+  end
+
   test "overview shows vital widgets" do
     person = Person.create!(name: "Vitals", birth_date: Date.new(2024, 1, 1))
     person.entries.create!(occurred_at: Time.zone.local(2026, 4, 2, 10, 0), input: "37.8 temp", facts: [ "Temperature 37.8 C" ], parseable_data: [ { "type" => "temperature", "value" => 37.8, "unit" => "C" } ])
