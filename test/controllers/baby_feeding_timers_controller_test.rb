@@ -13,7 +13,7 @@ class BabyFeedingTimersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_no_match(/feeding timer started|Still-Timer/, flash.to_hash.values.join(" "))
     assert_match(/Left/, @response.body)
-    assert_match(/tap to stop|zum Stoppen tippen/, @response.body)
+    assert_match(/1 min|1 Min/, @response.body)
   end
 
   test "stops a feeding timer and creates an entry" do
