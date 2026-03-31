@@ -30,6 +30,8 @@
 - The app is managed by `systemd` via `uncledoc-dev.service`.
 - The service runs `bin/dev`, keeps Rails in `development`, and binds to `0.0.0.0:3000`.
 - Persistent app data for this setup lives in `storage/development.sqlite3`.
+- In practice, this dev environment is used like a production environment because it contains live persistent data.
+- Agents must treat local data as valuable: avoid destructive actions, do not casually delete records or files, and require explicit user intent before removing data.
 - If operational docs change, keep `README.md` aligned with the live service setup.
 
 ## User Preferences
