@@ -141,6 +141,29 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "skipped", entry.parse_status
   end
 
+  test "reparse forces a fresh parse even when input is unchanged" do
+    UserPreference.current.update!(llm_provider: "ollama", llm_model: "llama3")
+    entry = @person.entries.create!(
+      input: "40 Celsius fieber",
+      occurred_at: Time.zone.parse("2026-03-31T17:47"),
+      facts: [ "40 Celsius Fieber" ],
+      parseable_data: [ { "type" => "temperature", "value" => 40, "unit" => "C", "flag" => "fever" } ],
+      llm_response: { "status" => "structured" },
+      parse_status: "parsed"
+    )
+
+    assert_enqueued_with(job: EntryDataParseJob) do
+      patch reparse_person_entry_url(@person, entry)
+    end
+
+    assert_response :redirect
+    entry.reload
+    assert_equal [], entry.facts
+    assert_equal [], entry.parseable_data
+    assert_equal({}, entry.llm_response)
+    assert_equal "pending", entry.parse_status
+  end
+
   test "free text entry flows from create through parse job to rendered log" do
     UserPreference.current.update!(llm_provider: "ollama", llm_model: "llama3")
 

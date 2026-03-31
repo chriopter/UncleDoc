@@ -183,6 +183,7 @@ en:
       created: "Entry added."
       updated: "Entry updated."
       destroyed: "Entry deleted."
+      reparse_requested: "Entry queued for reparsing."
     parse_status:
       parsed: "Parsed"
       pending_short: "Parsing"
@@ -201,6 +202,8 @@ en:
       label: "Raw"
     raw_data:
       toggle: "Show raw data"
+    reparse:
+      trigger: "Reparse entry"
     db_row:
       toggle: "Show full row"
 

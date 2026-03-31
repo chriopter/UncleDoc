@@ -200,6 +200,11 @@ class EntryDataParserTest < ActiveSupport::TestCase
         expected_parseable_data: [ { "type" => "temperature", "value" => 38.4, "unit" => "C", "flag" => "high" } ]
       },
       {
+        response: '{"facts":["40 Celsius Fieber"],"parseable_data":[{"type":"temperature","value":40,"unit":"C","flag":"fever"},{"type":"symptom","value":"Fieber"}]}',
+        expected_facts: [ "40 Celsius Fieber" ],
+        expected_parseable_data: [ { "type" => "temperature", "value" => 40, "unit" => "C", "flag" => "high" }, { "type" => "symptom", "value" => "Fieber" } ]
+      },
+      {
         response: '{"facts":["Pulse 128 bpm"],"parseable_data":[{"type":"heart_rate","value":"128","unit":"beats/min"}]}',
         expected_facts: [ "Pulse 128 bpm" ],
         expected_parseable_data: [ { "type" => "pulse", "value" => 128, "unit" => "bpm" } ]

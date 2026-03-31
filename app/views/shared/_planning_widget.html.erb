@@ -26,7 +26,7 @@
           <% appointments.each do |entry| %>
             <div class="rounded-2xl border border-amber-200 bg-white px-3 py-3 shadow-sm">
               <div class="text-xs font-semibold uppercase tracking-[0.14em] text-amber-700"><%= l(entry.display_time, format: :long) %></div>
-              <div class="mt-1 text-sm font-semibold text-slate-900"><%= entry.appointment_title || entry.fact_summary %></div>
+              <div class="mt-1 text-sm font-semibold text-slate-900"><%= entry.fact_summary.presence || entry.appointment_title %></div>
               <% if entry.appointment_data["location"].present? %>
                 <div class="mt-1 text-xs text-slate-500"><%= entry.appointment_data["location"] %></div>
               <% end %>

@@ -10,7 +10,7 @@
       <div class="space-y-2">
         <% notes.each do |entry| %>
           <div class="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
-            <div class="text-sm font-semibold text-white"><%= entry.note_title || entry.fact_summary %></div>
+            <div class="text-sm font-semibold text-white"><%= entry.fact_summary.presence || entry.input %></div>
             <% if entry.note_data["quality"].present? %>
               <div class="mt-1 text-xs text-slate-300"><%= entry.note_data["quality"] %></div>
             <% end %>

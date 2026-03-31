@@ -3,6 +3,11 @@ class EntryDataParser
   Result = Struct.new(:facts, :parseable_data, :occurred_at, :llm_response, :error, keyword_init: true)
   MAX_ATTEMPTS = 2
 
+  TEMPERATURE_FLAG_ALIASES = {
+    "fever" => "high",
+    "fieber" => "high"
+  }.freeze
+
   TYPE_ALIASES = {
     "temp" => "temperature",
     "temperature_c" => "temperature",
@@ -153,7 +158,7 @@ class EntryDataParser
 
       sanitized["type"] = type
       sanitized["unit"] = normalize_unit(sanitized["unit"]) if sanitized["unit"].present?
-      sanitized["flag"] = sanitized["flag"].to_s.downcase if sanitized["flag"].present?
+      sanitized["flag"] = normalize_flag(type, sanitized["flag"]) if sanitized["flag"].present?
       sanitized.transform_values! { |entry| normalize_value(entry) }
       sanitized.reject { |_key, entry| entry.blank? && entry != false }
     end
@@ -221,6 +226,15 @@ class EntryDataParser
     return if normalized.blank?
 
     UNIT_ALIASES.fetch(normalized.downcase, normalized)
+  end
+
+  def self.normalize_flag(type, flag)
+    normalized = flag.to_s.strip.downcase
+    return if normalized.blank?
+
+    return TEMPERATURE_FLAG_ALIASES.fetch(normalized, normalized) if type == "temperature"
+
+    normalized
   end
 
   def self.normalize_value(value)

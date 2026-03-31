@@ -1,6 +1,6 @@
 class EntriesController < ApplicationController
   before_action :set_person
-  before_action :set_entry, only: [ :show, :edit, :update, :destroy, :toggle_todo ]
+  before_action :set_entry, only: [ :show, :edit, :update, :destroy, :reparse, :toggle_todo ]
 
   def show
     return redirect_to person_log_path(person_slug: @person.name) unless turbo_frame_request?
@@ -76,6 +76,18 @@ class EntriesController < ApplicationController
     end
   end
 
+  def reparse
+    force_reparse(@entry)
+    @entry.save!
+
+    EntryDataParseJob.perform_later(@entry.id) if @entry.pending_parse?
+
+    respond_to do |format|
+      format.html { redirect_back fallback_location: person_log_path(person_slug: @person.name), notice: t("entries.flash.reparse_requested") }
+      format.turbo_stream { redirect_back fallback_location: person_log_path(person_slug: @person.name), notice: t("entries.flash.reparse_requested") }
+    end
+  end
+
   def update
     @entry.assign_attributes(entry_params)
     populate_facts_from_parseable_data(@entry)
@@ -136,8 +148,13 @@ class EntriesController < ApplicationController
   def prepare_reparse(entry)
     return false unless entry.will_save_change_to_input?
 
+    force_reparse(entry)
+  end
+
+  def force_reparse(entry)
     entry.facts = [] if entry.has_attribute?(:facts)
     entry.parseable_data = []
+    entry.llm_response = {} if entry.has_attribute?(:llm_response)
     entry.todo_done = false if entry.has_attribute?(:todo_done)
     entry.todo_done_at = nil if entry.has_attribute?(:todo_done_at)
     return false unless entry.has_attribute?(:parse_status)
