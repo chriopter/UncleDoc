@@ -10,7 +10,10 @@ class BabyQuickActionsController < ApplicationController
       parseable_data: [ diaper_payload ]
     )
 
-    redirect_back fallback_location: root_path(person_slug: @person.name, tab: "log")
+    respond_to do |format|
+      format.html { redirect_back fallback_location: person_baby_path(person_slug: @person.name) }
+      format.turbo_stream { render "shared/baby_action_update" }
+    end
   end
 
   def bottle
@@ -27,7 +30,10 @@ class BabyQuickActionsController < ApplicationController
       parseable_data: [ { "type" => "bottle_feeding", "value" => amount, "unit" => "ml" } ]
     )
 
-    redirect_back fallback_location: root_path(person_slug: @person.name, tab: "log"), notice: t("baby.bottle.saved")
+    respond_to do |format|
+      format.html { redirect_back fallback_location: person_baby_path(person_slug: @person.name) }
+      format.turbo_stream { render "shared/baby_action_update" }
+    end
   end
 
   private

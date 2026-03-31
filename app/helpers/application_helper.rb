@@ -148,13 +148,82 @@ module ApplicationHelper
     end
   end
 
-  def overview_recent_entries(person, sort_mode:, period:)
+  def overview_recent_entries(person, sort_mode:, period:, limit: 3)
     scope = person.entries.merge(Entry.sorted_by(sort_mode)).where(occurred_at: overview_period_window(period))
-    scope.limit(3)
+    scope.limit(limit)
   end
 
   def weight_activity_available?(person)
     person.entries.merge(Entry.by_parseable_data_type("weight")).exists?
+  end
+
+  def height_activity_available?(person)
+    person.entries.merge(Entry.by_parseable_data_type("height")).exists?
+  end
+
+  def vital_activity_available?(person, type)
+    person.entries.merge(Entry.by_parseable_data_type(type.to_s)).exists?
+  end
+
+  def vital_activity_series(person, type, period: "1w")
+    entries = person.entries.merge(Entry.by_parseable_data_type(type.to_s))
+    buckets = case period.to_s
+    when "1m"
+      build_day_buckets(Time.zone.today - 24.days, 5, 5.days)
+    when "1j"
+      build_month_buckets(6)
+    else
+      build_day_buckets(Time.zone.today - 6.days, 7, 1.day)
+    end
+
+    buckets.filter_map do |bucket|
+      entry = entries.where(occurred_at: bucket[:range]).order(occurred_at: :desc, created_at: :desc).first
+      next unless entry
+
+      item = entry.first_parseable_data_of_type(type.to_s)
+      next unless item
+
+      value = case type.to_s
+      when "blood_pressure"
+        next if item["systolic"].blank? || item["diastolic"].blank?
+        item["systolic"].to_f
+      else
+        next if item["value"].blank?
+        item["value"].to_f
+      end
+
+      {
+        date: bucket[:date],
+        short_label: bucket[:short_label],
+        value: value,
+        unit: item["unit"] || default_vital_unit(type),
+        secondary: (type.to_s == "blood_pressure" ? item["diastolic"] : nil)
+      }
+    end
+  end
+
+  def default_vital_unit(type)
+    case type.to_s
+    when "temperature" then "C"
+    when "pulse" then "bpm"
+    when "blood_pressure" then "mmHg"
+    end
+  end
+
+  def appointment_entries(person, limit: 6)
+    person.entries.merge(Entry.by_parseable_data_type("appointment")).where("occurred_at >= ?", Time.zone.now.beginning_of_day).order(occurred_at: :asc, created_at: :asc).limit(limit)
+  end
+
+  def appointment_activity_available?(person)
+    person.entries.merge(Entry.by_parseable_data_type("appointment")).exists?
+  end
+
+  def todo_entries(person, limit: 6)
+    person.entries.merge(Entry.by_parseable_data_type("todo")).recent_first.limit(limit)
+  end
+
+  def todo_activity_available?(person)
+    person.entries.merge(Entry.by_parseable_data_type("todo")).exists?
   end
 
   def baby_activity_series(person, type, period: "1w")
@@ -220,6 +289,36 @@ module ApplicationHelper
           unit: unit
         }
       end
+  end
+
+  def height_activity_series(person, period: "1w")
+    entries = person.entries.merge(Entry.by_parseable_data_type("height"))
+    buckets = case period.to_s
+    when "1m"
+      build_day_buckets(Time.zone.today - 24.days, 5, 5.days)
+    when "1j"
+      build_month_buckets(6)
+    else
+      build_day_buckets(Time.zone.today - 6.days, 7, 1.day)
+    end
+
+    buckets.filter_map do |bucket|
+      entry = entries.where(occurred_at: bucket[:range]).order(occurred_at: :desc, created_at: :desc).first
+      next unless entry
+
+      item = entry.first_parseable_data_of_type("height")
+      value = item&.dig("value")
+      unit = item&.dig("unit") || "cm"
+      next unless value.present?
+
+      {
+        date: bucket[:date],
+        day_label: bucket[:day_label],
+        short_label: bucket[:short_label],
+        value: value.to_f,
+        unit: unit
+      }
+    end
   end
 
   def weight_activity_plot_points(series)

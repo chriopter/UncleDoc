@@ -10,8 +10,13 @@ class EntryFactListBuilder
         build_measurement_fact(label_for("temperature"), item["value"], item["unit"], suffix: item["flag"])
       when "pulse"
         build_measurement_fact(label_for("pulse"), item["value"], item["unit"])
+      when "blood_pressure"
+        values = [ item["systolic"], item["diastolic"] ].compact.join("/")
+        build_measurement_fact(label_for("blood_pressure"), values.presence, item["unit"])
       when "weight"
         build_measurement_fact(label_for("weight"), item["value"], item["unit"])
+      when "height"
+        build_measurement_fact(label_for("height"), item["value"], item["unit"])
       when "bottle_feeding"
         build_measurement_fact(label_for("bottle_feeding"), item["value"], item["unit"])
       when "breast_feeding"
@@ -29,6 +34,18 @@ class EntryFactListBuilder
       when "medication"
         detail = [ item["value"], item["dose"] ].compact.join(" ")
         [ label_for("medication"), detail.presence ].compact.join(" ")
+      when "vaccination"
+        detail = [ item["value"], item["dose"] ].compact.join(" ")
+        [ label_for("vaccination"), detail.presence ].compact.join(" ")
+      when "appointment"
+        detail = [ item["value"], item["location"], item["quality"] ].compact.join(" • ")
+        [ label_for("appointment"), detail.presence ].compact.join(": ")
+      when "todo"
+        detail = [ item["value"], item["location"], item["quality"] ].compact.join(" • ")
+        [ label_for("todo"), detail.presence ].compact.join(": ")
+      when "note"
+        detail = [ item["value"], item["quality"] ].compact.join(" • ")
+        [ label_for("note"), detail.presence ].compact.join(": ")
       when "symptom"
         [ label_for("symptom"), item["value"].presence ].compact.join(": ")
       else

@@ -130,12 +130,18 @@ en:
     fact_labels:
       temperature: "Temperature"
       pulse: "Pulse"
+      blood_pressure: "Blood pressure"
       weight: "Weight"
+      height: "Height"
       bottle_feeding: "Bottle feeding"
       breast_feeding: "Breast feeding"
       diaper: "Diaper"
       sleep: "Sleep"
       medication: "Medication"
+      vaccination: "Vaccination"
+      appointment: "Appointment"
+      todo: "Todo"
+      note: "Note"
       symptom: "Symptom"
     facts:
       title: "Facts"
@@ -154,12 +160,18 @@ en:
     data_labels:
       temperature: "Temperature"
       pulse: "Pulse"
+      blood_pressure: "Blood pressure"
       weight: "Weight"
+      height: "Height"
       bottle_feeding: "Bottle"
       breast_feeding: "Breastfeeding"
       diaper: "Diaper"
       sleep: "Sleep"
       medication: "Medication"
+      vaccination: "Vaccination"
+      appointment: "Appointment"
+      todo: "Todo"
+      note: "Note"
     data_values:
       wet: "wet"
       solid: "solid"
@@ -422,10 +434,33 @@ en:
   # Person overview page
   person:
     overview:
+      planning:
+        label: "Planning"
+        title: "Appointments & todos"
+      vitals:
+        empty: "No entries in this range."
+        temperature:
+          title: "Temperature"
+        pulse:
+          title: "Pulse"
+        blood_pressure:
+          title: "Blood pressure"
       weight:
         title: "Weight trend"
         subtitle: "Latest stored weight entries"
         empty_range: "No weight entries in this range."
+        empty: "No weight entries yet."
+      height:
+        title: "Height trend"
+        empty_range: "No height entries in this range."
+        empty: "No height entries yet."
+      appointments:
+        title: "Appointments"
+        empty: "No appointments yet."
+      todos:
+        title: "Todos"
+        done_at: "Done %{time}"
+        empty: "No todos yet."
       family_member: "Family Member"
       edit_person: "Edit person"
       birth_date: "Born"

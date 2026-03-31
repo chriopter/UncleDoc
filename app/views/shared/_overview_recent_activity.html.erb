@@ -1,6 +1,6 @@
 <% recent_range = overview_period_mode(params, :recent) %>
-<% visible_entries = overview_recent_entries(person, sort_mode: entry_sort_mode(local_assigns[:sort] || params), period: recent_range) %>
-<div id="overview_recent_activity" class="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm ring-1 ring-black/5 <%= local_assigns[:card_classes] %>">
+<% visible_entries = overview_recent_entries(person, sort_mode: entry_sort_mode(local_assigns[:sort] || params), period: recent_range, limit: local_assigns[:entry_limit] || 3) %>
+<div id="overview_recent_activity" class="flex h-full flex-col rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm ring-1 ring-black/5 <%= local_assigns[:card_classes] %>">
   <div class="mb-4 flex items-center justify-between gap-4">
     <div>
       <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300"><%= t("person.overview.recent_activity") %></p>
@@ -35,7 +35,7 @@
     </div>
 
   <% else %>
-    <div class="rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-10 text-center text-sm text-slate-300">
+    <div class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-10 text-center text-sm text-slate-300">
       <%= t("dashboard.protocol.empty") %>
     </div>
   <% end %>

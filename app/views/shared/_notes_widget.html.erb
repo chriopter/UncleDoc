@@ -1,0 +1,26 @@
+<% notes = note_entries(person) %>
+<div id="overview_notes" class="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm ring-1 ring-black/5 <%= local_assigns[:card_classes] %>">
+  <section class="flex h-full flex-col rounded-[1.5rem] border border-fuchsia-300/20 bg-fuchsia-400/10 p-4">
+    <div class="mb-3">
+      <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-fuchsia-200"><%= t("entries.data_labels.note") %></p>
+      <h3 class="mt-1 text-lg font-bold text-white"><%= t("person.overview.notes.title") %></h3>
+    </div>
+
+    <% if notes.present? %>
+      <div class="space-y-2">
+        <% notes.each do |entry| %>
+          <div class="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
+            <div class="text-sm font-semibold text-white"><%= entry.note_title || entry.fact_summary %></div>
+            <% if entry.note_data["quality"].present? %>
+              <div class="mt-1 text-xs text-slate-300"><%= entry.note_data["quality"] %></div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-fuchsia-300/20 bg-slate-950/30 px-4 py-10 text-center text-sm text-slate-300">
+        <%= t("person.overview.notes.empty") %>
+      </div>
+    <% end %>
+  </section>
+</div>

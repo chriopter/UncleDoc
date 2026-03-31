@@ -64,22 +64,26 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 27, 9, 0), input: "Bottle 120ml", facts: [ "Bottle feeding 120 ml" ], parseable_data: [ { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" } ])
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 28, 10, 0), input: "Diaper: wet", facts: [ "Diaper wet" ], parseable_data: [ { "type" => "diaper", "wet" => true, "solid" => false } ])
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 30, 15, 0), input: "Gewicht 3356g", facts: [ "Gewicht 3356 g" ], parseable_data: [ { "type" => "weight", "value" => 3356, "unit" => "g" } ])
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 31, 9, 0), input: "53cm Körpergröße", facts: [ "Körpergröße 53 cm" ], parseable_data: [ { "type" => "height", "value" => 53, "unit" => "cm" } ])
 
     get person_overview_url(person_slug: person.name)
 
     assert_response :success
     assert_select "h2", text: /Baby quick actions|Baby-Schnellaktionen/, count: 1
-    assert_includes @response.body, "Breast"
+    assert_includes @response.body, "Left"
+    assert_includes @response.body, "Right"
     assert_includes @response.body, "Bottle"
     assert_includes @response.body, "Feedings"
     assert_includes @response.body, "Diapers"
     assert_includes @response.body, "Weight trend"
+    assert_includes @response.body, "Height trend"
     assert_includes @response.body, "1W"
     assert_includes @response.body, "1M"
     assert_includes @response.body, "1J"
     assert_select "#overview_baby_activity_feeding", 1
     assert_select "#overview_baby_activity_diaper", 1
     assert_select "#overview_weight_activity", 1
+    assert_select "#overview_height_activity", 1
     assert_select "h2", text: /Protocol - Mila/, count: 0
   end
 
@@ -142,6 +146,54 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "#overview_weight_activity", 1
     assert_includes @response.body, "Weight trend"
     assert_includes @response.body, "74.2 kg"
+  end
+
+  test "overview shows planning widget when appointment and todo data exist" do
+    person = Person.create!(name: "Planner", birth_date: Date.new(2024, 1, 1))
+    person.entries.create!(occurred_at: Time.zone.local(2026, 4, 2, 10, 0), input: "doctor appointment", facts: [ "Doctor appointment" ], parseable_data: [ { "type" => "appointment", "value" => "doctor appointment", "scheduled_for" => "2026-04-05T10:30:00Z", "location" => "hospital" } ])
+    person.entries.create!(occurred_at: Time.zone.local(2026, 4, 2, 11, 0), input: "todo bring card", facts: [ "Bring vaccination card" ], parseable_data: [ { "type" => "todo", "value" => "bring vaccination card" } ])
+
+    get person_overview_url(person_slug: person.name)
+
+    assert_response :success
+    assert_select "#overview_planning", 1
+    assert_includes @response.body, "Appointments &amp; todos"
+    assert_includes @response.body, "Appointment"
+    assert_includes @response.body, "Todo"
+  end
+
+  test "overview shows vital widgets" do
+    person = Person.create!(name: "Vitals", birth_date: Date.new(2024, 1, 1))
+    person.entries.create!(occurred_at: Time.zone.local(2026, 4, 2, 10, 0), input: "37.8 temp", facts: [ "Temperature 37.8 C" ], parseable_data: [ { "type" => "temperature", "value" => 37.8, "unit" => "C" } ])
+    person.entries.create!(occurred_at: Time.zone.local(2026, 4, 2, 11, 0), input: "Pulse 120", facts: [ "Pulse 120 bpm" ], parseable_data: [ { "type" => "pulse", "value" => 120, "unit" => "bpm" } ])
+    person.entries.create!(occurred_at: Time.zone.local(2026, 4, 2, 12, 0), input: "BP 120/80", facts: [ "Blood pressure 120/80 mmHg" ], parseable_data: [ { "type" => "blood_pressure", "systolic" => 120, "diastolic" => 80, "unit" => "mmHg" } ])
+
+    get person_overview_url(person_slug: person.name)
+
+    assert_response :success
+    assert_select "#overview_temperature_activity", 1
+    assert_select "#overview_pulse_activity", 1
+    assert_select "#overview_blood_pressure_activity", 1
+  end
+
+  test "shows dedicated baby page when baby mode enabled" do
+    person = Person.create!(name: "Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
+
+    get person_baby_url(person_slug: person.name)
+
+    assert_response :success
+    assert_select "#overview_baby_quick", 1
+  end
+
+  test "overview still shows planning widget when empty" do
+    person = Person.create!(name: "EmptyWidgets", birth_date: Date.new(2024, 1, 1))
+
+    get person_overview_url(person_slug: person.name)
+
+    assert_response :success
+    assert_select "#overview_planning", 1
+    assert_includes @response.body, "No appointments yet."
+    assert_includes @response.body, "No todos yet."
   end
 
   test "overview and log can sort by entered time" do

@@ -10,15 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_31_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_01_170500) do
   create_table "entries", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.json "facts", default: [], null: false
     t.text "input", null: false
+    t.json "llm_response", default: {}, null: false
     t.datetime "occurred_at", null: false
     t.string "parse_status", default: "parsed", null: false
     t.json "parseable_data", default: [], null: false
     t.integer "person_id", null: false
+    t.boolean "todo_done", default: false, null: false
+    t.datetime "todo_done_at"
     t.datetime "updated_at", null: false
     t.index ["person_id"], name: "index_entries_on_person_id"
   end

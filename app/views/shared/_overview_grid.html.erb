@@ -1,10 +1,20 @@
 <section class="space-y-6">
   <%= turbo_stream_from [person, :entries] %>
   <% has_weight_activity = weight_activity_available?(person) %>
+  <% has_height_activity = height_activity_available?(person) %>
+  <% has_appointment_activity = appointment_activity_available?(person) %>
+  <% has_todo_activity = todo_activity_available?(person) %>
+  <% bento_grid_classes = "grid gap-6 md:grid-cols-2 xl:grid-cols-6 xl:auto-rows-[8.5rem] xl:items-stretch" %>
+  <% one_third_card = "xl:col-span-2 h-full" %>
+  <% summary_widget_classes = "#{one_third_card} xl:row-span-3" %>
+  <% chart_widget_classes = "#{one_third_card} xl:row-span-2" %>
+  <% half_row_cards = "xl:col-span-3 xl:row-span-2 h-full" %>
+  <% baby_chart_spans = has_weight_activity ? chart_widget_classes : half_row_cards %>
+  <% profile_card_classes = "group flex h-full flex-col rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur #{summary_widget_classes}" %>
 
-  <div class="grid gap-6 xl:grid-cols-6 xl:auto-rows-[minmax(16rem,auto)] xl:items-start">
-    <div class="group rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur xl:col-span-2">
-      <div class="space-y-6">
+  <div class="<%= bento_grid_classes %>">
+    <div class="<%= profile_card_classes %>">
+      <div class="flex h-full flex-col space-y-6">
         <div>
           <div class="mb-5 flex items-start justify-between gap-4">
             <div class="flex items-center gap-4">
@@ -27,33 +37,32 @@
           <%= render "shared/overview_person_meta", person: person, entries: entries %>
         </div>
 
-        <div class="border-t border-slate-200 pt-6">
+        <div class="mt-auto border-t border-slate-200 pt-6">
           <%= render "entries/form", entry: entry, person: person %>
         </div>
       </div>
     </div>
 
     <% if person.baby_mode? %>
-      <div class="xl:col-span-2">
-        <%= render "dashboard/baby_overview_tools", person: person %>
-      </div>
-
-      <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort], card_classes: "xl:col-span-2 h-full" %>
-
-      <% if has_weight_activity %>
-        <%= render "shared/baby_activity_widget", person: person, type: :feeding, card_classes: "xl:col-span-3 h-full" %>
-        <%= render "shared/baby_activity_widget", person: person, type: :diaper, card_classes: "xl:col-span-3 h-full" %>
-        <%= render "shared/weight_activity_widget", person: person, card_classes: "xl:col-span-6 h-full" %>
-      <% else %>
-        <%= render "shared/baby_activity_widget", person: person, type: :feeding, card_classes: "xl:col-span-3 h-full" %>
-        <%= render "shared/baby_activity_widget", person: person, type: :diaper, card_classes: "xl:col-span-3 h-full" %>
-      <% end %>
+      <%= render "shared/planning_widget", person: person, card_classes: "xl:col-span-4 xl:row-span-3 h-full" %>
+      <%= render "dashboard/baby_overview_tools", person: person, card_classes: summary_widget_classes %>
+      <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort], card_classes: summary_widget_classes, entry_limit: 5 %>
+      <%= render "shared/baby_activity_widget", person: person, type: :feeding, card_classes: baby_chart_spans %>
+      <%= render "shared/baby_activity_widget", person: person, type: :diaper, card_classes: baby_chart_spans %>
+      <%= render "shared/weight_activity_widget", person: person, card_classes: chart_widget_classes %>
+      <%= render "shared/height_activity_widget", person: person, card_classes: chart_widget_classes %>
+      <%= render "shared/vital_activity_widget", person: person, type: :temperature, card_classes: chart_widget_classes %>
+      <%= render "shared/vital_activity_widget", person: person, type: :pulse, card_classes: chart_widget_classes %>
+      <%= render "shared/vital_activity_widget", person: person, type: :blood_pressure, card_classes: chart_widget_classes %>
     <% else %>
-      <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort], card_classes: "xl:col-span-2 h-full" %>
+      <%= render "shared/planning_widget", person: person, card_classes: "xl:col-span-4 xl:row-span-3 h-full" %>
+      <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort], card_classes: summary_widget_classes, entry_limit: 5 %>
 
-      <% if has_weight_activity %>
-        <%= render "shared/weight_activity_widget", person: person, card_classes: "xl:col-span-2 h-full" %>
-      <% end %>
+      <%= render "shared/weight_activity_widget", person: person, card_classes: chart_widget_classes %>
+      <%= render "shared/height_activity_widget", person: person, card_classes: chart_widget_classes %>
+      <%= render "shared/vital_activity_widget", person: person, type: :temperature, card_classes: chart_widget_classes %>
+      <%= render "shared/vital_activity_widget", person: person, type: :pulse, card_classes: chart_widget_classes %>
+      <%= render "shared/vital_activity_widget", person: person, type: :blood_pressure, card_classes: chart_widget_classes %>
     <% end %>
   </div>
 </section>

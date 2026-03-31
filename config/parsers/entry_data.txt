@@ -1,21 +1,6 @@
 # Entry Parsing
 
-Convert a raw health input into:
-
-- `facts`: concise human-readable statements
-- `parseable_data`: conservative machine-safe structured data
-- `occurred_at`: an inferred timestamp only when the input implies a specific event time
-
-## Output Contract
-
-Return exactly one JSON object.
-
-- No prose outside the JSON object.
-- No Markdown in the response.
-- Top-level keys must be exactly:
-  - `facts`
-  - `parseable_data`
-  - `occurred_at`
+Return exactly one JSON object with these keys:
 
 ```json
 {
@@ -23,88 +8,61 @@ Return exactly one JSON object.
   "parseable_data": [
     { "type": "..." }
   ],
-  "occurred_at": null
+  "occurred_at": null,
+  "llm_response": {
+    "status": "structured",
+    "confidence": "high",
+    "note": "Canonical structured data extracted successfully."
+  }
 }
 ```
 
-## Interpretation Policy
+Rules:
 
-- Preserve source meaning.
-- Normalize obvious shorthand only when safe.
-- Never invent diagnoses, causes, timelines, or missing values.
-- For any non-empty input, produce at least one fact.
-- Only return empty arrays when the input is blank or has no usable content.
-- Infer `occurred_at` only when the input clearly refers to another time such as `yesterday`, `today morning`, `5.3.`, `on 10:05`, or similar.
-- If the input does not contain usable timing information, return `null` for `occurred_at`.
+- No prose or Markdown outside the JSON object.
+- Facts must be short strings in the same language as the input when the input language is clear.
+- Always use English canonical schema for `parseable_data`, even if the input is another language.
+- Always try to return the best useful `facts` and the best useful `parseable_data` you can.
+- If the note is clearly machine-usable, do not leave `parseable_data` empty.
+- When the note fits one of these app-critical widget types, prefer that exact canonical type: `temperature`, `pulse`, `weight`, `height`, `bottle_feeding`, `breast_feeding`, `diaper`.
+- For clear measurements, feedings, diapers, medication, vaccination, appointments, todos, symptoms, or lab values, return at least one `parseable_data` item.
+- Return at most one `todo` item per entry.
+- `todo` completion state is app-managed. Never encode checked/done state from the app into `parseable_data`.
+- `todo` is only for actionable reminders, checks, or follow-ups.
+- Medical findings, measurements, symptoms, vaccinations, medication, vitals, and similar health data are never `todo` or `appointment`.
+- Use `occurred_at` only when the input implies a specific event time. Otherwise return `null`.
+- `llm_response` must always be present with `status`, `confidence`, and `note` in English.
 
-## Rules For Facts
+Canonical types:
 
-- Facts must be strings.
-- Use short factual statements.
-- Write facts in the same language as the input when the input language is clear.
-- Prefer one fact per clinically distinct observation.
-- Keep wording close to the source, but cleaner.
-- Keep uncertainty when the source is uncertain.
-- Include meaningful observations even when they are too fuzzy for `parseable_data`.
-- Preserve explicit location context in facts when it matters, for example `in the hospital`, `at home`, or `in the garden`.
-- Do not duplicate the same fact in different wording.
-- For general but meaningful notes, emit a simple fact like `General note seems fine today`.
+- `temperature`: `type`, `value`, `unit`, optional `flag`
+- `pulse`: `type`, `value`, `unit`
+- `weight`: `type`, `value`, `unit`
+- `height`: `type`, `value`, `unit`
+- `bottle_feeding`: `type`, `value`, `unit`
+- `breast_feeding`: `type`, optional `value`, optional `unit`, optional `side`, optional `quality`
+- `diaper`: `type`, `wet`, `solid`, optional `rash`
+- `medication`: `type`, `value`, optional `dose`
+- `vaccination`: `type`, `value`, optional `dose`
+- `appointment`: `type`, `value`, optional `scheduled_for`, optional `location`, optional `quality`
+- `todo`: `type`, `value`, optional `due_at`, optional `location`, optional `quality`
+- `sleep`: `type`, `value`, `unit`
+- `symptom`: `type`, `value`, optional `location`, optional `quality`
+- `blood_pressure`: `type`, `systolic`, `diastolic`, optional `unit`
 
-## Rules For Parseable Data
+Mapping hints:
 
-- Include only facts that are explicit enough for stable machine use.
-- Each item must be a JSON object with a `type`.
-- `parseable_data` must always use English canonical schema, even when the input and `facts` are in another language.
-- Keep all `type` names in English.
-- Keep fixed categorical field values in English where possible, for example `side`, `flag`, and `quality`.
-- Add `value` when there is a clear primary value or named item.
-- Add `unit` when a unit is explicit or obvious.
-- Only use supported extra keys: `side`, `dose`, `wet`, `solid`, `rash`, `ref`, `flag`, `location`, `quality`.
-- If the input explicitly states a relevant location such as `in the hospital`, `at home`, or `in the garden`, include it in the `location` field when it clearly belongs to that structured item.
-- For baby notes, map general feeding notes such as `Trinken`, `Stillen`, or `Fütterung` to `breast_feeding` unless the note explicitly indicates a bottle.
-- For baby notes, map `Windel` notes to `diaper`.
-- Preserve uppercase lab names such as `WBC` and `CRP`.
-- Use lowercase snake_case for common canonical types.
-- Use JSON numbers for numeric values, not strings.
-- If nothing structured is safe, return `[]` for `parseable_data`.
+- Map `Trinken`, `Stillen`, or `Fütterung` to `breast_feeding` unless the note clearly indicates a bottle.
+- Map `Windel` to `diaper`.
+- Map `Impfung` to `vaccination`.
+- Map `Termin`, `doctor appointment`, or similar visit planning to `appointment`.
+- Map actionable reminders, checks, and pinned follow-ups to `todo`.
 
-## Rules For Occurred At
+Examples:
 
-- Return `occurred_at` as either an ISO 8601 timestamp or `null`.
-- Use the provided current time and time zone as the reference point.
-- If the input says `yesterday`, `today`, a weekday, a date like `5.3.`, or a time like `10:05`, resolve it to the best full timestamp.
-- If the input includes only a date, keep a reasonable time from the reference context when possible.
-- If the input includes only a time, combine it with the most likely date from the input context.
-- If the input gives no usable timing information, return `null`.
-- Never return the current reference time just because no timing information was found.
-
-## Parseable Data Dictionary
-
-This dictionary exists to keep the structured output stable, predictable, and easy for the app to use later.
-
-Prefer these canonical types whenever they fit exactly: `temperature`, `pulse`, `weight`, `bottle_feeding`, `breast_feeding`, `diaper`, `medication`, `sleep`, `symptom`.
-
-- `temperature`: `type`, `value`, `unit`, optional `flag` -> `{ "type": "temperature", "value": 39.2, "unit": "C", "flag": "high" }`
-- `pulse`: `type`, `value`, `unit` -> `{ "type": "pulse", "value": 128, "unit": "bpm" }`
-- `weight`: `type`, `value`, `unit` -> `{ "type": "weight", "value": 12.4, "unit": "kg" }`
-- `bottle_feeding`: `type`, `value`, `unit` (`unit: "ml"`) -> `{ "type": "bottle_feeding", "value": 120, "unit": "ml" }`
-- `breast_feeding`: `type`, optional `value`, optional `unit`, optional `side`, optional `quality` (`unit: "min"` when duration exists) -> `{ "type": "breast_feeding", "value": 18, "unit": "min", "side": "left" }`, `{ "type": "breast_feeding", "quality": "good" }`
-- `diaper`: `type`, `wet`, `solid`, optional `rash`; always include boolean `wet` and `solid`; add `rash` only when explicit -> `{ "type": "diaper", "wet": true, "solid": false }`, `{ "type": "diaper", "wet": false, "solid": true }`, `{ "type": "diaper", "wet": true, "solid": true }`, `{ "type": "diaper", "wet": true, "solid": false, "rash": true }`
-- `medication`: `type`, `value`, optional `dose` -> `{ "type": "medication", "value": "ibuprofen", "dose": "400mg" }`
-- `sleep`: `type`, `value`, `unit` (`unit: "min"`) -> `{ "type": "sleep", "value": 95, "unit": "min" }`
-- `symptom`: `type`, `value`, optional `location`, optional `quality` -> `{ "type": "symptom", "value": "cough", "location": "hospital" }`
-
-## Examples
-
-These examples exist to show the intended level of detail and the relationship between `facts` and `parseable_data`.
-
-- Fever: `Peter has fever 39.2` -> facts: `Temperature 39.2 C high`; parseable_data: `[ { "type": "temperature", "value": 39.2, "unit": "C", "flag": "high" } ]`
-- Weight: `Peter weighs 12.4 kg` -> facts: `Weight 12.4 kg`; parseable_data: `[ { "type": "weight", "value": 12.4, "unit": "kg" } ]`
-- Breast feeding: `Peter breastfed left side for 18 minutes` -> facts: `Breast feeding left 18 min`; parseable_data: `[ { "type": "breast_feeding", "value": 18, "unit": "min", "side": "left" } ]`
-- Bottle feeding: `Peter drank 120 ml bottle` -> facts: `Bottle feeding 120 ml`; parseable_data: `[ { "type": "bottle_feeding", "value": 120, "unit": "ml" } ]`
-- German feeding note: `Trinken gut` -> facts: `Trinken gut`; parseable_data: `[ { "type": "breast_feeding", "quality": "good" } ]`
-- Diaper: `Peter diaper wet and rash` -> facts: `Diaper wet`, `Diaper rash`; parseable_data: `[ { "type": "diaper", "wet": true, "solid": false, "rash": true } ]`
-- German combined baby note: `Trinken gut; Windel: nass + fest` -> facts: `Trinken gut`, `Windel nass und fest`; parseable_data: `[ { "type": "breast_feeding", "quality": "good" }, { "type": "diaper", "wet": true, "solid": true } ]`
-- Location: `Fever in the hospital` -> facts: `Temperature high in the hospital`; parseable_data: `[ { "type": "temperature", "flag": "high", "location": "hospital" } ]`
-- Labs: `Elderly patient WBC 11.2 G/L and CRP 3.1` -> facts: `WBC 11.2 G/L high`, `CRP 3.1`; parseable_data: `[ { "type": "WBC", "value": 11.2, "unit": "G/L", "ref": "4.0-10.0", "flag": "high" }, { "type": "CRP", "value": 3.1 } ]`
-- General note: `Peter seems fine today` -> facts: `General note seems fine today`; parseable_data: `[]`; occurred_at: `null`
+- `53cm Körpergröße` -> `facts`: `["Körpergröße 53 cm"]`; `parseable_data`: `[ { "type": "height", "value": 53, "unit": "cm" } ]`
+- `sonntag RSV Impfung` -> `facts`: `["RSV-Impfung am Sonntag"]`; `parseable_data`: `[ { "type": "vaccination", "value": "RSV" } ]`
+- `Doctor appointment on 5.4. at 10:30 in the hospital` -> `parseable_data`: `[ { "type": "appointment", "value": "doctor appointment", "scheduled_for": "2026-04-05T10:30:00Z", "location": "hospital" } ]`
+- `todo bring vaccination card` -> `parseable_data`: `[ { "type": "todo", "value": "bring vaccination card" } ]`
+- `ask about feeding amount` -> `parseable_data`: `[ { "type": "todo", "value": "ask about feeding amount", "quality": "pinned" } ]`
+- `Blood pressure 120/80` -> `parseable_data`: `[ { "type": "blood_pressure", "systolic": 120, "diastolic": 80, "unit": "mmHg" } ]`

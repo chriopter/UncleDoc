@@ -9,7 +9,9 @@ Rails.application.routes.draw do
   patch "settings(/:section)", to: "settings#update"
   post "settings/llm_models", to: "settings#llm_models", as: :settings_llm_models
   resources :people, only: [ :create, :update, :destroy ] do
-    resources :entries, only: [ :create, :show, :edit, :update, :destroy ]
+    resources :entries, only: [ :create, :show, :edit, :update, :destroy ] do
+      patch :toggle_todo, on: :member
+    end
     resource :baby_feeding_timer, only: [ :create, :destroy ]
     post "baby_quick_actions/diaper", to: "baby_quick_actions#diaper", as: :baby_diaper_action
     post "baby_quick_actions/bottle", to: "baby_quick_actions#bottle", as: :baby_bottle_action
@@ -19,6 +21,7 @@ Rails.application.routes.draw do
   scope "/:person_slug", constraints: { person_slug: /(?!settings|up|manifest|service-worker|people)[^\/]+/ } do
     root "dashboard#show", as: :person_root
     get "overview", to: "people#show", as: :person_overview
+    get "baby", to: "people#baby", as: :person_baby
     get "log", to: "dashboard#log", as: :person_log
     post "log_summary", to: "dashboard#summarize_log", as: :person_log_summary
   end

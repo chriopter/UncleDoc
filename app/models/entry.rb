@@ -1,5 +1,6 @@
 class Entry < ApplicationRecord
   belongs_to :person
+  has_many :llm_logs, dependent: :destroy
 
   PARSE_STATUSES = %w[pending parsed failed skipped].freeze
 
@@ -8,6 +9,7 @@ class Entry < ApplicationRecord
   validates :parse_status, inclusion: { in: PARSE_STATUSES }, if: -> { has_attribute?(:parse_status) }
   validate :parseable_data_must_be_array
   validate :facts_must_be_array
+  validate :llm_response_must_be_hash
 
   after_initialize :normalize_defaults
 
@@ -37,6 +39,14 @@ class Entry < ApplicationRecord
     parseable_data_of_type("diaper").any?
   end
 
+  def appointment?
+    parseable_data_of_type("appointment").any?
+  end
+
+  def todo?
+    parseable_data_of_type("todo").any?
+  end
+
   def feeding?
     breast_feeding? || bottle_feeding?
   end
@@ -53,6 +63,14 @@ class Entry < ApplicationRecord
 
   def diaper_data
     first_parseable_data_of_type("diaper") || {}
+  end
+
+  def appointment_data
+    first_parseable_data_of_type("appointment") || {}
+  end
+
+  def todo_data
+    first_parseable_data_of_type("todo") || {}
   end
 
   def diaper_rash?
@@ -95,6 +113,18 @@ class Entry < ApplicationRecord
     current_parse_status == "skipped"
   end
 
+  def todo_open?
+    todo? && !todo_done?
+  end
+
+  def todo_title
+    todo_data["value"].presence
+  end
+
+  def appointment_title
+    appointment_data["value"].presence
+  end
+
   def time_since
     return nil unless display_time
 
@@ -110,6 +140,7 @@ class Entry < ApplicationRecord
   def normalize_defaults
     self[:parseable_data] = [] if has_attribute?(:parseable_data) && self[:parseable_data].nil?
     self[:facts] = [] if has_attribute?(:facts) && self[:facts].nil?
+    self[:llm_response] = {} if has_attribute?(:llm_response) && self[:llm_response].nil?
     self.occurred_at ||= Time.current
     self.parse_status ||= parseable_data_value.present? ? "parsed" : "pending" if has_attribute?(:parse_status)
   end
@@ -135,6 +166,13 @@ class Entry < ApplicationRecord
     return if facts.is_a?(Array) && facts.all? { |item| item.is_a?(String) }
 
     errors.add(:facts, :invalid)
+  end
+
+  def llm_response_must_be_hash
+    return unless has_attribute?(:llm_response)
+    return if self[:llm_response].is_a?(Hash)
+
+    errors.add(:llm_response, :invalid)
   end
 
   def numeric_value(value)

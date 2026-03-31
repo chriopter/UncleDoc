@@ -5,8 +5,10 @@
       <% label_key = item["type"].to_s.downcase %>
       <% label = t("entries.data_labels.#{label_key}", default: item["type"].to_s.humanize) %>
       <% detail_parts = case item["type"]
-      when "temperature", "pulse", "weight", "bottle_feeding", "sleep"
+      when "temperature", "pulse", "weight", "height", "bottle_feeding", "sleep"
         [[item["value"], item["unit"]].compact.join(" ")]
+      when "blood_pressure"
+        [[item["systolic"], item["diastolic"]].compact.join("/"), item["unit"]].compact
       when "breast_feeding"
         side_label = item["side"].present? ? t("entries.data_values.side_#{item['side']}", default: item["side"].to_s.humanize) : nil
         [[side_label, item["value"], item["unit"]].compact.join(" ")]
@@ -18,6 +20,14 @@
         [states.join(" + ")]
       when "medication"
         [[item["value"], item["dose"]].compact.join(" ")]
+      when "vaccination"
+        [[item["value"], item["dose"]].compact.join(" ")]
+      when "appointment"
+        [item["value"], item["scheduled_for"], item["location"], item["quality"]]
+      when "todo"
+        [item["value"], item["due_at"], item["location"], item["quality"]]
+      when "note"
+        [item["value"], item["quality"]]
       else
         [item["value"], item["unit"], item["dose"], item["flag"], item["ref"], item["location"], item["quality"]]
       end.filter_map(&:presence) %>

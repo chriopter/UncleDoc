@@ -1,0 +1,35 @@
+<%= turbo_stream.replace "overview_baby_quick" do %>
+  <%= render "dashboard/baby_overview_tools", person: @person, card_classes: nil %>
+<% end %>
+
+<%= turbo_stream.replace "overview_recent_activity" do %>
+  <%= render "shared/overview_recent_activity", person: @person, entries: @person.entries.recent_first, sort: params[:sort], card_classes: "xl:col-span-2 xl:row-span-3 h-full", entry_limit: 5 %>
+<% end %>
+
+<%= turbo_stream.replace "entries_list" do %>
+  <%= render(@person.baby_mode? ? "entries/baby_list" : "entries/protocol_list", entries: @person.entries.recent_first) %>
+<% end %>
+
+<%= turbo_stream.replace "overview_person_meta" do %>
+  <%= render "shared/overview_person_meta", person: @person, entries: @person.entries.recent_first %>
+<% end %>
+
+<%= turbo_stream.replace "overview_baby_activity_feeding" do %>
+  <%= render "shared/baby_activity_widget", person: @person, type: :feeding, card_classes: "xl:col-span-2 xl:row-span-2 h-full" %>
+<% end %>
+
+<%= turbo_stream.replace "overview_baby_activity_diaper" do %>
+  <%= render "shared/baby_activity_widget", person: @person, type: :diaper, card_classes: "xl:col-span-2 xl:row-span-2 h-full" %>
+<% end %>
+
+<%= turbo_stream.replace "overview_planning" do %>
+  <%= render "shared/planning_widget", person: @person, card_classes: "xl:col-span-4 xl:row-span-3 h-full" %>
+<% end %>
+
+<%= turbo_stream.replace "overview_weight_activity" do %>
+  <%= render "shared/weight_activity_widget", person: @person, card_classes: "xl:col-span-2 xl:row-span-2 h-full" %>
+<% end %>
+
+<%= turbo_stream.replace "overview_height_activity" do %>
+  <%= render "shared/height_activity_widget", person: @person, card_classes: "xl:col-span-2 xl:row-span-2 h-full" %>
+<% end %>

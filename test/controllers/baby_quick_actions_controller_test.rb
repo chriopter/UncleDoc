@@ -40,4 +40,11 @@ class BabyQuickActionsControllerTest < ActionDispatch::IntegrationTest
   ensure
     UserPreference.update_locale("en")
   end
+
+  test "diaper responds with turbo stream" do
+    post person_baby_diaper_action_url(@person, format: :turbo_stream), params: { kind: "wet" }
+
+    assert_response :success
+    assert_equal Mime[:turbo_stream].to_s, @response.media_type
+  end
 end
