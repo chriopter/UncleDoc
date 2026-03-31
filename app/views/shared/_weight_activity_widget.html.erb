@@ -20,8 +20,7 @@
               <%= link_to label, person_overview_path(person_slug: person.name, **overview_widget_params(weight_range: value)), class: "rounded-full px-3 py-1 transition #{current_range == value ? 'bg-white text-slate-950 shadow-sm' : 'hover:bg-white/10'}" %>
             <% end %>
           </div>
-          <span class="rounded-full border border-violet-300/30 bg-white/10 px-3 py-1 text-xs font-semibold text-violet-100"><%= number_with_precision(latest[:value], precision: latest[:value] % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> <%= latest[:unit] %></span>
-          <p class="mt-2 text-[10px] text-slate-400"><%= number_with_precision(min_value, precision: min_value % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> - <%= number_with_precision(max_value, precision: max_value % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> <%= latest[:unit] %></p>
+          <p class="text-[10px] font-semibold text-slate-300"><%= number_with_precision(min_value, precision: min_value % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> - <%= number_with_precision(max_value, precision: max_value % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> <%= latest[:unit] %></p>
         </div>
       </div>
 
