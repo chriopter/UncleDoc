@@ -363,8 +363,9 @@ de:
   baby:
     activity:
       label: "Baby-Aktivität"
-      subtitle: "Schnellübersicht der letzten fünf Tage auf Basis der protokollierten Fütterungen und Windelnotizen."
+      subtitle: "Schnellübersicht der letzten fünf Tage auf Basis der protokollierten Fütterungen, Schlafphasen und Windelnotizen."
       feeding_title: "Fütterungen"
+      sleep_title: "Schlaf"
       diaper_title: "Windeln"
     quick_actions:
       title: "Baby-Schnellaktionen"
@@ -377,6 +378,8 @@ de:
         breast: "Stillen"
         bottle: "Flasche"
       empty: "Noch keine Fütterungen eingetragen"
+      started_ago: "Gestartet"
+      stopped_ago: "Gestoppt"
       start_side: "%{side} starten"
       sides:
         left: "Links"
@@ -407,6 +410,20 @@ de:
         solid: "Windel: fest"
         both: "Windel: nass und fest"
       saved: "Windeleintrag gespeichert"
+    sleep:
+      title: "Schlaf"
+      empty: "Noch keine Schlafphasen eingetragen"
+      timer:
+        start: "Schlaf starten"
+        stop: "Stoppen und speichern"
+        running_now: "Schläft gerade"
+        started: "Schlaf-Timer gestartet"
+        stopped: "Schlaf-Timer gestoppt und gespeichert"
+        missing: "Es läuft kein Schlaf-Timer"
+        already_running: "Der Schlaf-Timer läuft bereits"
+        duration: "%{duration} Min"
+        start_hint: "Zum Starten tippen"
+        note: "Schlaf %{duration} Min"
     bottle:
       title: "Flasche"
       button: "Flasche speichern"
@@ -423,10 +440,12 @@ de:
     protocol:
       title: "Baby-Protokoll"
     last_feeding: "Letzte Fütterung"
+    last_sleep: "Letzter Schlaf"
     last_diaper: "Letzte Windel"
     diaper_change: "Windelwechsel"
     types:
       feeding: "Fütterung"
+      sleep: "Schlaf"
       diaper: "Windel"
     badge: "Baby-Modus"
     notes:

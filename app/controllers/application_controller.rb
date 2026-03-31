@@ -10,7 +10,7 @@ class ApplicationController < ActionController::Base
   before_action :set_current_person
   before_action :initialize_entry_for_current_person
 
-  helper_method :current_date_format, :current_locale, :current_llm_provider, :current_person, :family_members, :person_root_path_for, :settings_path_for, :user_preference, :baby_feeding_timer_started_at_for, :baby_feeding_timer_side_for
+  helper_method :current_date_format, :current_locale, :current_llm_provider, :current_person, :family_members, :person_root_path_for, :settings_path_for, :user_preference, :baby_feeding_timer_started_at_for, :baby_feeding_timer_side_for, :baby_sleep_timer_started_at_for
 
   def default_url_options
     {}
@@ -82,15 +82,14 @@ class ApplicationController < ActionController::Base
   end
 
   def baby_feeding_timer_started_at_for(person)
-    started_at = session.dig("baby_feeding_timers", person.id.to_s, "started_at")
-    return if started_at.blank?
-
-    Time.zone.parse(started_at)
-  rescue ArgumentError
-    nil
+    person.baby_feeding_timer_started_at
   end
 
   def baby_feeding_timer_side_for(person)
-    session.dig("baby_feeding_timers", person.id.to_s, "side") || "left"
+    person.baby_feeding_timer_side.presence || "left"
+  end
+
+  def baby_sleep_timer_started_at_for(person)
+    person.baby_sleep_timer_started_at
   end
 end

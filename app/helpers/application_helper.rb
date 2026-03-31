@@ -76,6 +76,13 @@ module ApplicationHelper
     t("baby.feeding.timer.duration", duration: duration_minutes)
   end
 
+  def baby_sleep_timer_elapsed_label(started_at)
+    return unless started_at
+
+    duration_minutes = [ ((Time.current - started_at) / 60).round, 1 ].max
+    t("baby.sleep.timer.duration", duration: duration_minutes)
+  end
+
   def capped_time_ago_in_words(time)
     return unless time
 
@@ -120,7 +127,35 @@ module ApplicationHelper
   end
 
   def overview_widget_params(overrides = {})
-    params.permit(:sort, :recent_range, :feeding_range, :diaper_range, :weight_range).to_h.symbolize_keys.merge(overrides).compact
+    params.permit(:sort, :recent_range, :feeding_range, :diaper_range, :sleep_range, :weight_range, :height_range).to_h.symbolize_keys.merge(overrides).compact
+  end
+
+  def person_widgets_path(person, overrides = {})
+    path_params = { person_slug: person.name, **overview_widget_params(overrides) }
+    params[:action] == "baby" ? person_baby_path(**path_params) : person_overview_path(**path_params)
+  end
+
+  def widget_context_for(person)
+    return :baby if params[:action] == "baby"
+    return :baby if request.referer.to_s.include?(person_baby_path(person_slug: person.name))
+
+    :overview
+  end
+
+  def chart_widget_card_classes
+    "xl:col-span-2 xl:row-span-2 h-full"
+  end
+
+  def baby_quick_card_classes_for(person)
+    widget_context_for(person) == :baby ? "xl:col-span-2 xl:row-span-3 h-full" : nil
+  end
+
+  def recent_activity_card_classes_for(person)
+    if widget_context_for(person) == :baby
+      "xl:col-span-4 xl:row-span-3 h-full"
+    else
+      "xl:col-span-2 xl:row-span-3 h-full"
+    end
   end
 
   def overview_period_mode(params_or_hash, key)
@@ -240,7 +275,11 @@ module ApplicationHelper
 
     buckets.map do |bucket|
       count = entries.count do |entry|
-        matches_type = type == :feeding ? baby_feeding_activity_entry?(entry) : baby_diaper_activity_entry?(entry)
+        matches_type = case type
+        when :feeding then baby_feeding_activity_entry?(entry)
+        when :sleep then baby_sleep_activity_entry?(entry)
+        else baby_diaper_activity_entry?(entry)
+        end
         matches_type && bucket[:range].cover?(entry.display_time)
       end
 
@@ -382,6 +421,12 @@ module ApplicationHelper
   def baby_diaper_activity_entry?(entry)
     return true if entry.diaper?
 
-    entry.input.to_s.downcase.include?("windel")
+    entry.input.to_s.downcase.match?(/windel|diaper/i)
+  end
+
+  def baby_sleep_activity_entry?(entry)
+    return true if entry.sleep?
+
+    entry.input.to_s.downcase.match?(/sleep|schlaf/i)
   end
 end

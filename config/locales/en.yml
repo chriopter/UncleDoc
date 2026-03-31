@@ -363,8 +363,9 @@ en:
   baby:
     activity:
       label: "Baby activity"
-      subtitle: "Quick counts from the last five days based on logged feedings and diaper notes."
+      subtitle: "Quick counts from the last five days based on logged feedings, sleep sessions, and diaper notes."
       feeding_title: "Feedings"
+      sleep_title: "Sleep"
       diaper_title: "Diapers"
     quick_actions:
       title: "Baby quick actions"
@@ -377,6 +378,8 @@ en:
         breast: "Breast"
         bottle: "Bottle"
       empty: "No feedings recorded yet"
+      started_ago: "Started"
+      stopped_ago: "Stopped"
       start_side: "Start %{side}"
       sides:
         left: "Left"
@@ -407,6 +410,20 @@ en:
         solid: "Diaper: solid"
         both: "Diaper: wet and solid"
       saved: "Diaper entry saved"
+    sleep:
+      title: "Sleep"
+      empty: "No sleep sessions recorded yet"
+      timer:
+        start: "Start sleep"
+        stop: "Stop and save"
+        running_now: "Sleeping now"
+        started: "Sleep timer started"
+        stopped: "Sleep timer stopped and saved"
+        missing: "No sleep timer is running"
+        already_running: "Sleep timer is already running"
+        duration: "%{duration} min"
+        start_hint: "Tap to start"
+        note: "Sleep %{duration} min"
     bottle:
       title: "Bottle"
       button: "Save bottle"
@@ -423,10 +440,12 @@ en:
     protocol:
       title: "Baby protocol"
     last_feeding: "Last feeding"
+    last_sleep: "Last sleep"
     last_diaper: "Last diaper"
     diaper_change: "Diaper change"
     types:
       feeding: "Feeding"
+      sleep: "Sleep"
       diaper: "Diaper"
     badge: "Baby mode"
     notes:

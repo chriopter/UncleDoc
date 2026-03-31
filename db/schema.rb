@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_01_170500) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_01_183000) do
   create_table "entries", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.json "facts", default: [], null: false
@@ -44,7 +44,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_01_170500) do
   end
 
   create_table "people", force: :cascade do |t|
+    t.string "baby_feeding_timer_side"
+    t.datetime "baby_feeding_timer_started_at"
     t.boolean "baby_mode"
+    t.datetime "baby_sleep_timer_started_at"
     t.datetime "birth_date"
     t.datetime "created_at", null: false
     t.string "name", null: false

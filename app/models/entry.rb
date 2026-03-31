@@ -39,6 +39,10 @@ class Entry < ApplicationRecord
     parseable_data_of_type("diaper").any?
   end
 
+  def sleep?
+    parseable_data_of_type("sleep").any?
+  end
+
   def appointment?
     parseable_data_of_type("appointment").any?
   end
@@ -65,6 +69,10 @@ class Entry < ApplicationRecord
     first_parseable_data_of_type("diaper") || {}
   end
 
+  def sleep_data
+    first_parseable_data_of_type("sleep") || {}
+  end
+
   def appointment_data
     first_parseable_data_of_type("appointment") || {}
   end
@@ -75,6 +83,10 @@ class Entry < ApplicationRecord
 
   def diaper_rash?
     diaper_data["rash"] == true
+  end
+
+  def sleep_duration_minutes
+    numeric_value(sleep_data["value"])
   end
 
   def diaper_wet?

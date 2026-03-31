@@ -12,7 +12,8 @@ class PeopleController < ApplicationController
     head :not_found and return unless @person.baby_mode?
 
     @entry = Entry.new
-    @entries = @person.entries.recent_first.limit(10)
+    @entry_sort = params[:sort].to_s == "entered" ? "entered" : "occurred"
+    @entries = @person.entries.merge(Entry.sorted_by(@entry_sort)).limit(10)
   end
 
   def create

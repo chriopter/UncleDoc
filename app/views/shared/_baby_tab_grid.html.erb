@@ -1,0 +1,16 @@
+<section class="space-y-6">
+  <%= turbo_stream_from [person, :entries] %>
+  <% chart_widget_classes = "xl:col-span-2 xl:row-span-2 h-full" %>
+
+  <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-6 xl:auto-rows-[8.5rem] xl:items-stretch">
+    <%= render "shared/baby_feeding_tracker_widget", person: person, card_classes: chart_widget_classes %>
+    <%= render "shared/baby_sleep_tracker_widget", person: person, card_classes: chart_widget_classes %>
+    <%= render "shared/baby_diaper_tracker_widget", person: person, card_classes: chart_widget_classes %>
+    <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort], card_classes: "xl:col-span-4 xl:row-span-3 h-full", entry_limit: 5 %>
+    <%= render "shared/baby_activity_widget", person: person, type: :feeding, card_classes: chart_widget_classes %>
+    <%= render "shared/baby_activity_widget", person: person, type: :sleep, card_classes: chart_widget_classes %>
+    <%= render "shared/baby_activity_widget", person: person, type: :diaper, card_classes: chart_widget_classes %>
+    <%= render "shared/weight_activity_widget", person: person, card_classes: chart_widget_classes %>
+    <%= render "shared/height_activity_widget", person: person, card_classes: chart_widget_classes %>
+  </div>
+</section>
