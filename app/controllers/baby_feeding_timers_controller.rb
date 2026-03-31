@@ -3,7 +3,7 @@ class BabyFeedingTimersController < ApplicationController
 
   def create
     if baby_feeding_timer_started_at.present?
-      redirect_back fallback_location: root_path(person_slug: @person.name, tab: "log"), notice: t("baby.feeding.timer.already_running")
+      redirect_back fallback_location: person_baby_path(person_slug: @person.name), notice: t("baby.feeding.timer.already_running")
       return
     end
 
@@ -13,14 +13,17 @@ class BabyFeedingTimersController < ApplicationController
       "side" => feeding_side
     }
 
-    redirect_back fallback_location: root_path(person_slug: @person.name, tab: "log")
+    respond_to do |format|
+      format.html { redirect_back fallback_location: person_baby_path(person_slug: @person.name) }
+      format.turbo_stream { render "shared/baby_action_update" }
+    end
   end
 
   def destroy
     started_at = baby_feeding_timer_started_at
 
     if started_at.blank?
-      redirect_back fallback_location: root_path(person_slug: @person.name, tab: "log"), alert: t("baby.feeding.timer.missing")
+      redirect_back fallback_location: person_baby_path(person_slug: @person.name), alert: t("baby.feeding.timer.missing")
       return
     end
 
@@ -36,7 +39,10 @@ class BabyFeedingTimersController < ApplicationController
 
     session["baby_feeding_timers"].delete(@person.id.to_s)
 
-    redirect_back fallback_location: root_path(person_slug: @person.name, tab: "log")
+    respond_to do |format|
+      format.html { redirect_back fallback_location: person_baby_path(person_slug: @person.name) }
+      format.turbo_stream { render "shared/baby_action_update" }
+    end
   end
 
   private

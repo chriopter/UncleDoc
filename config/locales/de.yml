@@ -130,12 +130,18 @@ de:
     fact_labels:
       temperature: "Temperatur"
       pulse: "Puls"
+      blood_pressure: "Blutdruck"
       weight: "Gewicht"
+      height: "Körpergröße"
       bottle_feeding: "Flasche"
       breast_feeding: "Stillen"
       diaper: "Windel"
       sleep: "Schlaf"
       medication: "Medikament"
+      vaccination: "Impfung"
+      appointment: "Termin"
+      todo: "Aufgabe"
+      note: "Notiz"
       symptom: "Symptom"
     facts:
       title: "Fakten"
@@ -154,12 +160,18 @@ de:
     data_labels:
       temperature: "Temperatur"
       pulse: "Puls"
+      blood_pressure: "Blutdruck"
       weight: "Gewicht"
+      height: "Körpergröße"
       bottle_feeding: "Flasche"
       breast_feeding: "Stillen"
       diaper: "Windel"
       sleep: "Schlaf"
       medication: "Medikament"
+      vaccination: "Impfung"
+      appointment: "Termin"
+      todo: "Aufgabe"
+      note: "Notiz"
     data_values:
       wet: "nass"
       solid: "fest"
@@ -422,10 +434,33 @@ de:
   # Person overview page
   person:
     overview:
+      planning:
+        label: "Planung"
+        title: "Termine & Aufgaben"
+      vitals:
+        empty: "Keine Einträge in diesem Zeitraum."
+        temperature:
+          title: "Temperatur"
+        pulse:
+          title: "Puls"
+        blood_pressure:
+          title: "Blutdruck"
       weight:
         title: "Gewichtsverlauf"
         subtitle: "Neueste gespeicherte Gewichtseinträge"
         empty_range: "Keine Gewichtseinträge in diesem Zeitraum."
+        empty: "Noch keine Gewichtseinträge vorhanden."
+      height:
+        title: "Körpergröße"
+        empty_range: "Keine Körpergrößen-Einträge in diesem Zeitraum."
+        empty: "Noch keine Körpergrößen-Einträge vorhanden."
+      appointments:
+        title: "Termine"
+        empty: "Noch keine Termine vorhanden."
+      todos:
+        title: "Aufgaben"
+        done_at: "Erledigt %{time}"
+        empty: "Noch keine Aufgaben vorhanden."
       family_member: "Familienmitglied"
       edit_person: "Person bearbeiten"
       birth_date: "Geboren"

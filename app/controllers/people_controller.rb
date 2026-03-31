@@ -7,6 +7,14 @@ class PeopleController < ApplicationController
     @entry = Entry.new
   end
 
+  def baby
+    @person = Person.find_by!(name: params[:person_slug])
+    head :not_found and return unless @person.baby_mode?
+
+    @entry = Entry.new
+    @entries = @person.entries.recent_first.limit(10)
+  end
+
   def create
     @person = Person.new(person_params)
 

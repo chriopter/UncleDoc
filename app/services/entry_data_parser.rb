@@ -1,6 +1,7 @@
 require "json"
 class EntryDataParser
-  Result = Struct.new(:facts, :parseable_data, :occurred_at, :error, keyword_init: true)
+  Result = Struct.new(:facts, :parseable_data, :occurred_at, :llm_response, :error, keyword_init: true)
+  MAX_ATTEMPTS = 2
 
   TYPE_ALIASES = {
     "temp" => "temperature",
@@ -13,7 +14,22 @@ class EntryDataParser
     "breast_fed" => "breast_feeding",
     "breast_feed" => "breast_feeding",
     "nursing" => "breast_feeding",
-    "heart_rate" => "pulse"
+    "heart_rate" => "pulse",
+    "body_length" => "height",
+    "length" => "height",
+    "size" => "height",
+    "vaccine" => "vaccination",
+    "vaccination" => "vaccination",
+    "impfung" => "vaccination",
+    "blood_pressure" => "blood_pressure",
+    "blood pressure" => "blood_pressure",
+    "bp" => "blood_pressure",
+    "task" => "todo",
+    "to_do" => "todo",
+    "appointment" => "appointment",
+    "termin" => "appointment",
+    "note" => "todo",
+    "memo" => "todo"
   }.freeze
 
   UNIT_ALIASES = {
@@ -28,21 +44,24 @@ class EntryDataParser
   }.freeze
 
   def self.call(input:, preference: UserPreference.current, entry: nil)
-    return Result.new(facts: [], parseable_data: [], occurred_at: nil, error: :blank_input) if input.blank?
+    return Result.new(facts: [], parseable_data: [], occurred_at: nil, llm_response: {}, error: :blank_input) if input.blank?
 
     configuration_error = configuration_error_for(preference)
-    return Result.new(facts: [], parseable_data: [], occurred_at: nil, error: configuration_error) if configuration_error.present?
+    return Result.new(facts: [], parseable_data: [], occurred_at: nil, llm_response: {}, error: configuration_error) if configuration_error.present?
 
-    response_body = request_completion(input, preference, entry: entry)
-    payload = parse_json_object(response_body)
+    payload = request_payload_with_retry(input, preference, entry: entry)
     Result.new(
       facts: sanitize_facts(payload["facts"]),
       parseable_data: sanitize_parseable_data(payload["parseable_data"]),
-      occurred_at: sanitize_occurred_at(payload["occurred_at"])
+      occurred_at: sanitize_occurred_at(payload["occurred_at"]),
+      llm_response: sanitize_llm_response(payload["llm_response"])
     )
   rescue StandardError => error
     Rails.logger.warn("Entry parsing failed: #{error.class}: #{error.message}")
-    Result.new(facts: [], parseable_data: [], occurred_at: nil, error: :request_failed)
+    fallback = fallback_result_for(input)
+    return fallback if fallback
+
+    Result.new(facts: [], parseable_data: [], occurred_at: nil, llm_response: {}, error: :request_failed)
   end
 
   def self.ready?(preference = UserPreference.current)
@@ -69,6 +88,23 @@ class EntryDataParser
       entry: entry,
       temperature: 0
     ).content
+  end
+
+  def self.request_payload_with_retry(input, preference, entry: nil)
+    attempts = 0
+
+    begin
+      attempts += 1
+      response_body = request_completion(input, preference, entry: entry)
+      raise JSON::ParserError, "Empty response body" if response_body.to_s.strip.blank?
+
+      parse_json_object(response_body)
+    rescue JSON::ParserError => error
+      raise error if attempts >= MAX_ATTEMPTS
+
+      Rails.logger.warn("Entry parsing retry after invalid response: #{error.message}")
+      retry
+    end
   end
 
   def self.system_prompt
@@ -111,7 +147,7 @@ class EntryDataParser
     value.filter_map do |item|
       next unless item.is_a?(Hash)
 
-      sanitized = item.deep_stringify_keys.slice("type", "value", "unit", "side", "dose", "wet", "solid", "rash", "ref", "flag", "location", "quality")
+      sanitized = item.deep_stringify_keys.slice("type", "value", "unit", "side", "dose", "wet", "solid", "rash", "ref", "flag", "location", "quality", "systolic", "diastolic", "scheduled_for", "due_at")
       type = normalize_type(sanitized["type"])
       next if type.blank?
 
@@ -137,6 +173,38 @@ class EntryDataParser
     parsed&.iso8601.present? ? parsed : nil
   rescue ArgumentError, TypeError
     nil
+  end
+
+  def self.sanitize_llm_response(value)
+    return {} unless value.is_a?(Hash)
+
+    value.deep_stringify_keys.slice("status", "confidence", "note").transform_values do |entry|
+      entry.to_s.strip.presence
+    end.compact
+  end
+
+  def self.fallback_result_for(input)
+    return if input.blank?
+
+    normalized_input = input.to_s.strip
+    return if normalized_input.blank?
+
+    if todo_like?(normalized_input)
+      Result.new(
+        facts: [ normalized_input ],
+        parseable_data: [ { "type" => "todo", "value" => normalized_input } ],
+        occurred_at: nil,
+        llm_response: {
+          "status" => "structured",
+          "confidence" => "low",
+          "note" => "Fallback parser mapped an actionable reminder to canonical todo after the LLM returned no usable response."
+        }
+      )
+    end
+  end
+
+  def self.todo_like?(input)
+    input.match?(/\A\s*(check|bring|call|ask|remember|book|schedule|buy|organize|todo|to do|pru?fe|checke|mitbringen|anrufen|fragen|merken|besorgen)\b/i)
   end
 
   def self.normalize_type(type)

@@ -1,6 +1,6 @@
 class EntriesController < ApplicationController
   before_action :set_person
-  before_action :set_entry, only: [ :show, :edit, :update, :destroy ]
+  before_action :set_entry, only: [ :show, :edit, :update, :destroy, :toggle_todo ]
 
   def show
     return redirect_to person_log_path(person_slug: @person.name) unless turbo_frame_request?
@@ -62,6 +62,17 @@ class EntriesController < ApplicationController
     respond_to do |format|
       format.html { redirect_to root_path(person_slug: @person.name, tab: "log"), notice: t("entries.flash.destroyed") }
       format.turbo_stream
+    end
+  end
+
+  def toggle_todo
+    return redirect_back fallback_location: person_overview_path(person_slug: @person.name) unless @entry.todo?
+
+    @entry.update!(todo_done: !@entry.todo_done?, todo_done_at: @entry.todo_done? ? nil : Time.current)
+
+    respond_to do |format|
+      format.html { redirect_back fallback_location: person_overview_path(person_slug: @person.name) }
+      format.turbo_stream { redirect_back fallback_location: person_overview_path(person_slug: @person.name) }
     end
   end
 
@@ -127,6 +138,8 @@ class EntriesController < ApplicationController
 
     entry.facts = [] if entry.has_attribute?(:facts)
     entry.parseable_data = []
+    entry.todo_done = false if entry.has_attribute?(:todo_done)
+    entry.todo_done_at = nil if entry.has_attribute?(:todo_done_at)
     return false unless entry.has_attribute?(:parse_status)
 
     if EntryDataParser.ready?

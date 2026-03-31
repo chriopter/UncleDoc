@@ -14,7 +14,7 @@ class EntryDataParseJob < ApplicationJob
     end
 
     if entry.reload.pending_parse?
-      attributes = { facts: result.facts, parseable_data: result.parseable_data, parse_status: "parsed" }
+      attributes = { facts: result.facts, parseable_data: result.parseable_data, llm_response: result.llm_response, parse_status: "parsed" }
       attributes[:occurred_at] = result.occurred_at if result.occurred_at.present?
       entry.update!(attributes)
       broadcast_entries(entry.person)
@@ -57,6 +57,13 @@ class EntryDataParseJob < ApplicationJob
 
     Turbo::StreamsChannel.broadcast_replace_to(
       [ person, :entries ],
+      target: "overview_planning",
+      partial: "shared/planning_widget",
+      locals: { person: person, card_classes: "xl:col-span-4 xl:row-span-3 h-full" }
+    )
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      [ person, :entries ],
       target: "overview_person_meta",
       partial: "shared/overview_person_meta",
       locals: { person: person, entries: person.entries.recent_first }
@@ -67,6 +74,34 @@ class EntryDataParseJob < ApplicationJob
       target: "overview_weight_activity",
       partial: "shared/weight_activity_widget",
       locals: { person: person }
+    )
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      [ person, :entries ],
+      target: "overview_height_activity",
+      partial: "shared/height_activity_widget",
+      locals: { person: person }
+    )
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      [ person, :entries ],
+      target: "overview_temperature_activity",
+      partial: "shared/vital_activity_widget",
+      locals: { person: person, type: :temperature }
+    )
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      [ person, :entries ],
+      target: "overview_pulse_activity",
+      partial: "shared/vital_activity_widget",
+      locals: { person: person, type: :pulse }
+    )
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      [ person, :entries ],
+      target: "overview_blood_pressure_activity",
+      partial: "shared/vital_activity_widget",
+      locals: { person: person, type: :blood_pressure }
     )
   end
 end

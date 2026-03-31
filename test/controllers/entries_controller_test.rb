@@ -153,7 +153,8 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
           { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" },
           { "type" => "diaper", "wet" => true, "solid" => false }
         ],
-        occurred_at: Time.zone.local(2026, 3, 28, 10, 5, 0)
+        occurred_at: Time.zone.local(2026, 3, 28, 10, 5, 0),
+        llm_response: { "status" => "structured", "confidence" => "high", "note" => "Canonical structured data extracted successfully." }
       )
     end
 
@@ -182,5 +183,33 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Bottle feeding 120 ml"
     assert_includes @response.body, "Diaper wet"
     assert_includes @response.body, "peter drank 120 ml bottle and diaper wet"
+  end
+
+  test "destroy removes dependent llm logs" do
+    entry = @person.entries.create!(input: "RSV Impfung durchgeführt", occurred_at: Time.zone.parse("2026-03-29T09:38"), facts: [ "RSV Impfung durchgeführt" ], parseable_data: [ { "type" => "medication", "value" => "RSV Impfung" } ], parse_status: "parsed")
+    LlmLog.create!(request_kind: "entry_parse", provider: "ollama", endpoint: "http://localhost:11434/v1/chat/completions", request_payload: "{}", response_body: "{}", status_code: 200, person: @person, entry: entry)
+
+    assert_difference("Entry.count", -1) do
+      assert_difference("LlmLog.count", -1) do
+        delete person_entry_url(@person, entry)
+      end
+    end
+
+    assert_response :redirect
+  end
+
+  test "toggle todo updates app-managed completion state" do
+    entry = @person.entries.create!(input: "todo bring card", occurred_at: Time.zone.parse("2026-04-02T09:38"), facts: [ "Bring vaccination card" ], parseable_data: [ { "type" => "todo", "value" => "bring vaccination card" } ], parse_status: "parsed", todo_done: false)
+
+    patch toggle_todo_person_entry_url(@person, entry)
+
+    assert_response :redirect
+    assert entry.reload.todo_done?
+    assert entry.todo_done_at.present?
+
+    patch toggle_todo_person_entry_url(@person, entry)
+    entry.reload
+    assert_not entry.todo_done?
+    assert_nil entry.todo_done_at
   end
 end

@@ -1,11 +1,12 @@
 require "test_helper"
 
 class EntryDataParserTest < ActiveSupport::TestCase
-  test "system prompt includes baby and elderly examples" do
+  test "system prompt includes baby and broader structured examples" do
     prompt = EntryDataParser.system_prompt
 
-    assert_includes prompt, "Peter diaper wet and rash"
-    assert_includes prompt, "Elderly patient WBC 11.2 G/L"
+    assert_includes prompt, "Trinken"
+    assert_includes prompt, "Doctor appointment"
+    assert_includes prompt, "RSV Impfung"
     assert_includes prompt, '"facts"'
     assert_includes prompt, '"parseable_data"'
   end
@@ -18,7 +19,7 @@ class EntryDataParserTest < ActiveSupport::TestCase
     EntryDataParser.define_singleton_method(:request_completion) do |_note, _preference, entry: nil|
       <<~JSON
         ```json
-        {"facts":["  Breast feeding left 18 minutes  ",""],"parseable_data":[{"type":"breastfeeding","value":"18","unit":"minutes","side":"left"}],"occurred_at":"2026-03-30T10:05:00Z"}
+        {"facts":["  Breast feeding left 18 minutes  ",""],"parseable_data":[{"type":"breastfeeding","value":"18","unit":"minutes","side":"left"}],"occurred_at":"2026-03-30T10:05:00Z","llm_response":{"status":"structured","confidence":"high","note":"Canonical structured data extracted successfully."}}
         ```
       JSON
     end
@@ -30,6 +31,7 @@ class EntryDataParserTest < ActiveSupport::TestCase
       assert_equal [ "Breast feeding left 18 minutes" ], result.facts
       assert_equal [ { "type" => "breast_feeding", "value" => 18, "unit" => "min", "side" => "left" } ], result.parseable_data
       assert_equal Time.zone.parse("2026-03-30T10:05:00Z"), result.occurred_at
+      assert_equal({ "status" => "structured", "confidence" => "high", "note" => "Canonical structured data extracted successfully." }, result.llm_response)
     ensure
       EntryDataParser.define_singleton_method(:request_completion, original_method)
     end
@@ -59,7 +61,7 @@ class EntryDataParserTest < ActiveSupport::TestCase
     payload = JSON.parse(LlmLog.order(:created_at).last.request_payload)
     assert_equal "llama3", payload["model"]
     assert_equal 0, payload["temperature"]
-    assert_includes payload["messages"][0]["content"], "Peter diaper wet and rash"
+    assert_includes payload["messages"][0]["content"], "RSV Impfung"
     assert_includes payload["messages"][1]["content"], "Current time:"
     assert_includes payload["messages"][1]["content"], "Time zone:"
     assert_includes payload["messages"][1]["content"], "Input: Peter has fever 39.2"
@@ -81,6 +83,77 @@ class EntryDataParserTest < ActiveSupport::TestCase
       assert_equal [], result.facts
       assert_equal [], result.parseable_data
       assert_nil result.occurred_at
+      assert_equal({}, result.llm_response)
+    ensure
+      EntryDataParser.define_singleton_method(:request_completion, original_method)
+    end
+  end
+
+  test "call retries once when first response is empty" do
+    preference = UserPreference.current
+    preference.update!(llm_provider: "ollama", llm_model: "llama3")
+
+    original_method = EntryDataParser.method(:request_completion)
+    attempts = 0
+    EntryDataParser.define_singleton_method(:request_completion) do |_input, _preference, entry: nil|
+      attempts += 1
+      attempts == 1 ? "" : '{"facts":["Weight 53 cm"],"parseable_data":[{"type":"height","value":"53","unit":"cm"}],"occurred_at":null,"llm_response":{"status":"structured","confidence":"high","note":"Canonical structured data extracted successfully."}}'
+    end
+
+    begin
+      result = EntryDataParser.call(input: "53cm Körpergröße", preference: preference)
+
+      assert_nil result.error
+      assert_equal 2, attempts
+      assert_equal [ "Weight 53 cm" ], result.facts
+      assert_equal [ { "type" => "height", "value" => 53, "unit" => "cm" } ], result.parseable_data
+      assert_equal({ "status" => "structured", "confidence" => "high", "note" => "Canonical structured data extracted successfully." }, result.llm_response)
+    ensure
+      EntryDataParser.define_singleton_method(:request_completion, original_method)
+    end
+  end
+
+  test "call fails after retry budget is exhausted" do
+    preference = UserPreference.current
+    preference.update!(llm_provider: "ollama", llm_model: "llama3")
+
+    original_method = EntryDataParser.method(:request_completion)
+    attempts = 0
+    EntryDataParser.define_singleton_method(:request_completion) do |_input, _preference, entry: nil|
+      attempts += 1
+      ""
+    end
+
+    begin
+      result = EntryDataParser.call(input: "still broken", preference: preference)
+
+      assert_equal :request_failed, result.error
+      assert_equal 2, attempts
+      assert_equal [], result.facts
+      assert_equal [], result.parseable_data
+      assert_equal({}, result.llm_response)
+    ensure
+      EntryDataParser.define_singleton_method(:request_completion, original_method)
+    end
+  end
+
+  test "call falls back to canonical todo when llm returns no usable response for simple reminder" do
+    preference = UserPreference.current
+    preference.update!(llm_provider: "ollama", llm_model: "llama3")
+
+    original_method = EntryDataParser.method(:request_completion)
+    EntryDataParser.define_singleton_method(:request_completion) do |_input, _preference, entry: nil|
+      ""
+    end
+
+    begin
+      result = EntryDataParser.call(input: "Check füsse", preference: preference)
+
+      assert_nil result.error
+      assert_equal [ "Check füsse" ], result.facts
+      assert_equal [ { "type" => "todo", "value" => "Check füsse" } ], result.parseable_data
+      assert_equal "structured", result.llm_response["status"]
+      assert_equal "low", result.llm_response["confidence"]
     ensure
       EntryDataParser.define_singleton_method(:request_completion, original_method)
     end
@@ -93,7 +166,7 @@ class EntryDataParserTest < ActiveSupport::TestCase
     original_method = EntryDataParser.method(:request_completion)
     EntryDataParser.define_singleton_method(:request_completion) do |_note, _preference, entry: nil|
       <<~JSON
-        {"facts":["Diaper wet and rash",123,null,"  "],"parseable_data":[{"type":"diaper","wet":"true","solid":"false","rash":"true"},{"type":"bottle","value":"120","unit":"mls"}]}
+        {"facts":["Diaper wet and rash",123,null,"  "],"parseable_data":[{"type":"diaper","wet":"true","solid":"false","rash":"true"},{"type":"bottle","value":"120","unit":"mls"}],"llm_response":{"status":"structured","confidence":"medium","note":"Structured diaper and bottle data extracted."}}
       JSON
     end
 
@@ -110,6 +183,7 @@ class EntryDataParserTest < ActiveSupport::TestCase
         result.parseable_data
       )
       assert_nil result.occurred_at
+      assert_equal({ "status" => "structured", "confidence" => "medium", "note" => "Structured diaper and bottle data extracted." }, result.llm_response)
     ensure
       EntryDataParser.define_singleton_method(:request_completion, original_method)
     end
@@ -161,6 +235,11 @@ class EntryDataParserTest < ActiveSupport::TestCase
         expected_parseable_data: [ { "type" => "medication", "value" => "ibuprofen", "dose" => "400mg" }, { "type" => "symptom", "value" => "knee pain" } ]
       },
       {
+        response: '{"facts":["RSV-Impfung am Sonntag"],"parseable_data":[{"type":"impfung","value":"RSV"}]}',
+        expected_facts: [ "RSV-Impfung am Sonntag" ],
+        expected_parseable_data: [ { "type" => "vaccination", "value" => "RSV" } ]
+      },
+      {
         response: '{"facts":["Sleep 95 min"],"parseable_data":[{"type":"sleep","value":"95","unit":"minutes"}]}',
         expected_facts: [ "Sleep 95 min" ],
         expected_parseable_data: [ { "type" => "sleep", "value" => 95, "unit" => "min" } ]
@@ -184,6 +263,7 @@ class EntryDataParserTest < ActiveSupport::TestCase
       assert_nil result.error
       assert_equal test_case[:expected_facts], result.facts
       assert_equal test_case[:expected_parseable_data], result.parseable_data
+      assert_equal({}, result.llm_response)
     end
   ensure
     EntryDataParser.define_singleton_method(:request_completion, original_method)
@@ -205,6 +285,7 @@ class EntryDataParserTest < ActiveSupport::TestCase
       assert_equal [], result.facts
       assert_equal [], result.parseable_data
       assert_nil result.occurred_at
+      assert_equal({}, result.llm_response)
     ensure
       EntryDataParser.define_singleton_method(:request_completion, original_method)
     end
@@ -213,20 +294,18 @@ class EntryDataParserTest < ActiveSupport::TestCase
   test "system prompt requires a fact even without parseable data" do
     prompt = EntryDataParser.system_prompt
 
-    assert_includes prompt, "For any non-empty input, produce at least one fact."
-    assert_includes prompt, "Write facts in the same language as the input"
-    assert_includes prompt, "Preserve explicit location context in facts"
-    assert_includes prompt, '"location"'
-    assert_includes prompt, "Fever in the hospital"
-    assert_includes prompt, "English canonical schema"
-    assert_includes prompt, "Trinken gut"
-    assert_includes prompt, '"type": "breast_feeding"'
-    assert_includes prompt, "## Rules For Occurred At"
+    assert_includes prompt, "Facts must be short strings"
+    assert_includes prompt, "Always use English canonical schema"
+    assert_includes prompt, "Always try to return the best useful `facts` and the best useful `parseable_data` you can."
+    assert_includes prompt, "prefer that exact canonical type"
+    assert_includes prompt, "Return at most one `todo` item per entry"
+    assert_includes prompt, "Medical findings, measurements, symptoms, vaccinations, medication, vitals"
+    assert_includes prompt, '"type": "appointment"'
+    assert_includes prompt, '"type": "todo"'
+    assert_not_includes prompt, '"type": "note"'
+    assert_includes prompt, '"llm_response"'
     assert_includes prompt, '"occurred_at": null'
-    assert_includes prompt, "Never return the current reference time just because no timing information was found."
-    assert_includes prompt, "General note seems fine today"
-    assert_includes prompt, "## Output Contract"
-    assert_includes prompt, '"parseable_data": ['
+    assert_includes prompt, '"status": "structured"'
   end
 
   test "call keeps occurred_at nil when llm returns null" do
@@ -235,12 +314,13 @@ class EntryDataParserTest < ActiveSupport::TestCase
 
     original_method = EntryDataParser.method(:request_completion)
     EntryDataParser.define_singleton_method(:request_completion) do |_input, _preference, entry: nil|
-      '{"facts":["General note seems fine today"],"parseable_data":[],"occurred_at":null}'
+      '{"facts":["General note seems fine today"],"parseable_data":[],"occurred_at":null,"llm_response":{"status":"facts_only","confidence":"medium","note":"No canonical structured data could be extracted from the note."}}'
     end
 
     begin
       result = EntryDataParser.call(input: "an old plain note", preference: preference)
       assert_nil result.occurred_at
+      assert_equal({ "status" => "facts_only", "confidence" => "medium", "note" => "No canonical structured data could be extracted from the note." }, result.llm_response)
     ensure
       EntryDataParser.define_singleton_method(:request_completion, original_method)
     end
@@ -252,13 +332,14 @@ class EntryDataParserTest < ActiveSupport::TestCase
 
     original_method = EntryDataParser.method(:request_completion)
     EntryDataParser.define_singleton_method(:request_completion) do |_input, _preference, entry: nil|
-      '{"facts":["General note happened yesterday at 10:05"],"parseable_data":[],"occurred_at":"2026-03-30T10:05:00+00:00"}'
+      '{"facts":["General note happened yesterday at 10:05"],"parseable_data":[],"occurred_at":"2026-03-30T10:05:00+00:00","llm_response":{"status":"facts_only","confidence":"medium","note":"Time was inferred but no canonical structured data was extracted."}}'
     end
 
     begin
       travel_to Time.zone.local(2026, 3, 31, 12, 0, 0) do
         result = EntryDataParser.call(input: "bla bla happened yesterday at 10:05", preference: preference)
         assert_equal Time.zone.local(2026, 3, 30, 10, 5, 0), result.occurred_at
+        assert_equal({ "status" => "facts_only", "confidence" => "medium", "note" => "Time was inferred but no canonical structured data was extracted." }, result.llm_response)
       end
     ensure
       EntryDataParser.define_singleton_method(:request_completion, original_method)

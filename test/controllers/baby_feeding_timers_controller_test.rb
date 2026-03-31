@@ -6,7 +6,7 @@ class BabyFeedingTimersControllerTest < ActionDispatch::IntegrationTest
 
     post person_baby_feeding_timer_url(person), params: { side: "left" }
 
-    assert_redirected_to root_url(person_slug: person.name, tab: "log")
+    assert_redirected_to person_baby_url(person_slug: person.name)
 
     follow_redirect!
 
@@ -14,6 +14,15 @@ class BabyFeedingTimersControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/feeding timer started|Still-Timer/, flash.to_hash.values.join(" "))
     assert_match(/Left/, @response.body)
     assert_match(/1 min|1 Min/, @response.body)
+  end
+
+  test "start responds with turbo stream" do
+    person = Person.create!(name: "Mila", birth_date: Date.new(2024, 3, 10), baby_mode: true)
+
+    post person_baby_feeding_timer_url(person, format: :turbo_stream), params: { side: "left" }
+
+    assert_response :success
+    assert_equal Mime[:turbo_stream].to_s, @response.media_type
   end
 
   test "stops a feeding timer and creates an entry" do

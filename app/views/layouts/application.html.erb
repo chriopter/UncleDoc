@@ -65,6 +65,9 @@
             <nav class="hidden xl:flex min-w-max items-center gap-2">
               <% if current_person %>
                 <%= link_to "Overview", person_overview_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/overview")) %>
+                <% if current_person.baby_mode? %>
+                  <%= link_to "Baby", person_baby_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/baby")) %>
+                <% end %>
                 <%= link_to "Log", person_log_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/log")) %>
               <% else %>
                 <%= link_to t("nav.home"), root_path, class: shell_menu_item_class(current_page?(root_path)) %>
@@ -77,6 +80,9 @@
             <nav class="flex xl:hidden min-w-max items-center gap-2">
               <% if current_person %>
                 <%= link_to "Overview", person_overview_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/overview")) %>
+                <% if current_person.baby_mode? %>
+                  <%= link_to "Baby", person_baby_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/baby")) %>
+                <% end %>
                 <%= link_to "Log", person_log_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/log")) %>
               <% else %>
                 <%= link_to t("nav.home"), root_path, class: shell_menu_item_class(current_page?(root_path)) %>
