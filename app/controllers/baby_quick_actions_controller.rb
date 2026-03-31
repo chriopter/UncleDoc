@@ -5,11 +5,12 @@ class BabyQuickActionsController < ApplicationController
   def diaper
     @person.entries.create!(
       occurred_at: Time.current,
-      note: diaper_note,
-      data: [ diaper_payload ]
+      input: diaper_note,
+      facts: EntryFactListBuilder.call([ diaper_payload ]),
+      parseable_data: [ diaper_payload ]
     )
 
-    redirect_back fallback_location: root_path(person_slug: @person.name, tab: "log"), notice: t("baby.diaper.saved")
+    redirect_back fallback_location: root_path(person_slug: @person.name, tab: "log")
   end
 
   def bottle
@@ -21,8 +22,9 @@ class BabyQuickActionsController < ApplicationController
 
     @person.entries.create!(
       occurred_at: Time.current,
-      note: t("baby.bottle.note", amount: amount),
-      data: [ { "type" => "bottle_feeding", "value" => amount, "unit" => "ml" } ]
+      input: t("baby.bottle.note", amount: amount),
+      facts: EntryFactListBuilder.call([ { "type" => "bottle_feeding", "value" => amount, "unit" => "ml" } ]),
+      parseable_data: [ { "type" => "bottle_feeding", "value" => amount, "unit" => "ml" } ]
     )
 
     redirect_back fallback_location: root_path(person_slug: @person.name, tab: "log"), notice: t("baby.bottle.saved")

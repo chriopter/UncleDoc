@@ -68,4 +68,33 @@ module ApplicationHelper
       "#{base} text-slate-600 hover:bg-slate-50 hover:text-slate-900"
     end
   end
+
+  def baby_feeding_timer_elapsed_label(started_at)
+    return unless started_at
+
+    duration_minutes = [ ((Time.current - started_at) / 60).round, 1 ].max
+    t("baby.feeding.timer.duration", duration: duration_minutes)
+  end
+
+  def capped_time_ago_in_words(time)
+    return unless time
+
+    seconds_ago = Time.current - time
+    return time_ago_in_words(1.minute.ago) if seconds_ago < 1.minute
+
+    time_ago_in_words(time)
+  end
+
+  def entry_sort_mode(params_or_mode)
+    mode = if params_or_mode.respond_to?(:to_unsafe_h) || params_or_mode.is_a?(Hash)
+      params_or_mode[:sort]
+    else
+      params_or_mode
+    end
+    mode.to_s == "entered" ? "entered" : "occurred"
+  end
+
+  def entry_sort_label(mode)
+    t("entries.sort.#{entry_sort_mode(mode)}")
+  end
 end

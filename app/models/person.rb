@@ -8,12 +8,12 @@ class Person < ApplicationRecord
 
   def last_feeding
     entries.where(
-      "EXISTS (SELECT 1 FROM json_each(entries.data) WHERE json_extract(value, '$.type') IN ('breast_feeding', 'bottle_feeding'))"
+      "EXISTS (SELECT 1 FROM json_each(entries.parseable_data) WHERE json_extract(value, '$.type') IN ('breast_feeding', 'bottle_feeding'))"
     ).recent_first.first
   end
 
   def last_diaper
-    entries.by_data_type("diaper").recent_first.first
+    entries.by_parseable_data_type("diaper").recent_first.first
   end
 
   def time_since_last_feeding

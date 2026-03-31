@@ -49,7 +49,7 @@ de:
         birth_date: "Geburtsdatum"
       entry:
         occurred_at: "Wann es passiert ist"
-        note: "Notiz"
+        input: "Eingabe"
 
   # Common labels
   labels:
@@ -108,6 +108,23 @@ de:
 
   # Entries
   entries:
+    fact_joiners:
+      and: "und"
+    sort:
+      occurred: "Ereignet"
+      entered: "Erfasst"
+    fact_labels:
+      temperature: "Temperatur"
+      pulse: "Puls"
+      weight: "Gewicht"
+      bottle_feeding: "Flasche"
+      breast_feeding: "Stillen"
+      diaper: "Windel"
+      sleep: "Schlaf"
+      medication: "Medikament"
+      symptom: "Symptom"
+    facts:
+      title: "Fakten"
     edit:
       label: "Bearbeiten"
       title: "Notiz aktualisieren"
@@ -145,7 +162,7 @@ de:
       pending_short: "Parsing"
       skipped_short: "Kein Parse"
       failed_short: "Parse fehlg."
-      pending: "Notiz wird an das LLM gesendet..."
+      pending: "Eingabe wird an das LLM gesendet..."
       skipped: "LLM-Parsing ist aus, bis in den Einstellungen ein Modell konfiguriert ist."
       failed: "LLM-Parsing fehlgeschlagen. Die Notiz bleibt erhalten und kann später erneut verarbeitet werden."
     day_groups:
@@ -153,8 +170,13 @@ de:
     parsed_data:
       title: "Geparst"
       empty: "Noch keine geparsten Daten"
+    raw_input:
+      title: "Eingabe"
+      label: "Roh"
     raw_data:
       toggle: "Rohdaten anzeigen"
+    db_row:
+      toggle: "Ganze Zeile anzeigen"
 
   # People / Users / Family
   people:
@@ -192,9 +214,13 @@ de:
     profile:
       title: "Profileinstellungen"
       subtitle: "UI"
+      nav: "Profil"
     users:
       title: "Benutzer"
       subtitle: "Familie"
+      nav: "Mitglieder"
+    user_group:
+      label: "Benutzer-Einstellungen"
     db:
       title: "DB-Ansicht"
       subtitle: "SQL"
@@ -234,6 +260,14 @@ de:
       prompt_label: "Parser-Prompt"
       prompt_title: "Aktueller Prompt für strukturierte Daten"
       prompt_description: "Dies ist der genaue System-Prompt, den UncleDoc vor jeder Notiz-Analyse sendet."
+      usage_label: "Nutzung"
+      usage_title: "Arbeitsbereich-Nutzung"
+      usage_description: "UncleDoc erfasst noch keine Token-Kosten, zahlt aber einfache LLM-Anfragen im Arbeitsbereich."
+      usage_total: "Anfragen gesamt"
+      usage_parse: "Parsing-Anfragen"
+      usage_summary: "Zusammenfassungen"
+      latest_request: "Letzte Anfrage: %{time}"
+      no_requests: "Es wurden noch keine LLM-Anfragen protokolliert."
       model_status:
         idle: "Wählen Sie Anbieter und Schlüssel, um verfügbare Modelle zu laden."
         loading: "Modelle werden geladen..."
@@ -273,6 +307,11 @@ de:
       raw_data:
         toggle: "Rohe Logdaten anzeigen"
       empty: "Es wurden noch keine LLM-Anfragen protokolliert."
+    llm_prompt:
+      nav: "Prompt"
+      label: "LLM-Prompt"
+      title: "Parser-System-Prompt"
+      description: "Prufen Sie den genauen Parser-System-Prompt fur die Extraktion von Eintragen."
     flash:
       saved: "Einstellungen gespeichert."
 
@@ -299,6 +338,10 @@ de:
     feeding:
       label: "Baby"
       title: "Fütterung"
+      combined_title: "Fütterung"
+      modes:
+        breast: "Stillen"
+        bottle: "Flasche"
       empty: "Noch keine Fütterungen eingetragen"
       start_side: "%{side} starten"
       sides:
@@ -312,6 +355,9 @@ de:
         missing: "Es läuft kein Fütterungs-Timer"
         already_running: "Der Fütterungs-Timer läuft bereits"
         duration: "%{duration} Min"
+        start_hint: "Zum Starten tippen"
+        tap_to_stop: "zum Stoppen tippen"
+        running_elsewhere: "läuft"
         note: "Stillen %{side}, %{duration} Minuten"
     diaper:
       label: "Baby"

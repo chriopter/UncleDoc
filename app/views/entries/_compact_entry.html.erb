@@ -1,21 +1,63 @@
-<%# Compact Entry Line for Overview - One line per entry %>
-<div class="flex items-center gap-3 py-1.5 border-b border-white/5 last:border-0 hover:bg-white/5 transition px-2 -mx-2 rounded">
-  <% display_time = entry.occurred_at || entry.created_at %>
-  
-  <%# Compact Date %>
-  <div class="flex-shrink-0 text-[11px] text-slate-400 w-14">
-    <%= display_time.strftime("%m/%d") %>
+<% display_time = entry.occurred_at || entry.created_at %>
+
+<details class="group border-b border-white/5 last:border-0">
+  <summary class="flex cursor-pointer items-center gap-3 rounded px-2 py-2 transition hover:bg-white/5">
+    <div class="w-20 flex-shrink-0 text-[11px] text-slate-400">
+      <div><%= l(display_time, format: "%m/%d") %></div>
+      <div class="mt-0.5 text-[10px] text-slate-500"><%= l(display_time, format: "%H:%M") %></div>
+    </div>
+
+    <div class="flex-1 min-w-0">
+      <p class="text-sm text-white truncate leading-tight"><%= entry.fact_summary.presence || entry.input %></p>
+      <% if entry.fact_items.present? %>
+        <p class="mt-0.5 truncate text-[11px] text-slate-400"><%= entry.input %></p>
+      <% end %>
+      <% if entry.pending_parse? %>
+        <p class="mt-0.5 text-[11px] text-amber-300"><%= t("entries.parse_status.pending") %></p>
+      <% elsif entry.failed_parse? %>
+        <p class="mt-0.5 text-[11px] text-rose-300"><%= t("entries.parse_status.failed") %></p>
+      <% elsif entry.skipped_parse? %>
+        <p class="mt-0.5 text-[11px] text-slate-400"><%= t("entries.parse_status.skipped") %></p>
+      <% end %>
+    </div>
+
+    <div class="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition group-open:rotate-180">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+      </svg>
+    </div>
+  </summary>
+
+  <div class="px-2 pb-3 pt-1">
+    <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+      <div class="grid gap-4 lg:grid-cols-3">
+        <section>
+          <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("entries.raw_input.title") %></p>
+          <p class="text-sm leading-relaxed text-slate-200 whitespace-pre-wrap break-words"><%= entry.input %></p>
+        </section>
+
+        <section>
+          <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300"><%= t("entries.facts.title") %></p>
+          <% if entry.fact_items.present? %>
+            <ul class="space-y-1 text-sm leading-relaxed text-white">
+              <% entry.fact_items.each do |fact| %>
+                <li class="break-words">• <%= fact %></li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p class="text-sm text-slate-400"><%= t("entries.parsed_data.empty") %></p>
+          <% end %>
+        </section>
+
+        <section>
+          <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300"><%= t("entries.parsed_data.title") %></p>
+          <% if entry.parseable_data.present? %>
+            <pre class="overflow-auto rounded-xl border border-white/10 bg-slate-950/70 p-3 text-[11px] leading-5 text-slate-200 whitespace-pre-wrap break-words"><%= JSON.pretty_generate(entry.parseable_data) %></pre>
+          <% else %>
+            <p class="text-sm text-slate-400"><%= t("entries.parsed_data.empty") %></p>
+          <% end %>
+        </section>
+      </div>
+    </div>
   </div>
-  
-  <%# Note - truncated to one line %>
-  <div class="flex-1 min-w-0">
-    <p class="text-sm text-white truncate leading-tight"><%= entry.note %></p>
-    <% if entry.pending_parse? %>
-      <p class="mt-0.5 text-[11px] text-amber-300"><%= t("entries.parse_status.pending") %></p>
-    <% elsif entry.failed_parse? %>
-      <p class="mt-0.5 text-[11px] text-rose-300"><%= t("entries.parse_status.failed") %></p>
-    <% elsif entry.skipped_parse? %>
-      <p class="mt-0.5 text-[11px] text-slate-400"><%= t("entries.parse_status.skipped") %></p>
-    <% end %>
-  </div>
-</div>
+</details>

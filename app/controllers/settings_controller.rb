@@ -2,11 +2,12 @@ class SettingsController < ApplicationController
   def show
     save_preferences if params[:locale].present? || params[:llm_provider].present?
 
-    @section = params[:section].in?(%w[profile llm llm_logs db users]) ? params[:section] : "profile"
+    @section = params[:section].in?(%w[profile llm llm_prompt llm_logs db users]) ? params[:section] : "profile"
     @database_snapshot = database_snapshot if @section == "db"
     @people = Person.recent_first if @section == "users"
     @person = Person.new if @section == "users"
     @llm_logs = LlmLog.order(created_at: :desc).limit(200) if @section == "llm_logs"
+    @llm_stats = llm_stats if @section == "llm"
   end
 
   def update
@@ -49,7 +50,18 @@ class SettingsController < ApplicationController
   end
 
   def resolved_section
-    params[:section].in?(%w[profile llm llm_logs db users]) ? params[:section] : "profile"
+    params[:section].in?(%w[profile llm llm_prompt llm_logs db users]) ? params[:section] : "profile"
+  end
+
+  def llm_stats
+    scope = LlmLog.all
+
+    {
+      total_requests: scope.count,
+      parse_requests: scope.where(request_kind: "entry_parse").count,
+      summary_requests: scope.where(request_kind: "log_summary").count,
+      latest_request_at: scope.maximum(:created_at)
+    }
   end
 
   def selected_llm_model(models)

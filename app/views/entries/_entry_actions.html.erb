@@ -1,5 +1,23 @@
 <div class="flex items-center gap-2">
-  <% if entry.data.present? %>
+  <details class="relative">
+    <summary class="flex cursor-pointer list-none items-center rounded-full border border-white/10 bg-white/5 p-2 text-slate-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white">
+      <span class="sr-only"><%= t("entries.db_row.toggle") %></span>
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <ellipse cx="12" cy="5" rx="7" ry="3" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 5v14c0 1.657 3.134 3 7 3s7-1.343 7-3V5" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 12c0 1.657 3.134 3 7 3s7-1.343 7-3" />
+      </svg>
+    </summary>
+
+    <div class="absolute right-0 z-10 mt-2 w-[min(30rem,88vw)] overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-2xl ring-1 ring-black/30">
+      <div class="border-b border-white/10 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+        <%= t("entries.db_row.toggle") %>
+      </div>
+      <pre class="max-h-96 overflow-auto px-4 py-3 text-[11px] leading-5 text-slate-200 whitespace-pre-wrap break-words"><%= JSON.pretty_generate(entry.attributes) %></pre>
+    </div>
+  </details>
+
+  <% if entry.parseable_data.present? %>
     <details class="relative">
       <summary class="flex cursor-pointer list-none items-center rounded-full border border-white/10 bg-white/5 p-2 text-slate-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white">
         <span class="sr-only"><%= t("entries.raw_data.toggle") %></span>
@@ -13,7 +31,7 @@
         <div class="border-b border-white/10 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
           <%= t("entries.raw_data.toggle") %>
         </div>
-        <pre class="max-h-80 overflow-auto px-4 py-3 text-[11px] leading-5 text-slate-200 whitespace-pre-wrap break-words"><%= JSON.pretty_generate(entry.data) %></pre>
+        <pre class="max-h-80 overflow-auto px-4 py-3 text-[11px] leading-5 text-slate-200 whitespace-pre-wrap break-words"><%= JSON.pretty_generate(entry.parseable_data) %></pre>
       </div>
     </details>
   <% end %>

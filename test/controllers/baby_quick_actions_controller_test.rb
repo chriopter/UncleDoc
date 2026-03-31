@@ -11,8 +11,9 @@ class BabyQuickActionsControllerTest < ActionDispatch::IntegrationTest
     end
 
     entry = Entry.order(:created_at).last
-    assert_equal "Diaper: wet and solid", entry.note
-    assert_equal({ "type" => "diaper", "wet" => true, "solid" => true }, entry.data.first)
+    assert_equal "Diaper: wet and solid", entry.input
+    assert_equal [ "Diaper wet and solid" ], entry.facts
+    assert_equal({ "type" => "diaper", "wet" => true, "solid" => true }, entry.parseable_data.first)
   end
 
   test "creates bottle entry" do
@@ -21,7 +22,22 @@ class BabyQuickActionsControllerTest < ActionDispatch::IntegrationTest
     end
 
     entry = Entry.order(:created_at).last
-    assert_equal "Bottle 120ml", entry.note
-    assert_equal({ "type" => "bottle_feeding", "value" => 120, "unit" => "ml" }, entry.data.first)
+    assert_equal "Bottle 120ml", entry.input
+    assert_equal [ "Bottle feeding 120 ml" ], entry.facts
+    assert_equal({ "type" => "bottle_feeding", "value" => 120, "unit" => "ml" }, entry.parseable_data.first)
+  end
+
+  test "creates german localized diaper and bottle facts" do
+    UserPreference.update_locale("de")
+
+    post person_baby_diaper_action_url(@person), params: { kind: "wet" }
+    diaper_entry = Entry.order(:created_at).last
+    assert_equal [ "Windel nass" ], diaper_entry.facts
+
+    post person_baby_bottle_action_url(@person), params: { amount_ml: 90 }
+    bottle_entry = Entry.order(:created_at).last
+    assert_equal [ "Flasche 90 ml" ], bottle_entry.facts
+  ensure
+    UserPreference.update_locale("en")
   end
 end

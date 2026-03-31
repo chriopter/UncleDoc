@@ -7,8 +7,8 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", "Family"
-    assert_select "span", text: "Profile settings"
-    assert_select "span", text: "Users"
+    assert_select "span", text: "Profile"
+    assert_select "span", text: "Members"
     assert_includes @response.body, "DB View"
   end
 
@@ -36,9 +36,21 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows parser prompt in llm settings" do
+    LlmLog.create!(request_kind: "entry_parse", provider: "ollama", model: "llama3", endpoint: "http://localhost:11434/v1/chat/completions", request_payload: "{}", response_body: "[]", status_code: 200)
+
     get settings_url(section: "llm")
 
     assert_response :success
+    assert_includes @response.body, "Workspace usage"
+    assert_includes @response.body, "Total requests"
+    assert_includes @response.body, "1"
+  end
+
+  test "shows dedicated llm prompt page" do
+    get settings_url(section: "llm_prompt")
+
+    assert_response :success
+    assert_includes @response.body, "Parser system prompt"
     assert_includes @response.body, EntryDataParser.system_prompt.lines.first.strip
   end
 
@@ -59,6 +71,7 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     get settings_url(section: "llm_logs")
 
     assert_response :success
+    assert_includes @response.body, "Prompt"
     assert_includes @response.body, "Raw logs"
     assert_includes @response.body, "Raw LLM request log"
     assert_includes @response.body, "entry_parse"

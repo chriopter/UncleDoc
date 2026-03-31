@@ -35,11 +35,11 @@
     <% if person.baby_mode? %>
       <%= render "dashboard/baby_overview_tools", person: person %>
     <% else %>
-      <%= render "shared/overview_recent_activity", person: person, entries: entries, card_classes: "xl:col-span-2" %>
+      <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort], card_classes: "xl:col-span-2" %>
     <% end %>
   </div>
 
   <% if person.baby_mode? %>
-    <%= render "shared/overview_recent_activity", person: person, entries: entries %>
+    <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort] %>
   <% end %>
 </section>

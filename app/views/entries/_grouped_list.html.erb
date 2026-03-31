@@ -7,11 +7,21 @@
         </div>
       </div>
 
-      <div class="space-y-2">
-        <% day_entries.each do |entry| %>
-          <%= render "entries/entry", entry: entry %>
-        <% end %>
-      </div>
+      <% if day_entries.first.person.baby_mode? %>
+        <div class="space-y-2">
+          <% day_entries.each do |entry| %>
+            <%= render "entries/entry", entry: entry %>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.03]">
+          <% day_entries.each_with_index do |entry, index| %>
+            <div class="<%= index.positive? ? 'border-t border-white/10' : '' %>">
+              <%= render "entries/entry", entry: entry, grouped: true %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
     </section>
   <% end %>
 </div>

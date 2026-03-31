@@ -55,13 +55,14 @@ class LogSummaryGenerator
 
   def self.entry_summary(entry)
     parts = []
-    parts << entry.note if entry.note.present?
-    parts << data_summary(entry) if entry.data.present?
+    parts << entry.fact_summary if entry.facts.present?
+    parts << entry.input if entry.input.present?
+    parts << parseable_data_summary(entry) if entry.parseable_data.present?
     parts.compact_blank.join(" - ")
   end
 
-  def self.data_summary(entry)
-    Array(entry.data).filter_map do |item|
+  def self.parseable_data_summary(entry)
+    Array(entry.parseable_data).filter_map do |item|
       next unless item.is_a?(Hash)
 
       parts = [ item["type"] ]

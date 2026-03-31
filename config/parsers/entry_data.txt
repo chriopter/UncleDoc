@@ -1,65 +1,100 @@
-Parse health notes into structured data.
+# Entry Parsing
 
-Return ONLY a JSON array.
-No markdown. No prose. No code fences.
+Convert a raw health input into:
 
-Rules:
-- Each item must be a JSON object.
-- Each object must include "type".
-- Add "value" when there is a clear primary value or named item.
-- Add "unit" when a unit is explicit or obvious.
-- Add only clearly supported keys such as "side", "dose", "wet", "solid", "rash", "ref", "flag", "location", or "quality".
-- Use lowercase snake_case for common types such as temperature, pulse, weight, bottle_feeding, breast_feeding, diaper, medication, sleep, and symptom.
-- Preserve uppercase lab names such as WBC or CRP.
+- `facts`: concise human-readable statements
+- `parseable_data`: conservative machine-safe structured data
+- `occurred_at`: an inferred timestamp only when the input implies a specific event time
+
+## Output Contract
+
+Return exactly one JSON object.
+
+- No prose outside the JSON object.
+- No Markdown in the response.
+- Top-level keys must be exactly:
+  - `facts`
+  - `parseable_data`
+  - `occurred_at`
+
+```json
+{
+  "facts": ["..."],
+  "parseable_data": [
+    { "type": "..." }
+  ],
+  "occurred_at": null
+}
+```
+
+## Interpretation Policy
+
+- Preserve source meaning.
+- Normalize obvious shorthand only when safe.
+- Never invent diagnoses, causes, timelines, or missing values.
+- For any non-empty input, produce at least one fact.
+- Only return empty arrays when the input is blank or has no usable content.
+- Infer `occurred_at` only when the input clearly refers to another time such as `yesterday`, `today morning`, `5.3.`, `on 10:05`, or similar.
+- If the input does not contain usable timing information, return `null` for `occurred_at`.
+
+## Rules For Facts
+
+- Facts must be strings.
+- Use short factual statements.
+- Write facts in the same language as the input when the input language is clear.
+- Prefer one fact per clinically distinct observation.
+- Keep wording close to the source, but cleaner.
+- Keep uncertainty when the source is uncertain.
+- Include meaningful observations even when they are too fuzzy for `parseable_data`.
+- Do not duplicate the same fact in different wording.
+- For general but meaningful notes, emit a simple fact like `General note seems fine today`.
+
+## Rules For Parseable Data
+
+- Include only facts that are explicit enough for stable machine use.
+- Each item must be a JSON object with a `type`.
+- Add `value` when there is a clear primary value or named item.
+- Add `unit` when a unit is explicit or obvious.
+- Only use supported extra keys: `side`, `dose`, `wet`, `solid`, `rash`, `ref`, `flag`, `location`, `quality`.
+- Preserve uppercase lab names such as `WBC` and `CRP`.
+- Use lowercase snake_case for common canonical types.
 - Use JSON numbers for numeric values, not strings.
-- Do not invent diagnoses or facts.
-- If nothing structured can be extracted, return [].
+- If nothing structured is safe, return `[]` for `parseable_data`.
 
-Examples:
-Peter has high temp 35 degree
-[{"type":"temperature","value":35,"unit":"C","flag":"low"}]
+## Rules For Occurred At
 
-Peter has fever 39.2
-[{"type":"temperature","value":39.2,"unit":"C","flag":"high"}]
+- Return `occurred_at` as either an ISO 8601 timestamp or `null`.
+- Use the provided current time and time zone as the reference point.
+- If the input says `yesterday`, `today`, a weekday, a date like `5.3.`, or a time like `10:05`, resolve it to the best full timestamp.
+- If the input includes only a date, keep a reasonable time from the reference context when possible.
+- If the input includes only a time, combine it with the most likely date from the input context.
+- If the input gives no usable timing information, return `null`.
+- Never return the current reference time just because no timing information was found.
 
-Peter pulse 128
-[{"type":"pulse","value":128,"unit":"bpm"}]
+## Parseable Data Dictionary
 
-Peter weighs 12.4 kg
-[{"type":"weight","value":12.4,"unit":"kg"}]
+This dictionary exists to keep the structured output stable, predictable, and easy for the app to use later.
 
-Peter breastfed left side for 18 minutes
-[{"type":"breast_feeding","value":18,"unit":"min","side":"left"}]
+Prefer these canonical types whenever they fit exactly: `temperature`, `pulse`, `weight`, `bottle_feeding`, `breast_feeding`, `diaper`, `medication`, `sleep`, `symptom`.
 
-Peter drank 120 ml bottle
-[{"type":"bottle_feeding","value":120,"unit":"ml"}]
+- `temperature`: `type`, `value`, `unit`, optional `flag` -> `{ "type": "temperature", "value": 39.2, "unit": "C", "flag": "high" }`
+- `pulse`: `type`, `value`, `unit` -> `{ "type": "pulse", "value": 128, "unit": "bpm" }`
+- `weight`: `type`, `value`, `unit` -> `{ "type": "weight", "value": 12.4, "unit": "kg" }`
+- `bottle_feeding`: `type`, `value`, `unit` (`unit: "ml"`) -> `{ "type": "bottle_feeding", "value": 120, "unit": "ml" }`
+- `breast_feeding`: `type`, `value`, `unit`, optional `side` (`unit: "min"`) -> `{ "type": "breast_feeding", "value": 18, "unit": "min", "side": "left" }`
+- `diaper`: `type`, `wet`, `solid`, optional `rash`; always include boolean `wet` and `solid`; add `rash` only when explicit -> `{ "type": "diaper", "wet": true, "solid": false }`, `{ "type": "diaper", "wet": false, "solid": true }`, `{ "type": "diaper", "wet": true, "solid": true }`, `{ "type": "diaper", "wet": true, "solid": false, "rash": true }`
+- `medication`: `type`, `value`, optional `dose` -> `{ "type": "medication", "value": "ibuprofen", "dose": "400mg" }`
+- `sleep`: `type`, `value`, `unit` (`unit: "min"`) -> `{ "type": "sleep", "value": 95, "unit": "min" }`
+- `symptom`: `type`, `value`, optional `location`, optional `quality` -> `{ "type": "symptom", "value": "cough" }`
 
-Peter diaper wet
-[{"type":"diaper","wet":true,"solid":false}]
+## Examples
 
-Peter diaper solid
-[{"type":"diaper","wet":false,"solid":true}]
+These examples exist to show the intended level of detail and the relationship between `facts` and `parseable_data`.
 
-Peter diaper wet and solid
-[{"type":"diaper","wet":true,"solid":true}]
-
-Peter diaper wet and rash
-[{"type":"diaper","wet":true,"solid":false,"rash":true}]
-
-Peter got ibuprofen 400mg
-[{"type":"medication","value":"ibuprofen","dose":"400mg"}]
-
-Peter slept 95 min
-[{"type":"sleep","value":95,"unit":"min"}]
-
-Elderly patient WBC 11.2 G/L and CRP 3.1
-[{"type":"WBC","value":11.2,"unit":"G/L","ref":"4.0-10.0","flag":"high"},{"type":"CRP","value":3.1}]
-
-Elderly patient took ibuprofen 400mg for knee pain
-[{"type":"medication","value":"ibuprofen","dose":"400mg"},{"type":"symptom","value":"knee pain"}]
-
-Elderly patient coughing and mild fever 38.1
-[{"type":"symptom","value":"cough"},{"type":"temperature","value":38.1,"unit":"C","flag":"high"}]
-
-Peter seems fine today
-[]
+- Fever: `Peter has fever 39.2` -> facts: `Temperature 39.2 C high`; parseable_data: `[ { "type": "temperature", "value": 39.2, "unit": "C", "flag": "high" } ]`
+- Weight: `Peter weighs 12.4 kg` -> facts: `Weight 12.4 kg`; parseable_data: `[ { "type": "weight", "value": 12.4, "unit": "kg" } ]`
+- Breast feeding: `Peter breastfed left side for 18 minutes` -> facts: `Breast feeding left 18 min`; parseable_data: `[ { "type": "breast_feeding", "value": 18, "unit": "min", "side": "left" } ]`
+- Bottle feeding: `Peter drank 120 ml bottle` -> facts: `Bottle feeding 120 ml`; parseable_data: `[ { "type": "bottle_feeding", "value": 120, "unit": "ml" } ]`
+- Diaper: `Peter diaper wet and rash` -> facts: `Diaper wet`, `Diaper rash`; parseable_data: `[ { "type": "diaper", "wet": true, "solid": false, "rash": true } ]`
+- Labs: `Elderly patient WBC 11.2 G/L and CRP 3.1` -> facts: `WBC 11.2 G/L high`, `CRP 3.1`; parseable_data: `[ { "type": "WBC", "value": 11.2, "unit": "G/L", "ref": "4.0-10.0", "flag": "high" }, { "type": "CRP", "value": 3.1 } ]`
+- General note: `Peter seems fine today` -> facts: `General note seems fine today`; parseable_data: `[]`; occurred_at: `null`

@@ -4,9 +4,9 @@ class EntryDataParseJob < ApplicationJob
   def perform(entry_id)
     entry = Entry.find_by(id: entry_id)
     return unless entry
-    return if entry.parsed? && entry.data.present?
+    return if entry.parsed? && entry.parseable_data.present?
 
-    result = EntryDataParser.call(note: entry.note, preference: UserPreference.current, entry: entry)
+    result = EntryDataParser.call(input: entry.input, preference: UserPreference.current, entry: entry)
     if result.error.present?
       entry.update!(parse_status: "failed") if entry.pending_parse?
       broadcast_entries(entry.person)
@@ -14,7 +14,9 @@ class EntryDataParseJob < ApplicationJob
     end
 
     if entry.reload.pending_parse?
-      entry.update!(data: result.data, parse_status: "parsed")
+      attributes = { facts: result.facts, parseable_data: result.parseable_data, parse_status: "parsed" }
+      attributes[:occurred_at] = result.occurred_at if result.occurred_at.present?
+      entry.update!(attributes)
       broadcast_entries(entry.person)
     end
   end
