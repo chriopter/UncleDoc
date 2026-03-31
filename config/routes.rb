@@ -14,6 +14,7 @@ Rails.application.routes.draw do
       patch :toggle_todo, on: :member
     end
     resource :baby_feeding_timer, only: [ :create, :destroy ]
+    resource :baby_sleep_timer, only: [ :create, :destroy ]
     post "baby_quick_actions/diaper", to: "baby_quick_actions#diaper", as: :baby_diaper_action
     post "baby_quick_actions/bottle", to: "baby_quick_actions#bottle", as: :baby_bottle_action
   end

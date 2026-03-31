@@ -3,6 +3,8 @@
     <div class="flex-shrink-0">
     <% if entry.feeding? %>
       <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-300">🤱</div>
+    <% elsif entry.sleep? %>
+      <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-300">🌙</div>
     <% elsif entry.diaper? %>
       <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20 text-blue-300">🧷</div>
     <% else %>
@@ -22,6 +24,11 @@
         <% end %>
         <% if entry.bottle_amount_ml.present? %>
           <span class="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-200"><%= t("baby.bottle.badge", amount: entry.bottle_amount_ml) %></span>
+        <% end %>
+      <% elsif entry.sleep? %>
+        <span class="text-xs font-semibold uppercase tracking-wider text-indigo-400"><%= t("baby.types.sleep") %></span>
+        <% if entry.sleep_duration_minutes.present? %>
+          <span class="rounded-full bg-indigo-500/20 px-2 py-0.5 text-xs text-indigo-200"><%= t("baby.sleep.timer.duration", duration: entry.sleep_duration_minutes) %></span>
         <% end %>
       <% elsif entry.diaper? %>
         <span class="text-xs font-semibold uppercase tracking-wider text-blue-400"><%= t("baby.types.diaper") %></span>

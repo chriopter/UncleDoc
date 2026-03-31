@@ -16,11 +16,35 @@ class Person < ApplicationRecord
     entries.by_parseable_data_type("diaper").recent_first.first
   end
 
+  def last_sleep
+    entries.by_parseable_data_type("sleep").recent_first.first
+  end
+
   def time_since_last_feeding
+    last_feeding&.display_time
+  end
+
+  def last_feeding_started_at
+    return baby_feeding_timer_started_at if baby_feeding_timer_started_at.present?
+
+    last_breast_feeding = entries.by_parseable_data_type("breast_feeding").recent_first.first
+    return if last_breast_feeding.blank?
+
+    minutes = last_breast_feeding.first_parseable_data_of_type("breast_feeding")&.dig("value").to_i
+    return if minutes <= 0
+
+    last_breast_feeding.display_time - minutes.minutes
+  end
+
+  def last_feeding_stopped_at
     last_feeding&.display_time
   end
 
   def time_since_last_diaper
     last_diaper&.display_time
+  end
+
+  def time_since_last_sleep
+    last_sleep&.display_time
   end
 end

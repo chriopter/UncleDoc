@@ -53,6 +53,13 @@ class EntryDataParseJob < ApplicationJob
         partial: "shared/baby_activity_widget",
         locals: { person: person, type: :diaper }
       )
+
+      Turbo::StreamsChannel.broadcast_replace_to(
+        [ person, :entries ],
+        target: "overview_baby_activity_sleep",
+        partial: "shared/baby_activity_widget",
+        locals: { person: person, type: :sleep }
+      )
     end
 
     Turbo::StreamsChannel.broadcast_replace_to(

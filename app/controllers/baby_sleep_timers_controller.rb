@@ -1,4 +1,4 @@
-class BabyFeedingTimersController < ApplicationController
+class BabySleepTimersController < ApplicationController
   before_action :set_person
   before_action :ensure_baby_mode
 
@@ -7,12 +7,12 @@ class BabyFeedingTimersController < ApplicationController
 
     @person.with_lock do
       @person.reload
-      if @person.baby_feeding_timer_started_at.present?
-        redirect_back fallback_location: person_baby_path(person_slug: @person.name), notice: t("baby.feeding.timer.already_running")
+      if @person.baby_sleep_timer_started_at.present?
+        redirect_back fallback_location: person_baby_path(person_slug: @person.name), notice: t("baby.sleep.timer.already_running")
         return
       end
 
-      @person.update!(baby_feeding_timer_started_at: Time.current, baby_feeding_timer_side: feeding_side)
+      @person.update!(baby_sleep_timer_started_at: Time.current)
       started = true
     end
 
@@ -31,24 +31,23 @@ class BabyFeedingTimersController < ApplicationController
 
     @person.with_lock do
       @person.reload
-      started_at = @person.baby_feeding_timer_started_at
+      started_at = @person.baby_sleep_timer_started_at
 
       if started_at.blank?
-        redirect_back fallback_location: person_baby_path(person_slug: @person.name), alert: t("baby.feeding.timer.missing")
+        redirect_back fallback_location: person_baby_path(person_slug: @person.name), alert: t("baby.sleep.timer.missing")
         return
       end
 
       duration_minutes = [ ((Time.current - started_at) / 60).round, 1 ].max
-      side = @person.baby_feeding_timer_side.presence || "left"
 
       @person.entries.create!(
         occurred_at: Time.current,
-        input: t("baby.feeding.timer.note", side: t("baby.feeding.sides.#{side}"), duration: duration_minutes),
-        facts: EntryFactListBuilder.call([ { "type" => "breast_feeding", "value" => duration_minutes, "unit" => "min", "side" => side } ]),
-        parseable_data: [ { "type" => "breast_feeding", "value" => duration_minutes, "unit" => "min", "side" => side } ]
+        input: t("baby.sleep.timer.note", duration: duration_minutes),
+        facts: EntryFactListBuilder.call([ { "type" => "sleep", "value" => duration_minutes, "unit" => "min" } ]),
+        parseable_data: [ { "type" => "sleep", "value" => duration_minutes, "unit" => "min" } ]
       )
 
-      @person.update!(baby_feeding_timer_started_at: nil, baby_feeding_timer_side: nil)
+      @person.update!(baby_sleep_timer_started_at: nil)
       stopped = true
     end
 
@@ -70,9 +69,5 @@ class BabyFeedingTimersController < ApplicationController
 
   def ensure_baby_mode
     head :not_found unless @person.baby_mode?
-  end
-
-  def feeding_side
-    params[:side].in?(%w[left right]) ? params[:side] : "left"
   end
 end

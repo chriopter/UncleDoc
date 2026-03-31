@@ -59,31 +59,26 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Sending input to the LLM"
   end
 
-  test "shows compact baby widgets on overview instead of full log layout" do
+  test "overview keeps weight but moves baby-specific widgets to baby tab" do
     person = Person.create!(name: "Marlon", birth_date: Date.new(2025, 1, 1), baby_mode: true)
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 27, 9, 0), input: "Bottle 120ml", facts: [ "Bottle feeding 120 ml" ], parseable_data: [ { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" } ])
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 28, 10, 0), input: "Diaper: wet", facts: [ "Diaper wet" ], parseable_data: [ { "type" => "diaper", "wet" => true, "solid" => false } ])
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 6, 0), input: "Sleep 95 min", facts: [ "Sleep 95 min" ], parseable_data: [ { "type" => "sleep", "value" => 95, "unit" => "min" } ])
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 30, 15, 0), input: "Gewicht 3356g", facts: [ "Gewicht 3356 g" ], parseable_data: [ { "type" => "weight", "value" => 3356, "unit" => "g" } ])
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 31, 9, 0), input: "53cm Körpergröße", facts: [ "Körpergröße 53 cm" ], parseable_data: [ { "type" => "height", "value" => 53, "unit" => "cm" } ])
 
     get person_overview_url(person_slug: person.name)
 
     assert_response :success
-    assert_select "h2", text: /Baby quick actions|Baby-Schnellaktionen/, count: 1
-    assert_includes @response.body, "Left"
-    assert_includes @response.body, "Right"
-    assert_includes @response.body, "Bottle"
-    assert_includes @response.body, "Feedings"
-    assert_includes @response.body, "Diapers"
     assert_includes @response.body, "Weight trend"
-    assert_includes @response.body, "Height trend"
-    assert_includes @response.body, "1W"
-    assert_includes @response.body, "1M"
-    assert_includes @response.body, "1J"
-    assert_select "#overview_baby_activity_feeding", 1
-    assert_select "#overview_baby_activity_diaper", 1
     assert_select "#overview_weight_activity", 1
-    assert_select "#overview_height_activity", 1
+    assert_select "#overview_baby_tracking_feeding", 0
+    assert_select "#overview_baby_tracking_sleep", 0
+    assert_select "#overview_baby_tracking_diaper", 0
+    assert_select "#overview_baby_activity_feeding", 0
+    assert_select "#overview_baby_activity_sleep", 0
+    assert_select "#overview_baby_activity_diaper", 0
+    assert_select "#overview_height_activity", 0
     assert_select "h2", text: /Protocol - Marlon/, count: 0
   end
 
@@ -194,11 +189,21 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
   test "shows dedicated baby page when baby mode enabled" do
     person = Person.create!(name: "Marlon", birth_date: Date.new(2025, 1, 1), baby_mode: true)
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 6, 0), input: "Sleep 95 min", facts: [ "Sleep 95 min" ], parseable_data: [ { "type" => "sleep", "value" => 95, "unit" => "min" } ])
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 30, 15, 0), input: "Gewicht 3356g", facts: [ "Gewicht 3356 g" ], parseable_data: [ { "type" => "weight", "value" => 3356, "unit" => "g" } ])
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 31, 9, 0), input: "53cm Körpergröße", facts: [ "Körpergröße 53 cm" ], parseable_data: [ { "type" => "height", "value" => 53, "unit" => "cm" } ])
 
     get person_baby_url(person_slug: person.name)
 
     assert_response :success
-    assert_select "#overview_baby_quick", 1
+    assert_select "#overview_baby_tracking_feeding", 1
+    assert_select "#overview_baby_tracking_sleep", 1
+    assert_select "#overview_baby_tracking_diaper", 1
+    assert_select "#overview_baby_activity_feeding", 1
+    assert_select "#overview_baby_activity_sleep", 1
+    assert_select "#overview_baby_activity_diaper", 1
+    assert_select "#overview_weight_activity", 1
+    assert_select "#overview_height_activity", 1
   end
 
   test "overview still shows planning widget when empty" do

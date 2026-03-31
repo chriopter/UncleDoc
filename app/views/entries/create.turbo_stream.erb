@@ -18,6 +18,9 @@
   <%= turbo_stream.replace "overview_baby_activity_feeding" do %>
     <%= render "shared/baby_activity_widget", person: @person, type: :feeding %>
   <% end %>
+  <%= turbo_stream.replace "overview_baby_activity_sleep" do %>
+    <%= render "shared/baby_activity_widget", person: @person, type: :sleep %>
+  <% end %>
   <%= turbo_stream.replace "overview_baby_activity_diaper" do %>
     <%= render "shared/baby_activity_widget", person: @person, type: :diaper %>
   <% end %>
