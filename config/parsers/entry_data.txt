@@ -46,6 +46,7 @@ Return exactly one JSON object.
 - Keep wording close to the source, but cleaner.
 - Keep uncertainty when the source is uncertain.
 - Include meaningful observations even when they are too fuzzy for `parseable_data`.
+- Preserve explicit location context in facts when it matters, for example `in the hospital`, `at home`, or `in the garden`.
 - Do not duplicate the same fact in different wording.
 - For general but meaningful notes, emit a simple fact like `General note seems fine today`.
 
@@ -56,6 +57,7 @@ Return exactly one JSON object.
 - Add `value` when there is a clear primary value or named item.
 - Add `unit` when a unit is explicit or obvious.
 - Only use supported extra keys: `side`, `dose`, `wet`, `solid`, `rash`, `ref`, `flag`, `location`, `quality`.
+- If the input explicitly states a relevant location such as `in the hospital`, `at home`, or `in the garden`, include it in the `location` field when it clearly belongs to that structured item.
 - Preserve uppercase lab names such as `WBC` and `CRP`.
 - Use lowercase snake_case for common canonical types.
 - Use JSON numbers for numeric values, not strings.
@@ -85,7 +87,7 @@ Prefer these canonical types whenever they fit exactly: `temperature`, `pulse`, 
 - `diaper`: `type`, `wet`, `solid`, optional `rash`; always include boolean `wet` and `solid`; add `rash` only when explicit -> `{ "type": "diaper", "wet": true, "solid": false }`, `{ "type": "diaper", "wet": false, "solid": true }`, `{ "type": "diaper", "wet": true, "solid": true }`, `{ "type": "diaper", "wet": true, "solid": false, "rash": true }`
 - `medication`: `type`, `value`, optional `dose` -> `{ "type": "medication", "value": "ibuprofen", "dose": "400mg" }`
 - `sleep`: `type`, `value`, `unit` (`unit: "min"`) -> `{ "type": "sleep", "value": 95, "unit": "min" }`
-- `symptom`: `type`, `value`, optional `location`, optional `quality` -> `{ "type": "symptom", "value": "cough" }`
+- `symptom`: `type`, `value`, optional `location`, optional `quality` -> `{ "type": "symptom", "value": "cough", "location": "hospital" }`
 
 ## Examples
 
@@ -96,5 +98,6 @@ These examples exist to show the intended level of detail and the relationship b
 - Breast feeding: `Peter breastfed left side for 18 minutes` -> facts: `Breast feeding left 18 min`; parseable_data: `[ { "type": "breast_feeding", "value": 18, "unit": "min", "side": "left" } ]`
 - Bottle feeding: `Peter drank 120 ml bottle` -> facts: `Bottle feeding 120 ml`; parseable_data: `[ { "type": "bottle_feeding", "value": 120, "unit": "ml" } ]`
 - Diaper: `Peter diaper wet and rash` -> facts: `Diaper wet`, `Diaper rash`; parseable_data: `[ { "type": "diaper", "wet": true, "solid": false, "rash": true } ]`
+- Location: `Fever in the hospital` -> facts: `Temperature high in the hospital`; parseable_data: `[ { "type": "temperature", "flag": "high", "location": "hospital" } ]`
 - Labs: `Elderly patient WBC 11.2 G/L and CRP 3.1` -> facts: `WBC 11.2 G/L high`, `CRP 3.1`; parseable_data: `[ { "type": "WBC", "value": 11.2, "unit": "G/L", "ref": "4.0-10.0", "flag": "high" }, { "type": "CRP", "value": 3.1 } ]`
 - General note: `Peter seems fine today` -> facts: `General note seems fine today`; parseable_data: `[]`; occurred_at: `null`

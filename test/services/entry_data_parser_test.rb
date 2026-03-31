@@ -215,6 +215,9 @@ class EntryDataParserTest < ActiveSupport::TestCase
 
     assert_includes prompt, "For any non-empty input, produce at least one fact."
     assert_includes prompt, "Write facts in the same language as the input"
+    assert_includes prompt, "Preserve explicit location context in facts"
+    assert_includes prompt, '"location"'
+    assert_includes prompt, "Fever in the hospital"
     assert_includes prompt, "## Rules For Occurred At"
     assert_includes prompt, '"occurred_at": null'
     assert_includes prompt, "Never return the current reference time just because no timing information was found."
