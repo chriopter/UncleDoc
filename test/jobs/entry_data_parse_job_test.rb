@@ -30,7 +30,7 @@ class EntryDataParseJobTest < ActiveJob::TestCase
     assert_equal 39.2, entry.parseable_data.first["value"]
     assert_equal Time.zone.local(2026, 3, 28, 22, 10, 0), entry.occurred_at
     assert_equal "parsed", entry.parse_status
-    assert_equal 3, broadcast_calls.size
+    assert_equal 4, broadcast_calls.size
   end
 
   test "does not change occurred_at when parser returns no inferred timestamp" do

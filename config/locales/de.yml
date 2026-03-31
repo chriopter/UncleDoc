@@ -12,6 +12,13 @@ de:
       compact: "%d.%m.%Y"
   
   time:
+    compact:
+      minutes_ago:
+        one: "vor 1 Min"
+        other: "vor %{count} Min"
+      hours_ago:
+        one: "vor 1 Std"
+        other: "vor %{count} Std"
     formats:
       default: "%H:%M"
   
@@ -113,6 +120,13 @@ de:
     sort:
       occurred: "Ereignet"
       entered: "Erfasst"
+    filters:
+      date: "Datum"
+      parseable_type: "Geparster Typ"
+      all_dates: "Alle Daten"
+      all_types: "Alle geparsten Typen"
+      apply: "Anwenden"
+      reset: "Zurücksetzen"
     fact_labels:
       temperature: "Temperatur"
       pulse: "Puls"
@@ -332,6 +346,11 @@ de:
 
   # Baby mode
   baby:
+    activity:
+      label: "Baby-Aktivität"
+      subtitle: "Schnellübersicht der letzten fünf Tage auf Basis der protokollierten Fütterungen und Windelnotizen."
+      feeding_title: "Fütterungen"
+      diaper_title: "Windeln"
     quick_actions:
       title: "Baby-Schnellaktionen"
       subtitle: "Die Schnellbuttons schreiben strukturierte Daten direkt. Freitext darunter bleibt fur alles andere sichtbar."
@@ -390,6 +409,7 @@ de:
       title: "Baby-Protokoll"
     last_feeding: "Letzte Fütterung"
     last_diaper: "Letzte Windel"
+    diaper_change: "Windelwechsel"
     types:
       feeding: "Fütterung"
       diaper: "Windel"
@@ -402,6 +422,10 @@ de:
   # Person overview page
   person:
     overview:
+      weight:
+        title: "Gewichtsverlauf"
+        subtitle: "Neueste gespeicherte Gewichtseinträge"
+        empty_range: "Keine Gewichtseinträge in diesem Zeitraum."
       family_member: "Familienmitglied"
       edit_person: "Person bearbeiten"
       birth_date: "Geboren"

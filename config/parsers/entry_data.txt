@@ -54,10 +54,15 @@ Return exactly one JSON object.
 
 - Include only facts that are explicit enough for stable machine use.
 - Each item must be a JSON object with a `type`.
+- `parseable_data` must always use English canonical schema, even when the input and `facts` are in another language.
+- Keep all `type` names in English.
+- Keep fixed categorical field values in English where possible, for example `side`, `flag`, and `quality`.
 - Add `value` when there is a clear primary value or named item.
 - Add `unit` when a unit is explicit or obvious.
 - Only use supported extra keys: `side`, `dose`, `wet`, `solid`, `rash`, `ref`, `flag`, `location`, `quality`.
 - If the input explicitly states a relevant location such as `in the hospital`, `at home`, or `in the garden`, include it in the `location` field when it clearly belongs to that structured item.
+- For baby notes, map general feeding notes such as `Trinken`, `Stillen`, or `Fütterung` to `breast_feeding` unless the note explicitly indicates a bottle.
+- For baby notes, map `Windel` notes to `diaper`.
 - Preserve uppercase lab names such as `WBC` and `CRP`.
 - Use lowercase snake_case for common canonical types.
 - Use JSON numbers for numeric values, not strings.
@@ -83,7 +88,7 @@ Prefer these canonical types whenever they fit exactly: `temperature`, `pulse`, 
 - `pulse`: `type`, `value`, `unit` -> `{ "type": "pulse", "value": 128, "unit": "bpm" }`
 - `weight`: `type`, `value`, `unit` -> `{ "type": "weight", "value": 12.4, "unit": "kg" }`
 - `bottle_feeding`: `type`, `value`, `unit` (`unit: "ml"`) -> `{ "type": "bottle_feeding", "value": 120, "unit": "ml" }`
-- `breast_feeding`: `type`, `value`, `unit`, optional `side` (`unit: "min"`) -> `{ "type": "breast_feeding", "value": 18, "unit": "min", "side": "left" }`
+- `breast_feeding`: `type`, optional `value`, optional `unit`, optional `side`, optional `quality` (`unit: "min"` when duration exists) -> `{ "type": "breast_feeding", "value": 18, "unit": "min", "side": "left" }`, `{ "type": "breast_feeding", "quality": "good" }`
 - `diaper`: `type`, `wet`, `solid`, optional `rash`; always include boolean `wet` and `solid`; add `rash` only when explicit -> `{ "type": "diaper", "wet": true, "solid": false }`, `{ "type": "diaper", "wet": false, "solid": true }`, `{ "type": "diaper", "wet": true, "solid": true }`, `{ "type": "diaper", "wet": true, "solid": false, "rash": true }`
 - `medication`: `type`, `value`, optional `dose` -> `{ "type": "medication", "value": "ibuprofen", "dose": "400mg" }`
 - `sleep`: `type`, `value`, `unit` (`unit: "min"`) -> `{ "type": "sleep", "value": 95, "unit": "min" }`
@@ -97,7 +102,9 @@ These examples exist to show the intended level of detail and the relationship b
 - Weight: `Peter weighs 12.4 kg` -> facts: `Weight 12.4 kg`; parseable_data: `[ { "type": "weight", "value": 12.4, "unit": "kg" } ]`
 - Breast feeding: `Peter breastfed left side for 18 minutes` -> facts: `Breast feeding left 18 min`; parseable_data: `[ { "type": "breast_feeding", "value": 18, "unit": "min", "side": "left" } ]`
 - Bottle feeding: `Peter drank 120 ml bottle` -> facts: `Bottle feeding 120 ml`; parseable_data: `[ { "type": "bottle_feeding", "value": 120, "unit": "ml" } ]`
+- German feeding note: `Trinken gut` -> facts: `Trinken gut`; parseable_data: `[ { "type": "breast_feeding", "quality": "good" } ]`
 - Diaper: `Peter diaper wet and rash` -> facts: `Diaper wet`, `Diaper rash`; parseable_data: `[ { "type": "diaper", "wet": true, "solid": false, "rash": true } ]`
+- German combined baby note: `Trinken gut; Windel: nass + fest` -> facts: `Trinken gut`, `Windel nass und fest`; parseable_data: `[ { "type": "breast_feeding", "quality": "good" }, { "type": "diaper", "wet": true, "solid": true } ]`
 - Location: `Fever in the hospital` -> facts: `Temperature high in the hospital`; parseable_data: `[ { "type": "temperature", "flag": "high", "location": "hospital" } ]`
 - Labs: `Elderly patient WBC 11.2 G/L and CRP 3.1` -> facts: `WBC 11.2 G/L high`, `CRP 3.1`; parseable_data: `[ { "type": "WBC", "value": 11.2, "unit": "G/L", "ref": "4.0-10.0", "flag": "high" }, { "type": "CRP", "value": 3.1 } ]`
 - General note: `Peter seems fine today` -> facts: `General note seems fine today`; parseable_data: `[]`; occurred_at: `null`

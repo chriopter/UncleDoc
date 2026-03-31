@@ -1,8 +1,8 @@
 <section class="space-y-6">
   <%= turbo_stream_from [person, :entries] %>
 
-  <div class="grid gap-6 xl:grid-cols-3 xl:items-start">
-    <div class="group rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
+  <div class="grid gap-6 xl:grid-cols-6 xl:auto-rows-[minmax(16rem,auto)] xl:items-start">
+    <div class="group rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur xl:col-span-2">
       <div class="space-y-6">
         <div>
           <div class="mb-5 flex items-start justify-between gap-4">
@@ -33,13 +33,30 @@
     </div>
 
     <% if person.baby_mode? %>
-      <%= render "dashboard/baby_overview_tools", person: person %>
+      <div class="xl:col-span-2">
+        <%= render "dashboard/baby_overview_tools", person: person %>
+      </div>
+
+      <% if weight_activity_available?(person) %>
+        <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort], card_classes: "xl:col-span-2 h-full" %>
+      <% else %>
+        <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort], card_classes: "xl:col-span-2 h-full" %>
+      <% end %>
+
+      <% if weight_activity_available?(person) %>
+        <%= render "shared/weight_activity_widget", person: person, card_classes: "xl:col-span-2 h-full" %>
+        <%= render "shared/baby_activity_widget", person: person, type: :feeding, card_classes: "xl:col-span-2 h-full" %>
+        <%= render "shared/baby_activity_widget", person: person, type: :diaper, card_classes: "xl:col-span-2 h-full" %>
+      <% else %>
+        <%= render "shared/baby_activity_widget", person: person, type: :feeding, card_classes: "xl:col-span-3 h-full" %>
+        <%= render "shared/baby_activity_widget", person: person, type: :diaper, card_classes: "xl:col-span-3 h-full" %>
+      <% end %>
     <% else %>
-      <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort], card_classes: "xl:col-span-2" %>
+      <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort], card_classes: "xl:col-span-2 h-full" %>
+
+      <% if weight_activity_available?(person) %>
+        <%= render "shared/weight_activity_widget", person: person, card_classes: "xl:col-span-2 h-full" %>
+      <% end %>
     <% end %>
   </div>
-
-  <% if person.baby_mode? %>
-    <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort] %>
-  <% end %>
 </section>

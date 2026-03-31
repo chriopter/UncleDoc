@@ -9,5 +9,5 @@
     <%= render "entries/inline_form", entry: @entry, person: @person %>
   </section>
 
-  <%= render "dashboard/log_feed", person: @person, entries: @entries, sort: @entry_sort %>
+  <%= render "dashboard/log_feed", person: @person, entries: @entries, sort: @entry_sort, available_filters: @available_log_filters %>
 </section>
