@@ -218,6 +218,9 @@ class EntryDataParserTest < ActiveSupport::TestCase
     assert_includes prompt, "Preserve explicit location context in facts"
     assert_includes prompt, '"location"'
     assert_includes prompt, "Fever in the hospital"
+    assert_includes prompt, "English canonical schema"
+    assert_includes prompt, "Trinken gut"
+    assert_includes prompt, '"type": "breast_feeding"'
     assert_includes prompt, "## Rules For Occurred At"
     assert_includes prompt, '"occurred_at": null'
     assert_includes prompt, "Never return the current reference time just because no timing information was found."

@@ -12,6 +12,13 @@ en:
       compact: "%m/%d/%Y"
   
   time:
+    compact:
+      minutes_ago:
+        one: "1m ago"
+        other: "%{count}m ago"
+      hours_ago:
+        one: "1h ago"
+        other: "%{count}h ago"
     formats:
       default: "%H:%M"
   
@@ -113,6 +120,13 @@ en:
     sort:
       occurred: "Occurred"
       entered: "Entered"
+    filters:
+      date: "Date"
+      parseable_type: "Parsed type"
+      all_dates: "All dates"
+      all_types: "All parsed types"
+      apply: "Apply"
+      reset: "Reset"
     fact_labels:
       temperature: "Temperature"
       pulse: "Pulse"
@@ -332,6 +346,11 @@ en:
 
   # Baby mode
   baby:
+    activity:
+      label: "Baby activity"
+      subtitle: "Quick counts from the last five days based on logged feedings and diaper notes."
+      feeding_title: "Feedings"
+      diaper_title: "Diapers"
     quick_actions:
       title: "Baby quick actions"
       subtitle: "Quick buttons write structured data directly. Free text below is still available for anything else."
@@ -390,6 +409,7 @@ en:
       title: "Baby protocol"
     last_feeding: "Last feeding"
     last_diaper: "Last diaper"
+    diaper_change: "Diaper change"
     types:
       feeding: "Feeding"
       diaper: "Diaper"
@@ -402,6 +422,10 @@ en:
   # Person overview page
   person:
     overview:
+      weight:
+        title: "Weight trend"
+        subtitle: "Latest stored weight entries"
+        empty_range: "No weight entries in this range."
       family_member: "Family Member"
       edit_person: "Edit person"
       birth_date: "Born"

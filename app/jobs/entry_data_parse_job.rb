@@ -39,11 +39,34 @@ class EntryDataParseJob < ApplicationJob
       locals: { person: person, entries: person.entries.recent_first }
     )
 
+    if person.baby_mode?
+      Turbo::StreamsChannel.broadcast_replace_to(
+        [ person, :entries ],
+        target: "overview_baby_activity_feeding",
+        partial: "shared/baby_activity_widget",
+        locals: { person: person, type: :feeding }
+      )
+
+      Turbo::StreamsChannel.broadcast_replace_to(
+        [ person, :entries ],
+        target: "overview_baby_activity_diaper",
+        partial: "shared/baby_activity_widget",
+        locals: { person: person, type: :diaper }
+      )
+    end
+
     Turbo::StreamsChannel.broadcast_replace_to(
       [ person, :entries ],
       target: "overview_person_meta",
       partial: "shared/overview_person_meta",
       locals: { person: person, entries: person.entries.recent_first }
+    )
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      [ person, :entries ],
+      target: "overview_weight_activity",
+      partial: "shared/weight_activity_widget",
+      locals: { person: person }
     )
   end
 end

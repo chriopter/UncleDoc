@@ -41,6 +41,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Temperature in the evening"
     assert_includes @response.body, "Mild fever in the evening"
     assert_includes @response.body, "Occurred"
+    assert_includes @response.body, "Parsed type"
     assert_includes @response.body, I18n.l(person.entries.first.display_time, format: :long)
   end
 
@@ -60,13 +61,25 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
   test "shows compact baby widgets on overview instead of full log layout" do
     person = Person.create!(name: "Marlon", birth_date: Date.new(2025, 1, 1), baby_mode: true)
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 27, 9, 0), input: "Bottle 120ml", facts: [ "Bottle feeding 120 ml" ], parseable_data: [ { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" } ])
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 28, 10, 0), input: "Diaper: wet", facts: [ "Diaper wet" ], parseable_data: [ { "type" => "diaper", "wet" => true, "solid" => false } ])
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 30, 15, 0), input: "Gewicht 3356g", facts: [ "Gewicht 3356 g" ], parseable_data: [ { "type" => "weight", "value" => 3356, "unit" => "g" } ])
 
     get person_overview_url(person_slug: person.name)
 
     assert_response :success
-    assert_select "h2", /Baby quick actions|Baby-Schnellaktionen/, 1
+    assert_select "h2", text: /Baby quick actions|Baby-Schnellaktionen/, count: 1
     assert_includes @response.body, "Breast"
     assert_includes @response.body, "Bottle"
+    assert_includes @response.body, "Feedings"
+    assert_includes @response.body, "Diapers"
+    assert_includes @response.body, "Weight trend"
+    assert_includes @response.body, "1W"
+    assert_includes @response.body, "1M"
+    assert_includes @response.body, "1J"
+    assert_select "#overview_baby_activity_feeding", 1
+    assert_select "#overview_baby_activity_diaper", 1
+    assert_select "#overview_weight_activity", 1
     assert_select "h2", text: /Protocol - Marlon/, count: 0
   end
 
@@ -118,6 +131,19 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "breast_feeding"
   end
 
+  test "overview shows weight widget when weight data exists" do
+    person = Person.create!(name: "Weighty", birth_date: Date.new(2024, 1, 1))
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 27, 9, 0), input: "75kg", facts: [ "Weight 75 kg" ], parseable_data: [ { "type" => "weight", "value" => 75, "unit" => "kg" } ])
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 30, 9, 0), input: "74.2kg", facts: [ "Weight 74.2 kg" ], parseable_data: [ { "type" => "weight", "value" => 74.2, "unit" => "kg" } ])
+
+    get person_overview_url(person_slug: person.name)
+
+    assert_response :success
+    assert_select "#overview_weight_activity", 1
+    assert_includes @response.body, "Weight trend"
+    assert_includes @response.body, "74.2 kg"
+  end
+
   test "overview and log can sort by entered time" do
     person = Person.create!(name: "Sorty", birth_date: Date.new(2024, 1, 1))
     older_entry = nil
@@ -138,5 +164,34 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     get person_log_url(person_slug: person.name, sort: "entered")
     assert_response :success
     assert @response.body.index("Newer fact") < @response.body.index("Older fact")
+  end
+
+  test "log can filter by date and parsed type" do
+    person = Person.create!(name: "Filtery", birth_date: Date.new(2024, 1, 1))
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 8, 0), input: "Bottle 120ml", facts: [ "Bottle feeding 120 ml" ], parseable_data: [ { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" } ])
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 9, 0), input: "Diaper wet", facts: [ "Diaper wet" ], parseable_data: [ { "type" => "diaper", "wet" => true, "solid" => false } ])
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 30, 10, 0), input: "Bottle 90ml", facts: [ "Bottle feeding 90 ml" ], parseable_data: [ { "type" => "bottle_feeding", "value" => 90, "unit" => "ml" } ])
+
+    get person_log_url(person_slug: person.name, date: "2026-03-29", parseable_type: "diaper")
+
+    assert_response :success
+    assert_includes @response.body, "Diaper wet"
+    assert_not_includes @response.body, "Bottle feeding 120 ml"
+    assert_not_includes @response.body, "Bottle feeding 90 ml"
+    assert_includes @response.body, "2026-03-29"
+    assert_includes @response.body, "diaper · Diaper"
+  end
+
+  test "baby log can filter by exact parseable type" do
+    person = Person.create!(name: "Marlon", birth_date: Date.new(2025, 1, 1), baby_mode: true)
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 12, 0), input: "Stillen links 12 min; Windel: nass + fest", facts: [ "Stillen links 12 min", "Windel nass und fest" ], parseable_data: [ { "type" => "breast_feeding", "value" => 12, "unit" => "min", "side" => "left" }, { "type" => "diaper", "wet" => true, "solid" => true } ])
+    person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 19, 30), input: "Windel: nass + fest", facts: [ "Windel nass und fest" ], parseable_data: [ { "type" => "diaper", "wet" => true, "solid" => true } ])
+
+    get person_log_url(person_slug: person.name, date: "2026-03-29", parseable_type: "breast_feeding")
+
+    assert_response :success
+    assert_includes @response.body, "breast_feeding · Breastfeeding"
+    assert_includes @response.body, "Stillen links 12 min"
+    assert_not_includes @response.body, "March 29, 2026 19:30"
   end
 end

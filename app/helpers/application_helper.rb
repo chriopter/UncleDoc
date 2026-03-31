@@ -85,6 +85,19 @@ module ApplicationHelper
     time_ago_in_words(time)
   end
 
+  def compact_time_ago_label(time)
+    return unless time
+
+    minutes_ago = [ ((Time.current - time) / 60).floor, 1 ].max
+
+    if minutes_ago < 360
+      t("time.compact.minutes_ago", count: minutes_ago)
+    else
+      hours_ago = [ (minutes_ago / 60.0).round, 1 ].max
+      t("time.compact.hours_ago", count: hours_ago)
+    end
+  end
+
   def entry_sort_mode(params_or_mode)
     mode = if params_or_mode.respond_to?(:to_unsafe_h) || params_or_mode.is_a?(Hash)
       params_or_mode[:sort]
@@ -96,5 +109,180 @@ module ApplicationHelper
 
   def entry_sort_label(mode)
     t("entries.sort.#{entry_sort_mode(mode)}")
+  end
+
+  def log_filter_params(overrides = {})
+    params.permit(:sort, :date, :parseable_type).to_h.symbolize_keys.merge(overrides).compact
+  end
+
+  def log_filter_date_label(date)
+    I18n.l(date, format: "%A, %d.%m.%Y")
+  end
+
+  def overview_widget_params(overrides = {})
+    params.permit(:sort, :recent_range, :feeding_range, :diaper_range, :weight_range).to_h.symbolize_keys.merge(overrides).compact
+  end
+
+  def overview_period_mode(params_or_hash, key)
+    source = if params_or_hash.respond_to?(:to_unsafe_h) || params_or_hash.is_a?(Hash)
+      params_or_hash["#{key}_range"] || params_or_hash["#{key}_range".to_sym]
+    else
+      params_or_hash
+    end
+
+    %w[1w 1m 1j].include?(source.to_s) ? source.to_s : "1w"
+  end
+
+  def overview_period_options
+    [ [ "1W", "1w" ], [ "1M", "1m" ], [ "1J", "1j" ] ]
+  end
+
+  def overview_period_window(period)
+    case period.to_s
+    when "1m"
+      29.days.ago.beginning_of_day..Time.zone.now.end_of_day
+    when "1j"
+      1.year.ago.beginning_of_day..Time.zone.now.end_of_day
+    else
+      6.days.ago.beginning_of_day..Time.zone.now.end_of_day
+    end
+  end
+
+  def overview_recent_entries(person, sort_mode:, period:)
+    scope = person.entries.merge(Entry.sorted_by(sort_mode)).where(occurred_at: overview_period_window(period))
+    scope.limit(3)
+  end
+
+  def weight_activity_available?(person)
+    person.entries.merge(Entry.by_parseable_data_type("weight")).exists?
+  end
+
+  def baby_activity_series(person, type, period: "1w")
+    entries = person.entries.where(occurred_at: overview_period_window(period))
+
+    buckets = case period.to_s
+    when "1m"
+      build_day_buckets(Time.zone.today - 24.days, 5, 5.days)
+    when "1j"
+      build_month_buckets(6)
+    else
+      build_day_buckets(Time.zone.today - 6.days, 7, 1.day)
+    end
+
+    buckets.map do |bucket|
+      count = entries.count do |entry|
+        matches_type = type == :feeding ? baby_feeding_activity_entry?(entry) : baby_diaper_activity_entry?(entry)
+        matches_type && bucket[:range].cover?(entry.display_time)
+      end
+
+      {
+        date: bucket[:date],
+        day_label: bucket[:day_label],
+        short_label: bucket[:short_label],
+        count: count
+      }
+    end
+  end
+
+  def baby_activity_bar_height(count, max_count)
+    return 12 if count.zero? || max_count.zero?
+
+    [ [ (count.to_f / max_count * 100).round, 18 ].max, 100 ].min
+  end
+
+  def weight_activity_series(person, period: "1w")
+    entries = person.entries
+      .merge(Entry.by_parseable_data_type("weight"))
+
+    buckets = case period.to_s
+    when "1m"
+      build_day_buckets(Time.zone.today - 24.days, 5, 5.days)
+    when "1j"
+      build_month_buckets(6)
+    else
+      build_day_buckets(Time.zone.today - 6.days, 7, 1.day)
+    end
+
+    buckets.filter_map do |bucket|
+      entry = entries.where(occurred_at: bucket[:range]).order(occurred_at: :desc, created_at: :desc).first
+      next unless entry
+
+        item = entry.first_parseable_data_of_type("weight")
+        value = item&.dig("value")
+        unit = item&.dig("unit") || "kg"
+        next unless value.present?
+
+        {
+          date: bucket[:date],
+          day_label: bucket[:day_label],
+          short_label: bucket[:short_label],
+          value: value.to_f,
+          unit: unit
+        }
+      end
+  end
+
+  def weight_activity_plot_points(series)
+    return [] if series.blank?
+
+    min_value = series.map { |point| point[:value] }.min
+    max_value = series.map { |point| point[:value] }.max
+    range = max_value - min_value
+    min_x = 8.0
+    max_x = 92.0
+    min_y = 8.0
+    max_y = 52.0
+    step_x = series.length > 1 ? (max_x - min_x) / (series.length - 1) : 0
+
+    series.each_with_index.map do |point, index|
+      x = (min_x + step_x * index).round(2)
+      y = if range.zero?
+        30
+      else
+        (max_y - (((point[:value] - min_value) / range.to_f) * (max_y - min_y))).round(2)
+      end
+      { x: x, y: y, value: point[:value], short_label: point[:short_label] }
+    end
+  end
+
+  def weight_activity_line_points(series)
+    weight_activity_plot_points(series).map { |point| "#{point[:x]},#{point[:y]}" }.join(" ")
+  end
+
+  def build_day_buckets(start_date, count, step)
+    count.times.map do |index|
+      bucket_start = (start_date + (step * index)).beginning_of_day
+      bucket_end = [ bucket_start + step - 1.second, Time.zone.now.end_of_day ].min
+      {
+        date: bucket_end.to_date,
+        range: bucket_start..bucket_end,
+        day_label: I18n.l(bucket_end.to_date, format: count >= 7 ? "%a" : "%d.%m"),
+        short_label: I18n.l(bucket_end.to_date, format: "%d.%m")
+      }
+    end
+  end
+
+  def build_month_buckets(count)
+    count.times.map do |index|
+      month_date = (Time.zone.today.beginning_of_month - (count - 1 - index).months)
+      {
+        date: month_date.to_date,
+        range: month_date.beginning_of_month..month_date.end_of_month.end_of_day,
+        day_label: I18n.l(month_date.to_date, format: "%b"),
+        short_label: I18n.l(month_date.to_date, format: "%b")
+      }
+    end
+  end
+
+  def baby_feeding_activity_entry?(entry)
+    return true if entry.feeding?
+
+    entry.input.to_s.downcase.match?(/trinken|stillen|flasche|bottle|breast/i)
+  end
+
+  def baby_diaper_activity_entry?(entry)
+    return true if entry.diaper?
+
+    entry.input.to_s.downcase.include?("windel")
   end
 end
