@@ -60,6 +60,10 @@ class Entry < ApplicationRecord
     numeric_value(feeding&.dig("value"))
   end
 
+  def feeding_side
+    first_parseable_data_of_type("breast_feeding")&.dig("side")
+  end
+
   def bottle_amount_ml
     bottle = first_parseable_data_of_type("bottle_feeding")
     numeric_value(bottle&.dig("value"))

@@ -380,6 +380,7 @@ en:
       empty: "No feedings recorded yet"
       started_ago: "Started"
       stopped_ago: "Stopped"
+      last_duration: "Duration"
       start_side: "Start %{side}"
       sides:
         left: "Left"

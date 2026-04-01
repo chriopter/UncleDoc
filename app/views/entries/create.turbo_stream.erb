@@ -11,18 +11,21 @@
 <% end %>
 
 <%= turbo_stream.replace "overview_planning" do %>
-  <%= render "shared/planning_widget", person: @person, card_classes: "xl:col-span-4 xl:row-span-3 h-full" %>
+  <%= render "shared/planning_widget", person: @person, card_classes: "h-full" %>
 <% end %>
 
 <% if @person.baby_mode? %>
-  <%= turbo_stream.replace "overview_baby_activity_feeding" do %>
-    <%= render "shared/baby_activity_widget", person: @person, type: :feeding %>
+  <%= turbo_stream.replace "overview_baby_actions" do %>
+    <%= render "shared/baby_actions_widget", person: @person, card_classes: "h-full" %>
   <% end %>
-  <%= turbo_stream.replace "overview_baby_activity_sleep" do %>
-    <%= render "shared/baby_activity_widget", person: @person, type: :sleep %>
+  <%= turbo_stream.replace "overview_baby_tracking_feeding" do %>
+    <%= render "shared/baby_feeding_tracker_widget", person: @person, card_classes: "flex-1" %>
   <% end %>
-  <%= turbo_stream.replace "overview_baby_activity_diaper" do %>
-    <%= render "shared/baby_activity_widget", person: @person, type: :diaper %>
+  <%= turbo_stream.replace "overview_baby_tracking_sleep" do %>
+    <%= render "shared/baby_sleep_tracker_widget", person: @person, card_classes: "flex-1" %>
+  <% end %>
+  <%= turbo_stream.replace "overview_baby_tracking_diaper" do %>
+    <%= render "shared/baby_diaper_tracker_widget", person: @person, card_classes: "flex-1" %>
   <% end %>
 <% end %>
 

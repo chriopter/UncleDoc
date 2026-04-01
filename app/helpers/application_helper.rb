@@ -83,6 +83,32 @@ module ApplicationHelper
     t("baby.sleep.timer.duration", duration: duration_minutes)
   end
 
+  def feeding_session_label(started_at, ended_at)
+    return unless started_at && ended_at
+
+    start_time = I18n.l(started_at, format: "%H:%M")
+    end_time = I18n.l(ended_at, format: "%H:%M")
+
+    if started_at.to_date == ended_at.to_date
+      if started_at.to_date == Time.zone.today
+        "#{start_time}-#{end_time}"
+      else
+        "#{I18n.l(started_at, format: "%-d %b")} #{start_time}-#{end_time}"
+      end
+    else
+      "#{I18n.l(started_at, format: "%-d %b #{start_time}")}-#{I18n.l(ended_at, format: "%-d %b #{end_time}")}"
+    end
+  end
+
+  def diaper_event_label(entry)
+    labels = []
+    labels << t("baby.diaper.buttons.wet") if entry.diaper_wet?
+    labels << t("baby.diaper.buttons.solid") if entry.diaper_solid?
+    labels = [ t("baby.diaper.buttons.both") ] if entry.diaper_wet? && entry.diaper_solid?
+    labels << t("baby.diaper.rash") if entry.diaper_rash?
+    labels.join(" · ")
+  end
+
   def capped_time_ago_in_words(time)
     return unless time
 
@@ -152,7 +178,7 @@ module ApplicationHelper
 
   def recent_activity_card_classes_for(person)
     if widget_context_for(person) == :baby
-      "xl:col-span-4 xl:row-span-3 h-full"
+      "xl:col-span-4 xl:row-span-4 h-full"
     else
       "xl:col-span-2 xl:row-span-3 h-full"
     end
