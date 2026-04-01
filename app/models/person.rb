@@ -40,11 +40,31 @@ class Person < ApplicationRecord
     last_feeding&.display_time
   end
 
+  def last_feeding_duration_minutes
+    breast_feeding = entries.by_parseable_data_type("breast_feeding").recent_first.first
+    return if breast_feeding.blank?
+
+    minutes = breast_feeding.first_parseable_data_of_type("breast_feeding")&.dig("value").to_i
+    minutes.positive? ? minutes : nil
+  end
+
+  def recent_timed_feedings(limit = 3)
+    entries.by_parseable_data_type("breast_feeding").recent_first.select { |entry| entry.feeding_duration_minutes.to_i.positive? }.first(limit)
+  end
+
   def time_since_last_diaper
     last_diaper&.display_time
   end
 
   def time_since_last_sleep
     last_sleep&.display_time
+  end
+
+  def recent_sleep_sessions(limit = 3)
+    entries.by_parseable_data_type("sleep").recent_first.select { |entry| entry.sleep_duration_minutes.to_i.positive? }.first(limit)
+  end
+
+  def recent_diapers(limit = 3)
+    entries.by_parseable_data_type("diaper").recent_first.first(limit)
   end
 end

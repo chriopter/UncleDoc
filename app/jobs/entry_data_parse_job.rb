@@ -42,23 +42,30 @@ class EntryDataParseJob < ApplicationJob
     if person.baby_mode?
       Turbo::StreamsChannel.broadcast_replace_to(
         [ person, :entries ],
-        target: "overview_baby_activity_feeding",
-        partial: "shared/baby_activity_widget",
-        locals: { person: person, type: :feeding }
+        target: "overview_baby_actions",
+        partial: "shared/baby_actions_widget",
+        locals: { person: person, card_classes: "h-full" }
       )
 
       Turbo::StreamsChannel.broadcast_replace_to(
         [ person, :entries ],
-        target: "overview_baby_activity_diaper",
-        partial: "shared/baby_activity_widget",
-        locals: { person: person, type: :diaper }
+        target: "overview_baby_tracking_feeding",
+        partial: "shared/baby_feeding_tracker_widget",
+        locals: { person: person, card_classes: "flex-1" }
       )
 
       Turbo::StreamsChannel.broadcast_replace_to(
         [ person, :entries ],
-        target: "overview_baby_activity_sleep",
-        partial: "shared/baby_activity_widget",
-        locals: { person: person, type: :sleep }
+        target: "overview_baby_tracking_sleep",
+        partial: "shared/baby_sleep_tracker_widget",
+        locals: { person: person, card_classes: "flex-1" }
+      )
+
+      Turbo::StreamsChannel.broadcast_replace_to(
+        [ person, :entries ],
+        target: "overview_baby_tracking_diaper",
+        partial: "shared/baby_diaper_tracker_widget",
+        locals: { person: person, card_classes: "flex-1" }
       )
     end
 
@@ -66,7 +73,7 @@ class EntryDataParseJob < ApplicationJob
       [ person, :entries ],
       target: "overview_planning",
       partial: "shared/planning_widget",
-      locals: { person: person, card_classes: "xl:col-span-4 xl:row-span-3 h-full" }
+      locals: { person: person, card_classes: "h-full" }
     )
 
     Turbo::StreamsChannel.broadcast_replace_to(

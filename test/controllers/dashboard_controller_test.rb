@@ -199,9 +199,9 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "#overview_baby_tracking_feeding", 1
     assert_select "#overview_baby_tracking_sleep", 1
     assert_select "#overview_baby_tracking_diaper", 1
-    assert_select "#overview_baby_activity_feeding", 1
-    assert_select "#overview_baby_activity_sleep", 1
-    assert_select "#overview_baby_activity_diaper", 1
+    assert_select "#overview_baby_activity_feeding", 0
+    assert_select "#overview_baby_activity_sleep", 0
+    assert_select "#overview_baby_activity_diaper", 0
     assert_select "#overview_weight_activity", 1
     assert_select "#overview_height_activity", 1
   end

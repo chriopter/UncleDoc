@@ -380,6 +380,7 @@ de:
       empty: "Noch keine Fütterungen eingetragen"
       started_ago: "Gestartet"
       stopped_ago: "Gestoppt"
+      last_duration: "Dauer"
       start_side: "%{side} starten"
       sides:
         left: "Links"

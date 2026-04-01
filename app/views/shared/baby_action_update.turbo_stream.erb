@@ -1,17 +1,21 @@
+<%= turbo_stream.replace "overview_baby_actions" do %>
+  <%= render "shared/baby_actions_widget", person: @person, card_classes: "h-full" %>
+<% end %>
+
 <%= turbo_stream.replace "overview_baby_tracking_feeding" do %>
-  <%= render "shared/baby_feeding_tracker_widget", person: @person, card_classes: chart_widget_card_classes %>
+  <%= render "shared/baby_feeding_tracker_widget", person: @person, card_classes: "flex-1" %>
 <% end %>
 
 <%= turbo_stream.replace "overview_baby_tracking_sleep" do %>
-  <%= render "shared/baby_sleep_tracker_widget", person: @person, card_classes: chart_widget_card_classes %>
+  <%= render "shared/baby_sleep_tracker_widget", person: @person, card_classes: "flex-1" %>
 <% end %>
 
 <%= turbo_stream.replace "overview_baby_tracking_diaper" do %>
-  <%= render "shared/baby_diaper_tracker_widget", person: @person, card_classes: chart_widget_card_classes %>
+  <%= render "shared/baby_diaper_tracker_widget", person: @person, card_classes: "flex-1" %>
 <% end %>
 
 <%= turbo_stream.replace "overview_recent_activity" do %>
-  <%= render "shared/overview_recent_activity", person: @person, entries: @person.entries.recent_first, sort: params[:sort], card_classes: recent_activity_card_classes_for(@person), entry_limit: 5 %>
+  <%= render "shared/overview_recent_activity", person: @person, entries: @person.entries.recent_first, sort: params[:sort], card_classes: "h-full", entry_limit: 5 %>
 <% end %>
 
 <%= turbo_stream.replace "entries_list" do %>
@@ -22,26 +26,14 @@
   <%= render "shared/overview_person_meta", person: @person, entries: @person.entries.recent_first %>
 <% end %>
 
-<%= turbo_stream.replace "overview_baby_activity_feeding" do %>
-  <%= render "shared/baby_activity_widget", person: @person, type: :feeding, card_classes: chart_widget_card_classes %>
-<% end %>
-
-<%= turbo_stream.replace "overview_baby_activity_sleep" do %>
-  <%= render "shared/baby_activity_widget", person: @person, type: :sleep, card_classes: chart_widget_card_classes %>
-<% end %>
-
-<%= turbo_stream.replace "overview_baby_activity_diaper" do %>
-  <%= render "shared/baby_activity_widget", person: @person, type: :diaper, card_classes: chart_widget_card_classes %>
-<% end %>
-
 <%= turbo_stream.replace "overview_planning" do %>
-  <%= render "shared/planning_widget", person: @person, card_classes: "xl:col-span-4 xl:row-span-3 h-full" %>
+  <%= render "shared/planning_widget", person: @person, card_classes: "h-full" %>
 <% end %>
 
 <%= turbo_stream.replace "overview_weight_activity" do %>
-  <%= render "shared/weight_activity_widget", person: @person, card_classes: chart_widget_card_classes %>
+  <%= render "shared/weight_activity_widget", person: @person, card_classes: "h-full" %>
 <% end %>
 
 <%= turbo_stream.replace "overview_height_activity" do %>
-  <%= render "shared/height_activity_widget", person: @person, card_classes: chart_widget_card_classes %>
+  <%= render "shared/height_activity_widget", person: @person, card_classes: "h-full" %>
 <% end %>
