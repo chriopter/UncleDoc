@@ -21,26 +21,19 @@ class LogSummaryGenerator
       preference: preference,
       person: person,
       messages: [
-        {
-          role: "user",
-          content: summary_prompt(person, entries)
-        }
+        { role: "system", content: system_prompt },
+        { role: "user", content: summary_prompt(person, entries) }
       ]
     ).content
   end
 
+  def self.system_prompt
+    File.read(Rails.root.join("prompts/uncledoc.md"))
+  end
+
   def self.summary_prompt(person, entries)
     <<~PROMPT
-      You are helping a family review a health log.
-
       Person: #{person.name}
-
-      Read the entries below and write a concise summary with:
-      - a short overview of the main pattern
-      - any notable changes or repeated issues
-      - a brief suggestion for what to keep an eye on
-
-      Do not mention that you are an AI. Keep the tone calm and practical.
 
       Entries:
       #{formatted_entries(entries)}
