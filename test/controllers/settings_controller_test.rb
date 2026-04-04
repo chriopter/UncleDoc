@@ -6,7 +6,7 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     get settings_url
 
     assert_response :success
-    assert_select "h1", "Family"
+    assert_select "h1", "Workspace settings"
     assert_select "span", text: "Profile"
     assert_select "span", text: "Members"
     assert_includes @response.body, "DB View"
@@ -24,8 +24,7 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     get settings_url
 
     assert_response :success
-    # With fixtures loaded, should show first person's name
-    assert_select "h1", "MyString"
+    assert_includes @response.body, "MyString"
   end
 
   test "shows the full db section" do

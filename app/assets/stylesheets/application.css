@@ -8,3 +8,7 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
+
+details.group summary { list-style: none; }
+details.group summary::marker,
+details.group summary::-webkit-details-marker { display: none; }
