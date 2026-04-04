@@ -1,10 +1,17 @@
 require "json"
+require "net/http"
+require "uri"
+require "base64"
+require "open3"
+require "tempfile"
+require "tmpdir"
 
 class LlmMultimodalRequest
   Response = Struct.new(:content, :status_code, :body, keyword_init: true)
 
   def self.call(request_kind:, preference:, instructions:, prompt:, attachments:, person: nil, entry: nil, temperature: nil)
-    sync_ruby_llm_config!(preference)
+    endpoint = "#{preference.llm_api_base.chomp('/')}/chat/completions"
+    payload = build_payload(preference:, instructions:, prompt:, attachments:, temperature:)
 
     log = LlmLog.create!(
       person: person,
@@ -12,62 +19,108 @@ class LlmMultimodalRequest
       request_kind: request_kind,
       provider: preference.llm_provider,
       model: preference.llm_model,
-      endpoint: "#{preference.llm_api_base.chomp('/')}/chat/completions",
-      request_payload: JSON.pretty_generate({
-        model: preference.llm_model,
-        provider: preference.llm_provider,
-        instructions: instructions,
-        prompt: prompt,
-        attachments: Array(attachments).map { |attachment| attachment_payload(attachment) }
-      })
+      endpoint: endpoint,
+      request_payload: JSON.pretty_generate(payload)
     )
 
-    chat = RubyLLM.chat(model: preference.llm_model, provider: preference.llm_ruby_provider, assume_model_exists: true)
-                  .with_instructions(instructions)
-    chat = chat.with_temperature(temperature) unless temperature.nil?
+    response = perform_request(endpoint:, payload:, preference:)
 
-    response = chat.ask(prompt, with: attachments)
-    body = response.content.to_s
+    log.update!(status_code: response.code.to_i, response_body: response.body)
 
-    log.update!(status_code: 200, response_body: body)
+    raise "LLM request failed with status #{response.code}" unless response.code.to_i.between?(200, 299)
 
-    Response.new(content: body, status_code: 200, body: body)
+    Response.new(
+      content: JSON.parse(response.body).dig("choices", 0, "message", "content").to_s,
+      status_code: response.code.to_i,
+      body: response.body
+    )
   rescue StandardError => error
     log&.update!(error_message: error.message, response_body: log.response_body.presence)
     raise
   end
 
-  def self.sync_ruby_llm_config!(preference)
-    config = RubyLLM.config
+  def self.build_payload(preference:, instructions:, prompt:, attachments:, temperature: nil)
+    payload = {
+      model: preference.llm_model,
+      messages: [
+        { role: "system", content: instructions },
+        { role: "user", content: build_content(prompt:, attachments:) }
+      ]
+    }
+    payload[:temperature] = temperature unless temperature.nil?
+    payload
+  end
 
-    case preference.llm_ruby_provider
-    when :openai
-      config.openai_api_key = preference.llm_runtime_api_key
-      config.openai_api_base = preference.llm_api_base
-    when :openrouter
-      config.openrouter_api_key = preference.llm_runtime_api_key
-      config.openrouter_api_base = preference.llm_api_base
-    when :ollama
-      config.ollama_api_key = preference.llm_runtime_api_key
-      config.ollama_api_base = preference.llm_api_base
-    when :mistral
-      config.mistral_api_key = preference.llm_runtime_api_key
-    when :perplexity
-      config.perplexity_api_key = preference.llm_runtime_api_key
-    when :xai
-      config.xai_api_key = preference.llm_runtime_api_key
-    when :deepseek
-      config.deepseek_api_key = preference.llm_runtime_api_key
+  def self.build_content(prompt:, attachments:)
+    [ { type: "text", text: prompt } ] + Array(attachments).flat_map { |attachment| attachment_parts(attachment) }
+  end
+
+  def self.attachment_parts(attachment)
+    llm_attachment = RubyLLM::Attachment.new(attachment)
+
+    case llm_attachment.type
+    when :image
+      [ {
+        type: "image_url",
+        image_url: {
+          url: llm_attachment.for_llm
+        }
+      } ]
+    when :pdf
+      pdf_image_parts(attachment)
+    when :text
+      [ {
+        type: "text",
+        text: llm_attachment.for_llm
+      } ]
+    else
+      raise ArgumentError, "Unsupported attachment type: #{llm_attachment.type}"
     end
   end
 
-  def self.attachment_payload(attachment)
-    source = attachment.respond_to?(:blob) ? attachment.blob : attachment
+  def self.pdf_image_parts(attachment)
+    blob = attachment.respond_to?(:download) ? attachment : attachment.blob
+    png_images = rasterize_pdf(blob.download)
 
-    {
-      filename: source.respond_to?(:filename) ? source.filename.to_s : attachment.try(:original_filename),
-      content_type: source.respond_to?(:content_type) ? source.content_type : nil,
-      byte_size: source.respond_to?(:byte_size) ? source.byte_size : nil
-    }.compact
+    raise ArgumentError, "Could not rasterize PDF attachment" if png_images.empty?
+
+    png_images.map do |png_bytes|
+      {
+        type: "image_url",
+        image_url: {
+          url: "data:image/png;base64,#{Base64.strict_encode64(png_bytes)}"
+        }
+      }
+    end
+  end
+
+  def self.rasterize_pdf(pdf_bytes)
+    Dir.mktmpdir("uncledoc-pdf") do |dir|
+      pdf_path = File.join(dir, "document.pdf")
+      File.binwrite(pdf_path, pdf_bytes)
+
+      stdout, stderr, status = Open3.capture3("pdftoppm", "-png", "-f", "1", "-l", "3", pdf_path, File.join(dir, "page"))
+      raise "pdftoppm failed: #{stderr.presence || stdout}" unless status.success?
+
+      Dir[File.join(dir, "page-*.png")].sort.map { |path| File.binread(path) }
+    end
+  end
+
+  def self.perform_request(endpoint:, payload:, preference:)
+    uri = URI.parse(endpoint)
+    request = Net::HTTP::Post.new(uri)
+    request["Content-Type"] = "application/json"
+    request["Authorization"] = "Bearer #{preference.llm_runtime_api_key}" if preference.llm_runtime_api_key.present?
+
+    if preference.llm_provider == "openrouter"
+      request["HTTP-Referer"] = "http://localhost:3000"
+      request["X-Title"] = "UncleDoc"
+    end
+
+    request.body = payload.to_json
+
+    Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https") do |http|
+      http.request(request)
+    end
   end
 end
