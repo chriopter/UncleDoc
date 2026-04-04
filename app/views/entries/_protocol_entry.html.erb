@@ -1,5 +1,6 @@
 <article class="group px-4 py-4 transition hover:bg-white/[0.02] sm:px-5 <%= local_assigns[:grouped] ? '' : 'rounded-[1.5rem] border border-white/10 bg-white/[0.03] hover:border-white/15 hover:bg-white/[0.05]' %>">
   <% display_time = entry.occurred_at || entry.created_at %>
+  <% raw_text = entry.input.presence || (entry.documents_attached? ? t("entries.documents.document_only") : nil) %>
   <div class="grid gap-3 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:gap-4 sm:items-start">
     <div class="shrink-0 self-start px-1 py-1">
       <div class="text-lg font-semibold leading-none text-amber-300 sm:text-base">
@@ -20,7 +21,10 @@
           </div>
 
           <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("entries.raw_input.title") %></p>
-          <p class="text-sm leading-relaxed text-slate-300 whitespace-pre-wrap break-words"><%= entry.input %></p>
+          <p class="text-sm leading-relaxed text-slate-300 whitespace-pre-wrap break-words"><%= raw_text %></p>
+          <div class="mt-4">
+            <%= render "entries/documents", entry: entry, compact: false %>
+          </div>
         </div>
 
         <div class="min-w-0 border-t border-white/10 pt-3 lg:border-t-0 lg:border-l lg:border-white/10 lg:px-5 lg:pt-1">

@@ -17,7 +17,7 @@ class EntriesController < ApplicationController
   def create
     @entry = @person.entries.build(entry_params)
     populate_facts_from_parseable_data(@entry)
-    should_enqueue_parse = @entry.parseable_data.blank? && EntryDataParser.ready?
+    should_enqueue_parse = @entry.parseable_data.blank? && entry_has_parseable_source?(@entry, documents_added: uploaded_documents_present?) && EntryDataParser.ready?
 
     if @entry.has_attribute?(:parse_status)
       @entry.parse_status = if @entry.parseable_data.present?
@@ -91,7 +91,7 @@ class EntriesController < ApplicationController
   def update
     @entry.assign_attributes(entry_params)
     populate_facts_from_parseable_data(@entry)
-    should_enqueue_parse = prepare_reparse(@entry)
+    should_enqueue_parse = prepare_reparse(@entry, documents_added: uploaded_documents_present?)
 
     if @entry.save
       EntryDataParseJob.perform_later(@entry.id) if should_enqueue_parse
@@ -121,7 +121,7 @@ class EntriesController < ApplicationController
   end
 
   def entry_params
-    permitted = params.require(:entry).permit(:input, :occurred_at, facts: [])
+    permitted = params.require(:entry).permit(:input, :occurred_at, facts: [], documents: [])
     permitted[:parseable_data] = normalize_parseable_data_param(params[:entry][:parseable_data]) if params[:entry].key?(:parseable_data)
     permitted[:facts] = normalize_facts_param(params[:entry][:facts]) if params[:entry].key?(:facts)
     permitted
@@ -145,8 +145,8 @@ class EntriesController < ApplicationController
     []
   end
 
-  def prepare_reparse(entry)
-    return false unless entry.will_save_change_to_input?
+  def prepare_reparse(entry, documents_added: false)
+    return false unless entry.will_save_change_to_input? || documents_added
 
     force_reparse(entry)
   end
@@ -173,5 +173,15 @@ class EntriesController < ApplicationController
     return if entry.facts.present? || entry.parseable_data.blank?
 
     entry.facts = EntryFactListBuilder.call(entry.parseable_data)
+  end
+
+  def uploaded_documents_present?
+    Array(params.dig(:entry, :documents)).any? do |document|
+      document.respond_to?(:original_filename) && document.original_filename.present?
+    end
+  end
+
+  def entry_has_parseable_source?(entry, documents_added: false)
+    entry.input.to_s.strip.present? || entry.documents_attached? || documents_added
   end
 end

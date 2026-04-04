@@ -34,6 +34,7 @@ en:
     home: "Home"
     overview: "Overview"
     baby: "Baby"
+    files: "Files"
     timeline: "Timeline"
     reports: "Reports"
     settings: "Settings"
@@ -61,6 +62,7 @@ en:
       entry:
         occurred_at: "When it happened"
         input: "Input"
+        documents: "Documents"
 
   # Common labels
   labels:
@@ -161,6 +163,16 @@ en:
       title: "Log health info for %{name}"
       use_current_time: "Now"
       change_time: "Change time"
+    documents:
+      title: "Files"
+      open: "Open"
+      document_only: "Document upload"
+      upload_title: "Add documents"
+      upload_hint: "Upload PDFs, JPGs, PNGs, or TXT files. The LLM reads them directly and turns them into facts."
+      errors:
+        invalid_type: "Unsupported file type: %{content_type}"
+        too_large: "File is too large. Max size is %{size}."
+        too_many: "Upload up to %{count} files per entry."
     data_labels:
       temperature: "Temperature"
       pulse: "Pulse"
@@ -345,9 +357,25 @@ en:
       nav: "Prompt"
       label: "LLM prompt"
       title: "Parser system prompt"
-      description: "Inspect the exact parser system prompt used for entry extraction."
+      description: "Inspect the exact parser system prompt used for entry extraction, including uploaded documents."
     flash:
       saved: "Settings saved."
+
+  files:
+    label: "Files"
+    title: "Files for %{name}"
+    subtitle: "Upload invoices, reports, and snapshots right from the entry form. Attached documents stay on the entry and are parsed directly by the LLM."
+    empty: "No files yet"
+    empty_subtitle: "Upload the first document from the entry form above."
+    stats:
+      documents: "Documents"
+      entries: "Entries"
+    list:
+      label: "Archive"
+      title: "Uploaded documents"
+      count: "%{count} file"
+      count_plural: "%{count} files"
+      document_only: "Document upload"
 
   # DB view
   db:

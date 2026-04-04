@@ -1,10 +1,53 @@
 require "test_helper"
+require "rack/test"
 
 class EntriesControllerTest < ActionDispatch::IntegrationTest
   include ActiveJob::TestHelper
 
   setup do
     @person = Person.create!(name: "Alice", birth_date: Date.new(2024, 1, 1))
+  end
+
+  def fake_pdf_upload(name: "report.pdf")
+    tempfile = Tempfile.new([ File.basename(name, ".pdf"), ".pdf" ])
+    tempfile.binmode
+    tempfile.write(fake_pdf_content("Fabricated report for upload testing"))
+    tempfile.rewind
+
+    Rack::Test::UploadedFile.new(tempfile.path, "application/pdf", true, original_filename: name)
+  end
+
+  def fake_pdf_content(text)
+    <<~PDF
+      %PDF-1.4
+      1 0 obj
+      << /Type /Catalog /Pages 2 0 R >>
+      endobj
+      2 0 obj
+      << /Type /Pages /Count 1 /Kids [3 0 R] >>
+      endobj
+      3 0 obj
+      << /Type /Page /Parent 2 0 R /MediaBox [0 0 300 144] /Contents 4 0 R /Resources << >> >>
+      endobj
+      4 0 obj
+      << /Length 44 >>
+      stream
+      BT /F1 12 Tf 36 96 Td (#{text}) Tj ET
+      endstream
+      endobj
+      xref
+      0 5
+      0000000000 65535 f
+      0000000010 00000 n
+      0000000063 00000 n
+      0000000122 00000 n
+      0000000226 00000 n
+      trailer
+      << /Root 1 0 R /Size 5 >>
+      startxref
+      319
+      %%EOF
+    PDF
   end
 
   test "creates free text entry and enqueues parsing" do
@@ -44,6 +87,27 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_equal "skipped", Entry.order(:created_at).last.parse_status
+  end
+
+  test "creates document-only entry and enqueues parsing" do
+    UserPreference.current.update!(llm_provider: "ollama", llm_model: "llama3")
+
+    assert_enqueued_with(job: EntryDataParseJob) do
+      assert_difference("Entry.count", 1) do
+        post person_entries_url(@person), params: {
+          entry: {
+            input: "",
+            occurred_at: "2026-03-29T10:15",
+            documents: [ fake_pdf_upload(name: "invoice.pdf") ]
+          }
+        }
+      end
+    end
+
+    entry = Entry.order(:created_at).last
+    assert entry.documents.attached?
+    assert_equal [ "invoice.pdf" ], entry.document_names
+    assert_equal "pending", entry.parse_status
   end
 
   test "defaults occurred_at to current time when omitted" do
@@ -206,6 +270,46 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Bottle feeding 120 ml"
     assert_includes @response.body, "Diaper wet"
     assert_includes @response.body, "peter drank 120 ml bottle and diaper wet"
+  end
+
+  test "document entry flows from create through parse job to rendered files tab" do
+    UserPreference.current.update!(llm_provider: "ollama", llm_model: "llama3")
+
+    parser_singleton = EntryDataParser.singleton_class
+    parser_singleton.alias_method :__original_call_for_document_test, :call
+    parser_singleton.define_method(:call) do |**|
+      EntryDataParser::Result.new(
+        facts: [ "Doctor invoice follow-up needed" ],
+        parseable_data: [ { "type" => "todo", "value" => "Pay doctor invoice" } ],
+        occurred_at: Time.zone.local(2026, 3, 28, 10, 5, 0),
+        llm_response: { "status" => "structured", "confidence" => "high", "note" => "Document parsed successfully." }
+      )
+    end
+
+    begin
+      perform_enqueued_jobs only: EntryDataParseJob do
+        post person_entries_url(@person), params: {
+          entry: {
+            input: "Invoice upload",
+            occurred_at: "2026-03-29T10:15",
+            documents: [ fake_pdf_upload(name: "doctor-invoice.pdf") ]
+          }
+        }
+      end
+    ensure
+      parser_singleton.alias_method :call, :__original_call_for_document_test
+      parser_singleton.remove_method :__original_call_for_document_test
+    end
+
+    entry = Entry.order(:created_at).last
+    assert_equal [ "Doctor invoice follow-up needed" ], entry.facts
+    assert_equal "parsed", entry.parse_status
+
+    get person_files_url(person_slug: @person.name)
+
+    assert_response :success
+    assert_includes @response.body, "doctor-invoice.pdf"
+    assert_includes @response.body, "Doctor invoice follow-up needed"
   end
 
   test "destroy removes dependent llm logs" do

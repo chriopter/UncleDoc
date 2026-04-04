@@ -1,0 +1,16 @@
+<% if entry.documents_attached? %>
+  <div class="space-y-2 <%= local_assigns[:compact] == false ? 'min-w-[18rem] max-w-full lg:max-w-sm' : '' %>">
+    <p class="text-[11px] font-semibold uppercase tracking-[0.18em] <%= local_assigns[:compact] == false ? 'text-slate-400' : 'text-slate-500' %>"><%= t("entries.documents.title") %></p>
+
+    <div class="flex flex-wrap gap-2">
+      <% entry.documents.each do |document| %>
+        <div class="inline-flex items-center gap-2 rounded-full border <%= local_assigns[:compact] == false ? 'border-white/10 bg-white/[0.06] text-slate-100' : 'border-slate-200 bg-slate-50 text-slate-700' %> px-3 py-2 text-xs font-medium">
+          <span class="max-w-[12rem] truncate"><%= document.filename.to_s %></span>
+          <%= link_to rails_blob_path(document, disposition: "inline"), class: "font-semibold #{local_assigns[:compact] == false ? 'text-amber-300' : 'text-amber-700'}" do %>
+            <%= t("entries.documents.open") %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

@@ -1,6 +1,39 @@
 require "test_helper"
 
 class DashboardControllerTest < ActionDispatch::IntegrationTest
+  def fake_pdf_content(text)
+    <<~PDF
+      %PDF-1.4
+      1 0 obj
+      << /Type /Catalog /Pages 2 0 R >>
+      endobj
+      2 0 obj
+      << /Type /Pages /Count 1 /Kids [3 0 R] >>
+      endobj
+      3 0 obj
+      << /Type /Page /Parent 2 0 R /MediaBox [0 0 300 144] /Contents 4 0 R /Resources << >> >>
+      endobj
+      4 0 obj
+      << /Length 44 >>
+      stream
+      BT /F1 12 Tf 36 96 Td (#{text}) Tj ET
+      endstream
+      endobj
+      xref
+      0 5
+      0000000000 65535 f
+      0000000010 00000 n
+      0000000063 00000 n
+      0000000122 00000 n
+      0000000226 00000 n
+      trailer
+      << /Root 1 0 R /Size 5 >>
+      startxref
+      319
+      %%EOF
+    PDF
+  end
+
   test "shows the log tab by default" do
     Person.delete_all
     get root_url
@@ -253,6 +286,19 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     get person_log_url(person_slug: person.name, sort: "entered")
     assert_response :success
     assert @response.body.index("Newer fact") < @response.body.index("Older fact")
+  end
+
+  test "files tab lists uploaded documents" do
+    person = Person.create!(name: "Filesy", birth_date: Date.new(2024, 1, 1))
+    entry = person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 8, 0), input: "Doctor invoice", facts: [ "Doctor invoice uploaded" ], parseable_data: [])
+    entry.documents.attach(io: StringIO.new(fake_pdf_content("Doctor invoice")), filename: "doctor-invoice.pdf", content_type: "application/pdf")
+
+    get person_files_url(person_slug: person.name)
+
+    assert_response :success
+    assert_includes @response.body, "Files for Filesy"
+    assert_includes @response.body, "doctor-invoice.pdf"
+    assert_includes @response.body, "Doctor invoice uploaded"
   end
 
   test "log can filter by date and parsed type" do

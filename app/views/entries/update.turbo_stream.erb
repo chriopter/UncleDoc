@@ -1,3 +1,11 @@
 <%= turbo_stream.replace "entries_list" do %>
   <%= render(@person.baby_mode? ? "entries/baby_list" : "entries/protocol_list", entries: @person.entries.recent_first) %>
 <% end %>
+
+<%= turbo_stream.replace "files_list" do %>
+  <%= render "dashboard/files_list", document_entries: @person.entries.with_documents.recent_first %>
+<% end %>
+
+<%= turbo_stream.replace "files_stats" do %>
+  <%= render "dashboard/files_stats", document_entries: @person.entries.with_documents.recent_first, document_count: @person.entries.with_documents.sum(&:document_count) %>
+<% end %>

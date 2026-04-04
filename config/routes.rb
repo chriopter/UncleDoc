@@ -25,6 +25,7 @@ Rails.application.routes.draw do
     get "overview", to: "people#show", as: :person_overview
     get "baby", to: "people#baby", as: :person_baby
     get "log", to: "dashboard#log", as: :person_log
+    get "files", to: "dashboard#files", as: :person_files
     post "log_summary", to: "dashboard#summarize_log", as: :person_log_summary
   end
 end

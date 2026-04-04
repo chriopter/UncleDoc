@@ -96,7 +96,7 @@ def create_baby_timeline(person, now:)
     day = now - day_offset.days
 
     3.times do |feeding_index|
-      occurred_at = day.change(hour: 6 + (feeding_index * 5), min: [10, 25, 40][feeding_index])
+      occurred_at = day.change(hour: 6 + (feeding_index * 5), min: [ 10, 25, 40 ][feeding_index])
       minutes = 12 + ((day_offset + feeding_index) % 14)
       side = feeding_index.even? ? "left" : "right"
 

@@ -34,6 +34,7 @@ de:
     home: "Startseite"
     overview: "Übersicht"
     baby: "Baby"
+    files: "Dateien"
     timeline: "Zeitlinie"
     reports: "Berichte"
     settings: "Einstellungen"
@@ -61,6 +62,7 @@ de:
       entry:
         occurred_at: "Wann es passiert ist"
         input: "Eingabe"
+        documents: "Dateien"
 
   # Common labels
   labels:
@@ -161,6 +163,16 @@ de:
       title: "Gesundheitsinfo für %{name} protokollieren"
       use_current_time: "Jetzt"
       change_time: "Zeit ändern"
+    documents:
+      title: "Dateien"
+      open: "Öffnen"
+      document_only: "Dokument-Upload"
+      upload_title: "Dokumente anhängen"
+      upload_hint: "PDFs, JPGs, PNGs oder TXT-Dateien hochladen. Das LLM liest sie direkt und macht daraus Fakten."
+      errors:
+        invalid_type: "Nicht unterstützter Dateityp: %{content_type}"
+        too_large: "Datei ist zu groß. Maximal %{size}."
+        too_many: "Pro Eintrag sind bis zu %{count} Dateien möglich."
     data_labels:
       temperature: "Temperatur"
       pulse: "Puls"
@@ -345,9 +357,25 @@ de:
       nav: "Prompt"
       label: "LLM-Prompt"
       title: "Parser-System-Prompt"
-      description: "Prufen Sie den genauen Parser-System-Prompt fur die Extraktion von Eintragen."
+      description: "Prufen Sie den genauen Parser-System-Prompt fur die Extraktion von Eintragen inklusive hochgeladener Dokumente."
     flash:
       saved: "Einstellungen gespeichert."
+
+  files:
+    label: "Dateien"
+    title: "Dateien für %{name}"
+    subtitle: "Rechnungen, Berichte und Schnappschüsse direkt im Eintragsformular hochladen. Die Dokumente bleiben am Eintrag und werden direkt vom LLM geparst."
+    empty: "Noch keine Dateien"
+    empty_subtitle: "Laden Sie oben im Eintragsformular das erste Dokument hoch."
+    stats:
+      documents: "Dokumente"
+      entries: "Einträge"
+    list:
+      label: "Archiv"
+      title: "Hochgeladene Dokumente"
+      count: "%{count} Datei"
+      count_plural: "%{count} Dateien"
+      document_only: "Dokument-Upload"
 
   # DB view
   db:

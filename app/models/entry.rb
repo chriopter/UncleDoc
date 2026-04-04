@@ -1,20 +1,26 @@
 class Entry < ApplicationRecord
   belongs_to :person
   has_many :llm_logs, dependent: :destroy
+  has_many_attached :documents
 
   PARSE_STATUSES = %w[pending parsed failed skipped].freeze
+  DOCUMENT_CONTENT_TYPES = %w[application/pdf image/png image/jpeg text/plain].freeze
+  MAX_DOCUMENT_COUNT = 5
+  MAX_DOCUMENT_SIZE = 10.megabytes
 
-  validates :input, presence: true
   validates :occurred_at, presence: true
   validates :parse_status, inclusion: { in: PARSE_STATUSES }, if: -> { has_attribute?(:parse_status) }
   validate :parseable_data_must_be_array
   validate :facts_must_be_array
   validate :llm_response_must_be_hash
+  validate :input_or_documents_present
+  validate :documents_are_supported
 
   after_initialize :normalize_defaults
 
   scope :recent_first, -> { order(occurred_at: :desc, created_at: :desc) }
   scope :entered_first, -> { order(created_at: :desc, occurred_at: :desc) }
+  scope :with_documents, -> { includes(documents_attachments: :blob).where.associated(:documents_attachments).distinct }
   scope :by_parseable_data_type, ->(type) {
     where("EXISTS (SELECT 1 FROM json_each(entries.parseable_data) WHERE json_extract(value, '$.type') = ?)", type)
   }
@@ -113,6 +119,18 @@ class Entry < ApplicationRecord
     fact_items.join(". ")
   end
 
+  def documents_attached?
+    documents.attached?
+  end
+
+  def document_names
+    documents.map { |document| document.filename.to_s }
+  end
+
+  def document_count
+    documents.size
+  end
+
   def pending_parse?
     current_parse_status == "pending"
   end
@@ -175,6 +193,30 @@ class Entry < ApplicationRecord
     return if parseable_data_value.is_a?(Array)
 
     errors.add(:parseable_data, :invalid)
+  end
+
+  def input_or_documents_present
+    return if input.to_s.strip.present? || documents_attached?
+
+    errors.add(:input, :blank)
+  end
+
+  def documents_are_supported
+    return unless documents.attached?
+
+    if documents.size > MAX_DOCUMENT_COUNT
+      errors.add(:documents, I18n.t("entries.documents.errors.too_many", count: MAX_DOCUMENT_COUNT))
+    end
+
+    documents.each do |document|
+      unless DOCUMENT_CONTENT_TYPES.include?(document.blob.content_type)
+        errors.add(:documents, I18n.t("entries.documents.errors.invalid_type", content_type: document.blob.content_type))
+      end
+
+      if document.blob.byte_size > MAX_DOCUMENT_SIZE
+        errors.add(:documents, I18n.t("entries.documents.errors.too_large", size: ActiveSupport::NumberHelper.number_to_human_size(MAX_DOCUMENT_SIZE)))
+      end
+    end
   end
 
   def facts_must_be_array
