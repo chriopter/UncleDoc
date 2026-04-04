@@ -82,14 +82,28 @@ class EntryDataParser
   end
 
   def self.request_completion(input, preference, entry: nil)
-    return request_multimodal_completion(input, preference, entry: entry) if entry_documents(entry).present?
+    if entry_documents(entry).present?
+      begin
+        return request_multimodal_completion(input, preference, entry: entry)
+      rescue StandardError
+        fallback_input = fallback_document_input(input, entry)
+        return request_text_completion(fallback_input, preference, entry: entry) if fallback_input.present?
+
+        raise
+      end
+    end
+
+    request_text_completion(input, preference, entry: entry)
+  end
+
+  def self.request_text_completion(input, preference, entry: nil)
 
     LlmChatRequest.call(
       request_kind: "entry_parse",
       preference: preference,
       messages: [
         { role: "system", content: system_prompt },
-        { role: "user", content: user_prompt(input) }
+        { role: "user", content: user_prompt(input, entry: entry) }
       ],
       person: entry&.person,
       entry: entry,
@@ -278,5 +292,13 @@ class EntryDataParser
   def self.document_list(entry)
     names = entry_documents(entry).map { |document| document.filename.to_s }
     names.any? ? names.join(", ") : "none"
+  end
+
+  def self.fallback_document_input(input, entry)
+    extracted = DocumentTextExtractor.extract_many(entry_documents(entry))
+    return input if extracted.blank?
+    return extracted if input.blank?
+
+    [input, extracted].join("\n\n")
   end
 end
