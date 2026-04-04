@@ -44,4 +44,14 @@ class EntryFactListBuilderTest < ActiveSupport::TestCase
 
     assert_equal [ "Medication ibuprofen 400mg" ], facts
   end
+
+  test "builds facts for lab results" do
+    facts = I18n.with_locale(:en) do
+      EntryFactListBuilder.call([
+        { "type" => "lab_result", "value" => "Hemoglobin", "result" => 15.2, "unit" => "g/dl", "ref" => "13.5-17.5" }
+      ], locale: :en)
+    end
+
+    assert_equal [ "Lab Result: Hemoglobin 15.2 g/dl (13.5-17.5)" ], facts
+  end
 end

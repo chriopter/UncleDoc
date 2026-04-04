@@ -149,6 +149,7 @@ en:
       todo: "Todo"
       note: "Note"
       symptom: "Symptom"
+      lab_result: "Lab Result"
     facts:
       title: "Facts"
     edit:
@@ -188,6 +189,7 @@ en:
       appointment: "Appointment"
       todo: "Todo"
       note: "Note"
+      lab_result: "Lab Result"
     data_values:
       wet: "wet"
       solid: "solid"

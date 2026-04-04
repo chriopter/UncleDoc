@@ -149,6 +149,7 @@ de:
       todo: "Aufgabe"
       note: "Notiz"
       symptom: "Symptom"
+      lab_result: "Laborwert"
     facts:
       title: "Fakten"
     edit:
@@ -188,6 +189,7 @@ de:
       appointment: "Termin"
       todo: "Aufgabe"
       note: "Notiz"
+      lab_result: "Laborwert"
     data_values:
       wet: "nass"
       solid: "fest"

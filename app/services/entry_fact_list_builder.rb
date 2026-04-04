@@ -34,6 +34,12 @@ class EntryFactListBuilder
       when "medication"
         detail = [ item["value"], item["dose"] ].compact.join(" ")
         [ label_for("medication"), detail.presence ].compact.join(" ")
+      when "lab_result"
+        detail = [ item["value"], item["result"], item["unit"] ].compact.join(" ")
+        detail = [ detail, item["ref"] ].compact.join(" (") if item["ref"].present?
+        detail = "#{detail})" if item["ref"].present?
+        detail = [ detail, item["flag"] ].compact.join(" ")
+        [ label_for("lab_result"), detail.presence ].compact.join(": ")
       when "vaccination"
         detail = [ item["value"], item["dose"] ].compact.join(" ")
         [ label_for("vaccination"), detail.presence ].compact.join(" ")

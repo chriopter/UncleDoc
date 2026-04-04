@@ -26,6 +26,10 @@ class EntryDataParser
     "vaccine" => "vaccination",
     "vaccination" => "vaccination",
     "impfung" => "vaccination",
+    "lab" => "lab_result",
+    "lab_result" => "lab_result",
+    "blood_test" => "lab_result",
+    "bloodwork" => "lab_result",
     "blood_pressure" => "blood_pressure",
     "blood pressure" => "blood_pressure",
     "bp" => "blood_pressure",
@@ -112,16 +116,32 @@ class EntryDataParser
   end
 
   def self.request_multimodal_completion(input, preference, entry: nil)
-    LlmMultimodalRequest.call(
-      request_kind: "entry_parse",
-      preference: preference,
-      instructions: system_prompt,
-      prompt: user_prompt(input, entry: entry),
-      attachments: entry_documents(entry),
-      person: entry&.person,
-      entry: entry,
-      temperature: 0
-    ).content
+    last_response = nil
+    last_error = nil
+
+    multimodal_models_for(preference).each do |model|
+      content = LlmMultimodalRequest.call(
+        request_kind: "entry_parse",
+        preference: preference,
+        instructions: system_prompt,
+        prompt: user_prompt(input, entry: entry),
+        attachments: entry_documents(entry),
+        person: entry&.person,
+        entry: entry,
+        temperature: 0,
+        model:
+      ).content
+
+      last_response = content
+      payload = parse_json_object(content)
+      return content if document_payload_useful?(payload)
+    rescue StandardError => error
+      last_error = error
+    end
+
+    raise last_error if last_response.blank? && last_error
+
+    last_response.to_s
   end
 
   def self.request_payload_with_retry(input, preference, entry: nil)
@@ -182,7 +202,7 @@ class EntryDataParser
     value.filter_map do |item|
       next unless item.is_a?(Hash)
 
-      sanitized = item.deep_stringify_keys.slice("type", "value", "unit", "side", "dose", "wet", "solid", "rash", "ref", "flag", "location", "quality", "systolic", "diastolic", "scheduled_for", "due_at")
+      sanitized = item.deep_stringify_keys.slice("type", "value", "result", "unit", "side", "dose", "wet", "solid", "rash", "ref", "flag", "location", "quality", "systolic", "diastolic", "scheduled_for", "due_at")
       type = normalize_type(sanitized["type"])
       next if type.blank?
 
@@ -292,6 +312,22 @@ class EntryDataParser
   def self.document_list(entry)
     names = entry_documents(entry).map { |document| document.filename.to_s }
     names.any? ? names.join(", ") : "none"
+  end
+
+  def self.multimodal_models_for(preference)
+    models = [ preference.llm_model ]
+
+    if preference.llm_provider == "openrouter" && preference.llm_model == "openai/gpt-5.4"
+      models.unshift("openai/gpt-4.1-mini")
+    end
+
+    models.compact.uniq
+  end
+
+  def self.document_payload_useful?(payload)
+    facts = sanitize_facts(payload["facts"])
+    data = sanitize_parseable_data(payload["parseable_data"])
+    facts.present? || data.present?
   end
 
   def self.fallback_document_input(input, entry)
