@@ -49,6 +49,30 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to %r{\A#{root_url}(\?.*)?\z}
   end
 
+  test "deletes a person as turbo stream" do
+    person = Person.create!(name: "Turbo Mila", birth_date: Date.new(2024, 3, 10))
+    person.entries.create!(input: "Bottle 120ml", occurred_at: Time.current)
+
+    assert_difference("Person.count", -1) do
+      assert_difference("Entry.count", -1) do
+        delete person_url(person), as: :turbo_stream
+      end
+    end
+
+    assert_response :success
+    assert_equal Mime[:turbo_stream].to_s, response.media_type
+    assert_includes @response.body, "people_list"
+  end
+
+  test "settings users page renders delete links outside nested forms" do
+    person = Person.create!(name: "Delete UI", birth_date: Date.new(2024, 3, 10))
+
+    get settings_url(section: "users")
+
+    assert_response :success
+    assert_select "a[data-turbo-method='delete'][href='#{person_path(person)}']", 1
+  end
+
   test "updates a person including datetime birth date and baby mode" do
     person = Person.create!(name: "Mila", birth_date: Time.zone.local(2024, 3, 10, 12, 0))
 
