@@ -9,6 +9,8 @@
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
 ARG RUBY_VERSION=3.4.7
+ARG GIT_SHA=unknown
+ARG GIT_COMMIT_SUBJECT=unknown
 FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 
 # Rails app lives here
@@ -25,7 +27,9 @@ ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development" \
-    LD_PRELOAD="/usr/local/lib/libjemalloc.so"
+    LD_PRELOAD="/usr/local/lib/libjemalloc.so" \
+    APP_REVISION="$GIT_SHA" \
+    APP_COMMIT_SUBJECT="$GIT_COMMIT_SUBJECT"
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build

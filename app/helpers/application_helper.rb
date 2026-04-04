@@ -1,4 +1,19 @@
 module ApplicationHelper
+  def app_revision_tooltip
+    details = app_revision_details
+    return unless details
+
+    t("app.revision.tooltip", subject: details[:subject], sha: details[:short_sha])
+  end
+
+  def app_revision_details
+    sha = ENV["KAMAL_VERSION"].presence || ENV["APP_REVISION"].presence || local_git_sha
+    subject = ENV["APP_COMMIT_SUBJECT"].presence || local_git_subject
+    return if sha.blank? || subject.blank?
+
+    { sha: sha, short_sha: sha.first(7), subject: subject }
+  end
+
   def formatted_date(date)
     return "Unknown" if date.blank?
 
@@ -454,5 +469,15 @@ module ApplicationHelper
     return true if entry.sleep?
 
     entry.input.to_s.downcase.match?(/sleep|schlaf/i)
+  end
+
+  private
+
+  def local_git_sha
+    @local_git_sha ||= `git rev-parse HEAD 2>/dev/null`.strip.presence
+  end
+
+  def local_git_subject
+    @local_git_subject ||= `git log -1 --pretty=%s 2>/dev/null`.strip.presence
   end
 end
