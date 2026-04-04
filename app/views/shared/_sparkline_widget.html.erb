@@ -1,0 +1,58 @@
+<%# Compact sparkline widget for bento grid
+  Required: person, type (:weight, :pulse, :blood_pressure)
+  Optional: card_classes
+%>
+<% config = case type.to_s
+  when "weight"
+    { color: "violet", label: t("entries.data_labels.weight"), series: weight_activity_series(person, period: "1m"), gid: "bento_weight" }
+  when "pulse"
+    { color: "orange", label: t("entries.data_labels.pulse"), series: vital_activity_series(person, :pulse, period: "1m"), gid: "bento_pulse" }
+  when "blood_pressure"
+    { color: "sky", label: t("entries.data_labels.blood_pressure"), series: vital_activity_series(person, :blood_pressure, period: "1m"), gid: "bento_bp" }
+  end %>
+<% ct = chart_theme(config[:color]) %>
+<% series = config[:series] %>
+<% plot_points = weight_activity_plot_points(series || []) %>
+<% smooth_line = chart_smooth_path(plot_points) %>
+<% area_fill = chart_area_path(plot_points) %>
+
+<%= link_to person_trends_path(person_slug: person.name), class: "group block rounded-[2rem] border bg-white p-5 shadow-sm ring-1 transition hover:shadow-md #{widget_theme(config[:color])[:border]} #{widget_theme(config[:color])[:ring]} #{local_assigns[:card_classes]}" do %>
+  <div class="mb-2 flex items-center justify-between">
+    <p class="text-[11px] font-semibold uppercase tracking-[0.18em] <%= ct[:label_color] %>"><%= config[:label] %></p>
+    <% if series.present? %>
+      <% latest = series.last %>
+      <p class="text-lg font-bold text-slate-900">
+        <% if latest[:secondary] %>
+          <%= latest[:value].to_i %>/<%= latest[:secondary].to_i %>
+        <% else %>
+          <%= number_with_precision(latest[:value], precision: latest[:value] % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %>
+        <% end %>
+        <span class="text-xs font-medium text-slate-400"><%= latest[:unit] %></span>
+      </p>
+    <% end %>
+  </div>
+  <% if series.present? %>
+    <div class="relative h-16">
+      <svg viewBox="0 0 100 60" preserveAspectRatio="none" class="absolute inset-0 h-full w-full">
+        <defs>
+          <linearGradient id="<%= config[:gid] %>-line" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="<%= ct[:gradient][0] %>" />
+            <stop offset="100%" stop-color="<%= ct[:gradient][1] %>" />
+          </linearGradient>
+          <linearGradient id="<%= config[:gid] %>-area" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="<%= ct[:gradient][1] %>" stop-opacity="0.15" />
+            <stop offset="100%" stop-color="<%= ct[:gradient][2] %>" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <path d="<%= area_fill %>" fill="url(#<%= config[:gid] %>-area)" />
+        <path d="<%= smooth_line %>" fill="none" stroke="url(#<%= config[:gid] %>-line)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+      </svg>
+    </div>
+    <div class="mt-1.5 flex items-center justify-between text-[10px] text-slate-400">
+      <span><%= series.first[:short_label] %></span>
+      <span><%= series.last[:short_label] %></span>
+    </div>
+  <% else %>
+    <div class="flex h-16 items-center justify-center text-xs text-slate-400"><%= t("person.overview.vitals.empty") %></div>
+  <% end %>
+<% end %>

@@ -35,11 +35,13 @@ en:
   nav:
     home: "Home"
     overview: "Overview"
+    trends: "Trends"
     baby: "Baby"
     files: "Files"
     timeline: "Timeline"
     reports: "Reports"
     settings: "Settings"
+    calendar: "Calendar"
     back: "Back"
     log: "Log"
     research: "Research"
@@ -399,6 +401,13 @@ en:
       count: "%{count} row"
       count_plural: "%{count} rows"
       empty: "No rows yet."
+      columns: "%{count} columns"
+      view: "View"
+    groups:
+      data: "User data"
+      logs: "Logs"
+      system: "System"
+      other: "Other"
 
   # Family/Header
   family:

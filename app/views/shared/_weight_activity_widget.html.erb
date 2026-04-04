@@ -4,7 +4,7 @@
   <div class="mb-3 flex items-center justify-between">
     <div class="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1 text-[11px] font-semibold text-slate-600">
       <% overview_period_options.each do |label, value| %>
-        <%= link_to label, person_widgets_path(person, weight_range: value), class: "rounded-full px-3 py-1 transition #{current_range == value ? 'bg-white text-slate-950 shadow-sm' : 'hover:bg-white'}" %>
+        <%= link_to label, person_widgets_path(person, weight_range: value), class: "rounded-full px-3 py-1 transition #{current_range == value ? 'bg-white text-slate-950 shadow-sm' : 'hover:bg-white'}", data: { turbo_preserve_scroll: true } %>
       <% end %>
     </div>
     <% if series.present? %>

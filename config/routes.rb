@@ -23,6 +23,8 @@ Rails.application.routes.draw do
   scope "/:person_slug", constraints: { person_slug: /(?!settings|up|manifest|service-worker|people)[^\/]+/ } do
     root "dashboard#show", as: :person_root
     get "overview", to: "people#show", as: :person_overview
+    get "trends", to: "people#trends", as: :person_trends
+    get "calendar", to: "dashboard#calendar", as: :person_calendar
     get "baby", to: "people#baby", as: :person_baby
     get "log", to: "dashboard#log", as: :person_log
     get "files", to: "dashboard#files", as: :person_files

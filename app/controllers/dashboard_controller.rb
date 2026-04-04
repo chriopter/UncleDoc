@@ -19,6 +19,15 @@ class DashboardController < ApplicationController
     @log_summary_state = :idle
   end
 
+  def calendar
+    @person = Person.find_by!(name: params[:person_slug])
+    @year = (params[:year] || Time.zone.today.year).to_i
+    @appointments = @person.entries
+      .merge(Entry.by_parseable_data_type("appointment"))
+      .where(occurred_at: Date.new(@year, 1, 1).beginning_of_day..Date.new(@year, 12, 31).end_of_day)
+      .order(occurred_at: :asc)
+  end
+
   def files
     @person = Person.find_by!(name: params[:person_slug])
     @document_entries = @person.entries.with_documents.recent_first

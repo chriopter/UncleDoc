@@ -1,6 +1,8 @@
 <section class="space-y-6">
-    <% if @section == "db" %>
-      <%= render "dashboard/db", database_snapshot: @database_snapshot %>
+    <% if @section == "db_table" && @database_table %>
+      <%= render "dashboard/db_table", table: @database_table %>
+    <% elsif @section == "db" %>
+      <%= render "dashboard/db_overview" %>
     <% elsif @section == "users" %>
       <%= render "settings/users", people: @people, person: @person %>
     <% elsif @section == "llm_logs" %>

@@ -48,7 +48,7 @@ end %>
     </div>
     <div class="inline-flex rounded-full border border-black/5 bg-white p-1 text-[11px] font-semibold <%= theme[:range] %>">
       <% overview_period_options.each do |label, value| %>
-        <%= link_to label, person_widgets_path(person, "#{type}_range": value), class: "rounded-full px-3 py-1 transition #{current_range == value ? theme[:active_range] : 'hover:bg-black/5'}" %>
+        <%= link_to label, person_widgets_path(person, "#{type}_range": value), class: "rounded-full px-3 py-1 transition #{current_range == value ? theme[:active_range] : 'hover:bg-black/5'}", data: { turbo_preserve_scroll: true } %>
       <% end %>
     </div>
   </div>
