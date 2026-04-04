@@ -151,6 +151,38 @@ bin/rails test
 
 See [Kamal deployment docs](https://kamal-deploy.org) for production deployment with Docker.
 
+### Kamal on a LAN
+
+This app can be deployed with Kamal on a trusted LAN without requesting a public TLS certificate.
+
+- Keep `config/deploy.yml` generic and committed.
+- Keep the LAN host out of git by reading it from `KAMAL_LAN_HOST` in `config/deploy.lan.yml`.
+- Store the LAN host and Kamal deploy secrets in 1Password.
+- Keep Kamal proxy SSL disabled for LAN-only HTTP deployment.
+- First-time setup should use `bin/setup_op`.
+- Regular deploys should use `bin/deploy_op`.
+
+Tracked LAN destination file:
+
+```yaml
+servers:
+  web:
+    - <%= ENV.fetch("KAMAL_LAN_HOST") %>
+```
+
+Example 1Password-backed LAN secrets template:
+
+```sh
+SECRETS=$(kamal secrets fetch --adapter 1password --account my.1password.eu --from "default/UncleDoc Production Secrets" RAILS_MASTER_KEY)
+RAILS_MASTER_KEY=$(kamal secrets extract RAILS_MASTER_KEY $SECRETS)
+```
+
+Example 1Password field for the server target:
+
+```text
+op://default/UncleDoc Production Secrets/KAMAL_LAN_HOST
+```
+
 ## License
 
 MIT License - See LICENSE file for details.

@@ -1,0 +1,3 @@
+servers:
+  web:
+    - <%= ENV.fetch("KAMAL_LAN_HOST") %>
