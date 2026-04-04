@@ -26,6 +26,8 @@ de:
   app:
     name: "UncleDoc"
     tagline: "Familien-Gesundheitstracker"
+    shell:
+      settings_hint: "Personen, Parser und Spracheinstellungen bleiben immer griffbereit."
     revision:
       tooltip: "Letzter Commit: %{subject} (%{sha})"
 
@@ -34,12 +36,19 @@ de:
     home: "Startseite"
     overview: "Übersicht"
     baby: "Baby"
-    files: "Dateien"
+    files: "Dokumente"
     timeline: "Zeitlinie"
     reports: "Berichte"
     settings: "Einstellungen"
+    back: "Zurück"
     log: "Protokoll"
+    research: "Recherche"
+    data: "Daten"
     db: "DB"
+    sections:
+      overview: "Übersicht"
+      research: "Recherche"
+      data: "Daten"
 
   # Common actions
   actions:
@@ -167,9 +176,11 @@ de:
     documents:
       title: "Dateien"
       open: "Öffnen"
+      attach: "Anhängen"
       document_only: "Dokument-Upload"
       upload_title: "Dokumente anhängen"
       upload_hint: "PDFs, JPGs, PNGs oder TXT-Dateien hochladen. Das LLM liest sie direkt und macht daraus Fakten."
+      drop_hint: "Dateien ins Eingabefeld ziehen oder die Klammer nutzen"
       errors:
         invalid_type: "Nicht unterstützter Dateityp: %{content_type}"
         too_large: "Datei ist zu groß. Maximal %{size}."

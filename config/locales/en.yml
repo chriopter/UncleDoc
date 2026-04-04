@@ -26,6 +26,8 @@ en:
   app:
     name: "UncleDoc"
     tagline: "Family health tracker"
+    shell:
+      settings_hint: "Keep people, parser, and language settings close at hand."
     revision:
       tooltip: "Last commit: %{subject} (%{sha})"
 
@@ -38,8 +40,15 @@ en:
     timeline: "Timeline"
     reports: "Reports"
     settings: "Settings"
+    back: "Back"
     log: "Log"
+    research: "Research"
+    data: "Data"
     db: "DB"
+    sections:
+      overview: "Overview"
+      research: "Research"
+      data: "Data"
 
   # Common actions
   actions:
@@ -167,9 +176,11 @@ en:
     documents:
       title: "Files"
       open: "Open"
+      attach: "Attach"
       document_only: "Document upload"
       upload_title: "Add documents"
       upload_hint: "Upload PDFs, JPGs, PNGs, or TXT files. The LLM reads them directly and turns them into facts."
+      drop_hint: "Drop files into the input field or use the clip"
       errors:
         invalid_type: "Unsupported file type: %{content_type}"
         too_large: "File is too large. Max size is %{size}."

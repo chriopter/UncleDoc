@@ -15,7 +15,8 @@ class EntriesController < ApplicationController
   end
 
   def create
-    @entry = @person.entries.build(entry_params)
+    @entry = @person.entries.build(model_entry_params)
+    attach_uploaded_documents(@entry)
     populate_facts_from_parseable_data(@entry)
     should_enqueue_parse = @entry.parseable_data.blank? && entry_has_parseable_source?(@entry, documents_added: uploaded_documents_present?) && EntryDataParser.ready?
 
@@ -121,10 +122,15 @@ class EntriesController < ApplicationController
   end
 
   def entry_params
-    permitted = params.require(:entry).permit(:input, :occurred_at, facts: [], documents: [])
+    permitted = params.require(:entry).permit(:input, :occurred_at, :llm_response, facts: [], documents: [])
     permitted[:parseable_data] = normalize_parseable_data_param(params[:entry][:parseable_data]) if params[:entry].key?(:parseable_data)
     permitted[:facts] = normalize_facts_param(params[:entry][:facts]) if params[:entry].key?(:facts)
+    permitted[:llm_response] = normalize_llm_response_param(params[:entry][:llm_response]) if params[:entry].key?(:llm_response)
     permitted
+  end
+
+  def model_entry_params
+    entry_params.except(:documents)
   end
 
   def normalize_parseable_data_param(raw_parseable_data)
@@ -143,6 +149,15 @@ class EntriesController < ApplicationController
     JSON.parse(raw_facts)
   rescue JSON::ParserError
     []
+  end
+
+  def normalize_llm_response_param(raw_llm_response)
+    return {} if raw_llm_response.blank?
+    return raw_llm_response if raw_llm_response.is_a?(Hash)
+
+    JSON.parse(raw_llm_response)
+  rescue JSON::ParserError
+    {}
   end
 
   def prepare_reparse(entry, documents_added: false)
@@ -176,8 +191,23 @@ class EntriesController < ApplicationController
   end
 
   def uploaded_documents_present?
-    Array(params.dig(:entry, :documents)).any? do |document|
+    uploaded_document_files.any?
+  end
+
+  def uploaded_document_files
+    Array(params.dig(:entry, :documents)).select do |document|
       document.respond_to?(:original_filename) && document.original_filename.present?
+    end
+  end
+
+  def attach_uploaded_documents(entry)
+    uploaded_document_files.each do |document|
+      document.tempfile.rewind
+      entry.documents.attach(
+        io: document.tempfile,
+        filename: document.original_filename,
+        content_type: document.content_type
+      )
     end
   end
 

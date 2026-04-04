@@ -1,0 +1,35 @@
+<%# Standard widget card wrapper
+  Required locals:
+    id:    - DOM id for turbo targeting
+  Optional locals:
+    title: - widget title text
+    label: - small uppercase label above title
+    color: - theme color (amber, violet, cyan, rose, etc.) default: amber
+    dark:  - dark mode card (bg-slate-950)
+    span:  - grid column span ("2" for md:col-span-2 xl:col-span-2)
+    card_classes: - extra classes on the outer div
+%>
+<% color = local_assigns[:color] || "amber" %>
+<% dark = local_assigns[:dark] %>
+<% span_class = case local_assigns[:span].to_s
+   when "2" then "md:col-span-2 xl:col-span-2"
+   when "3" then "md:col-span-2 xl:col-span-3"
+   else ""
+   end %>
+
+<div id="<%= local_assigns[:id] %>"
+     class="rounded-[2rem] border p-6 shadow-sm ring-1
+            <%= dark ? "border-slate-200 bg-slate-950 text-white ring-black/5" : "border-#{color}-200 bg-white text-slate-900 ring-#{color}-100" %>
+            <%= span_class %> <%= local_assigns[:card_classes] %>">
+  <% if local_assigns[:label] || local_assigns[:title] %>
+    <div class="mb-4">
+      <% if local_assigns[:label] %>
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] <%= dark ? "text-#{color}-200" : "text-#{color}-700" %>"><%= label %></p>
+      <% end %>
+      <% if local_assigns[:title] %>
+        <h3 class="mt-1 text-lg font-bold <%= dark ? 'text-white' : 'text-slate-950' %>"><%= title %></h3>
+      <% end %>
+    </div>
+  <% end %>
+  <%= yield %>
+</div>

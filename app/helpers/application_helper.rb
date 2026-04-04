@@ -192,11 +192,7 @@ module ApplicationHelper
   end
 
   def recent_activity_card_classes_for(person)
-    if widget_context_for(person) == :baby
-      "md:col-span-2 xl:col-span-2"
-    else
-      "xl:col-span-1"
-    end
+    "md:col-span-2 xl:col-span-2"
   end
 
   def overview_period_mode(params_or_hash, key)

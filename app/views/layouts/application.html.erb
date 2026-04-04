@@ -23,36 +23,102 @@
 
   <% nav_items = shell_nav_items(current_person, request.path) %>
 
-  <body class="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(254,243,199,0.9),_transparent_30%),linear-gradient(180deg,_#fffdf8_0%,_#f7f1e6_100%)] text-slate-900 antialiased">
+  <body class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.20),_transparent_22%),radial-gradient(circle_at_bottom_right,_rgba(244,114,182,0.12),_transparent_24%),linear-gradient(180deg,_#fffaf1_0%,_#f4efe4_100%)] text-slate-900 antialiased">
     <%# Skip to content link for accessibility %>
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:rounded-xl focus:bg-amber-500 focus:px-4 focus:py-3 focus:text-white focus:text-sm focus:font-semibold focus:shadow-lg">
       <%= t("accessibility.skip_to_content") %>
     </a>
 
-    <main id="main-content" class="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 md:px-6 md:py-8">
-      <header class="relative z-50 mb-6 rounded-[2rem] border border-amber-100 bg-white/90 p-4 shadow-sm ring-1 ring-amber-100/80 md:p-5">
-        <div class="flex flex-col gap-4 xl:flex-row xl:items-center">
-          <%# Left: UncleDoc branding %>
-          <div class="hidden xl:flex xl:w-32 xl:items-center">
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-700" title="<%= app_revision_tooltip %>"><%= t("app.name") %></p>
+    <main id="main-content" class="mx-auto min-h-screen w-full max-w-[96rem] px-4 py-4 md:px-6 md:py-6">
+      <div class="flex min-h-[calc(100vh-2rem)] flex-col gap-6 xl:flex-row">
+
+        <%# ── Mobile / tablet top bar (below xl) ── %>
+        <header class="relative rounded-[2rem] border border-amber-100/80 bg-white/95 p-4 shadow-sm ring-1 ring-amber-100/80 xl:hidden" data-controller="dropdown">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex min-w-0 flex-1 items-center gap-3">
+              <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100 text-base font-black text-amber-800 shadow-inner">
+                <%= current_person&.name&.first&.upcase || "U" %>
+              </div>
+              <span class="truncate text-lg font-black tracking-tight text-slate-950"><%= current_person&.name || t("family.default_name") %></span>
+            </div>
+
+            <button type="button" data-action="dropdown#toggle" class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-amber-200 hover:text-slate-950" aria-label="Menu">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            </button>
           </div>
 
-          <%# Center: Name dropdown and navigation %>
-          <div class="flex flex-1 flex-col items-stretch gap-4 xl:flex-row xl:items-center xl:justify-center xl:gap-8">
-            <div class="relative mx-auto xl:mx-0" data-controller="dropdown">
-              <button type="button" data-action="dropdown#toggle" class="flex items-center gap-3 text-left group">
-                <h1 class="max-w-[14rem] break-words text-xl font-black tracking-tight text-slate-950 transition-colors group-hover:text-amber-700 md:max-w-[20rem] md:text-2xl"><%= current_person&.name || t("family.default_name") %></h1>
+          <div data-dropdown-target="menu" class="absolute left-0 right-0 top-full z-[9999] mt-3 hidden rounded-[1.75rem] border border-amber-200 bg-white p-3 shadow-xl ring-1 ring-black/5">
+            <%# Person switcher %>
+            <% if family_members.size > 1 %>
+              <div class="mb-2 border-b border-slate-100 pb-2">
+                <% family_members.each do |person| %>
+                  <%= link_to person_overview_path(person_slug: person.name), class: "flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium #{current_person == person ? 'bg-amber-100 text-amber-900' : 'text-slate-700 hover:bg-amber-50'}" do %>
+                    <span class="truncate"><%= person.name %></span>
+                    <% if current_person == person %>
+                      <span class="ml-2 text-xs text-amber-600">●</span>
+                    <% end %>
+                  <% end %>
+                <% end %>
+              </div>
+            <% end %>
+
+            <%# Navigation %>
+            <div class="space-y-0.5">
+              <% nav_items.each do |item| %>
+                <% if item[:child] %>
+                  <%= link_to item[:path], class: "ml-7 block rounded-lg px-3 py-1.5 text-sm font-medium #{item[:active] ? 'text-amber-800 bg-amber-50' : 'text-slate-500 hover:text-slate-900 hover:bg-amber-50'}" do %>
+                    <%= item[:label] %>
+                  <% end %>
+                <% else %>
+                  <%= link_to item[:path], class: "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold #{item[:active] ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-amber-50'}" do %>
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="<%= shell_nav_icon(item[:label]) %>" />
+                    </svg>
+                    <span><%= item[:label] %></span>
+                  <% end %>
+                <% end %>
+              <% end %>
+            </div>
+
+            <%# Settings %>
+            <div class="mt-1 border-t border-slate-100 pt-2 space-y-0.5">
+              <% shell_settings_items(request.path).each do |item| %>
+                <%= link_to item[:path], class: "ml-7 block rounded-lg px-3 py-1.5 text-sm font-medium #{item[:active] ? 'text-amber-800 bg-amber-50' : 'text-slate-500 hover:text-slate-900 hover:bg-amber-50'}" do %>
+                  <%= item[:label] %>
+                <% end %>
+              <% end %>
+              <% on_settings = request.path.start_with?("/settings") %>
+              <%= link_to settings_path_for, class: "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold #{on_settings ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-amber-50'}" do %>
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="<%= shell_nav_icon(t('nav.settings')) %>" />
+                </svg>
+                <span><%= t("nav.settings") %></span>
+              <% end %>
+            </div>
+          </div>
+        </header>
+
+        <%# ── Desktop sidebar (xl+) ── %>
+        <aside class="hidden xl:sticky xl:top-6 xl:block xl:h-[calc(100vh-3rem)] xl:w-[18rem] xl:flex-shrink-0">
+          <div class="flex h-full flex-col rounded-[2rem] border border-amber-100/80 bg-[linear-gradient(180deg,_rgba(255,255,255,0.96)_0%,_rgba(255,248,235,0.92)_100%)] p-5 shadow-[0_24px_70px_-32px_rgba(120,53,15,0.28)] ring-1 ring-amber-100/80">
+
+            <%# Person picker %>
+            <div class="relative mb-6" data-controller="dropdown">
+              <button type="button" data-action="dropdown#toggle" class="group mx-auto flex items-center gap-3 text-left">
+                <h1 class="max-w-[13rem] break-words text-xl font-black tracking-tight text-slate-950 transition-colors group-hover:text-amber-700"><%= current_person&.name || t("family.default_name") %></h1>
                 <svg class="h-5 w-5 text-slate-400 group-hover:text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                 </svg>
               </button>
-              
-              <div data-dropdown-target="menu" class="absolute left-1/2 -translate-x-1/2 top-full z-[9999] mt-3 hidden w-56 rounded-2xl border border-amber-200 bg-white p-2 shadow-xl ring-1 ring-black/5">
+
+              <div data-dropdown-target="menu" class="absolute left-1/2 top-full z-[9999] mt-3 hidden w-48 -translate-x-1/2 rounded-2xl border border-amber-200 bg-white p-2 shadow-xl ring-1 ring-black/5">
                 <% if family_members.any? %>
-                  <div class="pb-1">
+                  <div class="space-y-0.5">
                     <% family_members.each do |person| %>
-                      <%= link_to person_overview_path(person_slug: person.name), class: "w-full text-left block rounded-xl px-3 py-2.5 text-sm font-medium #{current_person == person ? 'bg-amber-100 text-amber-900' : 'text-slate-700 hover:bg-amber-50'}" do %>
-                        <%= person.name %>
+                      <%= link_to person_overview_path(person_slug: person.name), class: "flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium #{current_person == person ? 'bg-amber-100 text-amber-900' : 'text-slate-700 hover:bg-amber-50'}" do %>
+                        <span class="truncate"><%= person.name %></span>
                         <% if current_person == person %>
                           <span class="ml-2 text-xs text-amber-600">●</span>
                         <% end %>
@@ -63,46 +129,66 @@
               </div>
             </div>
 
-            <%# Desktop navigation next to name %>
-            <nav class="hidden xl:flex min-w-max items-center gap-2">
+            <%# Main nav %>
+            <nav class="flex-1 space-y-0.5 overflow-y-auto">
               <% nav_items.each do |item| %>
-                <%= link_to item[:label], item[:path], class: shell_menu_item_class(item[:active]) %>
+                <% if item[:child] %>
+                  <%= link_to item[:path], class: "ml-11 block rounded-lg px-3 py-1.5 text-sm font-medium transition #{item[:active] ? 'text-amber-800 bg-amber-50' : 'text-slate-500 hover:text-slate-900 hover:bg-white'}" do %>
+                    <%= item[:label] %>
+                  <% end %>
+                <% else %>
+                  <%= link_to item[:path], class: shell_menu_item_class(item[:active]) do %>
+                    <span class="flex items-center gap-3">
+                      <span class="flex h-8 w-8 items-center justify-center rounded-xl <%= item[:active] ? 'bg-white/[.12]' : 'bg-amber-50 text-amber-700' %>">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="<%= shell_nav_icon(item[:label]) %>" />
+                        </svg>
+                      </span>
+                      <span><%= item[:label] %></span>
+                    </span>
+                  <% end %>
+                <% end %>
               <% end %>
             </nav>
-          </div>
 
-          <%# Right: Mobile nav + Settings %>
-          <div class="flex items-center justify-between gap-3 xl:w-32 xl:justify-end">
-            <nav class="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto xl:hidden">
-              <% nav_items.each do |item| %>
-                <%= link_to item[:label], item[:path], class: shell_menu_item_class(item[:active]) %>
+            <%# Settings pinned to bottom %>
+            <% settings_children = shell_settings_items(request.path) %>
+            <div class="mt-auto border-t border-amber-100/80 pt-3">
+              <% settings_children.each do |item| %>
+                <%= link_to item[:path], class: "ml-11 block rounded-lg px-3 py-1.5 text-sm font-medium transition #{item[:active] ? 'text-amber-800 bg-amber-50' : 'text-slate-500 hover:text-slate-900 hover:bg-white'}" do %>
+                  <%= item[:label] %>
+                <% end %>
               <% end %>
-            </nav>
-
-            <%= link_to settings_path_for, class: "#{shell_menu_item_class(request.path.start_with?("/settings"))} px-3.5 py-2.5", aria: { label: t("nav.settings") } do %>
-              <span class="flex items-center justify-center" style="width: 1.75rem; height: 1.75rem;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" style="width: 1.75rem; height: 1.75rem;">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37 1 .608 2.296.07 2.572-1.065z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" />
-                </svg>
-              </span>
-            <% end %>
+              <% on_settings = request.path.start_with?("/settings") %>
+              <%= link_to settings_path_for, class: shell_menu_item_class(on_settings) do %>
+                <span class="flex items-center gap-3">
+                  <span class="flex h-8 w-8 items-center justify-center rounded-xl <%= on_settings ? 'bg-white/[.12]' : 'bg-amber-50 text-amber-700' %>">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="<%= shell_nav_icon(t('nav.settings')) %>" />
+                    </svg>
+                  </span>
+                  <span><%= t("nav.settings") %></span>
+                </span>
+              <% end %>
+            </div>
           </div>
-        </div>
-      </header>
+        </aside>
 
-      <% if notice.present? || alert.present? %>
-        <div class="mb-4 flex flex-col gap-2">
-          <% if notice.present? %>
-            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><%= notice %></div>
+        <div class="min-w-0 flex-1">
+          <% if notice.present? || alert.present? %>
+            <div class="mb-4 flex flex-col gap-2">
+              <% if notice.present? %>
+                <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><%= notice %></div>
+              <% end %>
+              <% if alert.present? %>
+                <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800"><%= alert %></div>
+              <% end %>
+            </div>
           <% end %>
-          <% if alert.present? %>
-            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800"><%= alert %></div>
-          <% end %>
-        </div>
-      <% end %>
 
-      <%= yield %>
+          <%= yield %>
+        </div>
+      </div>
     </main>
   </body>
 </html>

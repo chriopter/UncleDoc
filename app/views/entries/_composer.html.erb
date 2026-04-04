@@ -1,0 +1,50 @@
+<%= turbo_frame_tag "entry_form" do %>
+  <%= form_with model: [person, entry], class: "space-y-4", data: { controller: "entry-composer" } do |f| %>
+    <% if entry.errors.any? %>
+      <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+        <% entry.errors.full_messages.each do |message| %>
+          <p><%= message %></p>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="space-y-3 rounded-[1.75rem] border border-slate-200 bg-white/85 p-4 shadow-sm">
+      <%= f.label :input, t("activerecord.attributes.entry.input"), class: "text-base font-semibold text-slate-800" %>
+      <%= f.text_area :input,
+          value: entry.input,
+          rows: 4,
+          placeholder: t("entries.form.placeholder"),
+          class: "block w-full min-h-[104px] rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-4 text-base text-slate-900 placeholder:text-slate-400 focus:border-amber-400 focus:ring-amber-200 resize-y",
+          data: { entry_composer_target: "input", action: "keydown->entry-composer#submitOnEnter dragover->entry-composer#dragOver dragleave->entry-composer#dragLeave drop->entry-composer#drop" } %>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="button" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" data-action="entry-composer#toggleTime">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+          <span><%= t("entries.form.use_current_time") %></span>
+        </button>
+
+        <button type="button" class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700 transition hover:bg-slate-100" data-action="entry-composer#openFilePicker" aria-label="<%= t("entries.documents.attach") %>">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21.44 11.05 12.25 20.24a6 6 0 1 1-8.49-8.49l9.2-9.19a4 4 0 0 1 5.65 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+          </svg>
+        </button>
+
+        <%= f.submit t("entries.form.submit"), class: "inline-flex items-center rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800" %>
+      </div>
+
+      <div data-entry-composer-target="timeFields" class="hidden rounded-[1.25rem] border border-slate-200 bg-slate-50 p-3">
+        <%= f.label :occurred_at, t("activerecord.attributes.entry.occurred_at"), class: "block text-sm font-semibold text-slate-700" %>
+        <%= f.datetime_local_field :occurred_at,
+            value: (entry.occurred_at || Time.current).strftime("%Y-%m-%dT%H:%M"),
+            class: "mt-2 block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-amber-500 focus:ring-amber-500" %>
+      </div>
+
+      <%= f.file_field :documents, multiple: true, direct_upload: false, accept: ".pdf,.png,.jpg,.jpeg,.txt,text/plain,application/pdf,image/png,image/jpeg", class: "hidden", data: { entry_composer_target: "fileInput", action: "change->entry-composer#filesChanged" } %>
+
+      <div data-entry-composer-target="files" class="text-sm text-slate-500"><%= t("entries.documents.drop_hint") %></div>
+    </div>
+  <% end %>
+<% end %>
