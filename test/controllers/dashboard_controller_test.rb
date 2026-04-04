@@ -130,6 +130,22 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "breast_feeding"
   end
 
+  test "recent activity summary clamps long text" do
+    person = Person.create!(name: "Clampy", birth_date: Date.new(2024, 1, 1))
+    person.entries.create!(
+      occurred_at: Time.zone.local(2026, 3, 31, 9, 0),
+      input: "Bla" * 120,
+      facts: [],
+      parseable_data: []
+    )
+
+    get person_overview_url(person_slug: person.name)
+
+    assert_response :success
+    assert_includes @response.body, "line-clamp-6"
+    assert_not_includes @response.body, "line-clamp-2"
+  end
+
   test "overview shows weight widget when weight data exists" do
     person = Person.create!(name: "Weighty", birth_date: Date.new(2024, 1, 1))
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 27, 9, 0), input: "75kg", facts: [ "Weight 75 kg" ], parseable_data: [ { "type" => "weight", "value" => 75, "unit" => "kg" } ])

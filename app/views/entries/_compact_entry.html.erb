@@ -8,9 +8,9 @@
     </div>
 
     <div class="flex-1 min-w-0">
-      <p class="break-words text-sm font-medium leading-snug text-slate-900 [overflow-wrap:anywhere]"><%= entry.fact_summary.presence || entry.input %></p>
+      <p class="line-clamp-6 break-words text-sm font-medium leading-snug text-slate-900 [overflow-wrap:anywhere]"><%= entry.fact_summary.presence || entry.input %></p>
       <% if entry.fact_items.present? %>
-        <p class="mt-1 break-words text-[11px] text-slate-500 [overflow-wrap:anywhere]"><%= entry.input %></p>
+        <p class="mt-1 line-clamp-2 break-words text-[11px] text-slate-500 [overflow-wrap:anywhere]"><%= entry.input %></p>
       <% end %>
       <% if entry.pending_parse? %>
         <p class="mt-1 text-[11px] text-amber-700"><%= t("entries.parse_status.pending") %></p>
