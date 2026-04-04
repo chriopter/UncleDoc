@@ -9,6 +9,6 @@ if [[ -f ".kamal/secrets.lan.template" ]]; then
 fi
 
 op run --env-file=<(cat <<'EOF'
-KAMAL_LAN_HOST=op://default/UncleDoc Production Secrets/KAMAL_LAN_HOST
+KAMAL_LAN_HOST=op://Private/UncleDoc Production Secrets/KAMAL_LAN_HOST
 EOF
 ) -- bin/kamal "$@"

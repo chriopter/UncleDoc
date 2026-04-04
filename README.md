@@ -173,14 +173,14 @@ servers:
 Example 1Password-backed LAN secrets template:
 
 ```sh
-SECRETS=$(kamal secrets fetch --adapter 1password --account my.1password.eu --from "default/UncleDoc Production Secrets" RAILS_MASTER_KEY)
+SECRETS=$(kamal secrets fetch --adapter 1password --account my.1password.eu --from "Private/UncleDoc Production Secrets" RAILS_MASTER_KEY)
 RAILS_MASTER_KEY=$(kamal secrets extract RAILS_MASTER_KEY $SECRETS)
 ```
 
 Example 1Password field for the server target:
 
 ```text
-op://default/UncleDoc Production Secrets/KAMAL_LAN_HOST
+op://Private/UncleDoc Production Secrets/KAMAL_LAN_HOST
 ```
 
 ## License
