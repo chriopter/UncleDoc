@@ -27,6 +27,7 @@ module DashboardHelper
       { label: t("settings.users.nav"), path: settings_path_for(:users), active: request_path == settings_path_for(:users), child: true },
       { label: t("settings.llm.title"), path: settings_path_for(:llm), active: request_path.include?("llm") },
       { label: t("settings.llm_prompt.nav"), path: settings_path_for(:llm_prompt), active: request_path == settings_path_for(:llm_prompt), child: true },
+      { label: t("settings.llm_prompt_preview.nav"), path: settings_path_for(:llm_prompt_preview), active: request_path == settings_path_for(:llm_prompt_preview), child: true },
       { label: t("settings.llm_logs.nav"), path: settings_path_for(:llm_logs), active: request_path == settings_path_for(:llm_logs), child: true },
       { label: t("settings.db.title"), path: settings_path_for(:db), active: request_path.include?("db") }
     ]

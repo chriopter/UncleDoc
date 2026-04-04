@@ -162,7 +162,7 @@ class EntryDataParser
   end
 
   def self.system_prompt
-    File.read(Rails.root.join("config/parsers/entry_data.txt"))
+    File.read(Rails.root.join("prompts/parser.md"))
   end
 
   def self.user_prompt(input, entry: nil)
