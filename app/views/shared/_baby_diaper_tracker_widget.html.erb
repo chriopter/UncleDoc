@@ -1,17 +1,11 @@
 <% recent_diapers = person.recent_diapers(3) %>
-
-<div id="overview_baby_tracking_diaper" class="rounded-[2rem] border border-blue-200 bg-white/95 p-6 text-slate-950 shadow-sm ring-1 ring-black/5 backdrop-blur <%= local_assigns[:card_classes] || 'xl:col-span-2 xl:row-span-3 h-full' %>">
+<%= render "shared/widget", id: "overview_baby_tracking_diaper", label: t("baby.badge"), title: t("baby.diaper.title"), color: "blue", card_classes: local_assigns[:card_classes] || 'xl:col-span-2 xl:row-span-3 h-full' do %>
   <section class="flex h-full flex-col rounded-[1.5rem] border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-cyan-50 p-4">
-    <div class="mb-4 flex items-start justify-between gap-3">
-      <div>
-        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-600"><%= t("baby.badge") %></p>
-        <h3 class="mt-1 text-lg font-bold text-slate-950"><%= t("baby.diaper.title") %></h3>
-      </div>
-      <% if person.time_since_last_diaper %>
+    <% if person.time_since_last_diaper %>
+      <div class="mb-4 flex justify-end">
         <span class="rounded-full border border-blue-200 bg-white px-3 py-1 text-[11px] font-semibold text-blue-800"><%= compact_time_ago_label(person.time_since_last_diaper) %></span>
-      <% end %>
-    </div>
-
+      </div>
+    <% end %>
     <% if recent_diapers.any? %>
       <div class="space-y-1.5 rounded-2xl border border-blue-100 bg-white/80 px-3 py-3 text-xs font-medium text-blue-900">
         <% recent_diapers.each do |entry| %>
@@ -19,7 +13,6 @@
         <% end %>
       </div>
     <% end %>
-
     <%= render "shared/baby_activity_chart", person: person, type: :diaper %>
   </section>
-</div>
+<% end %>

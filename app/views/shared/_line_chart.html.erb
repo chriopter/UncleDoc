@@ -1,0 +1,45 @@
+<%# Shared line chart
+  Required: series, color (string matching chart_theme keys)
+  Optional: gradient_id (unique id for SVG gradient, defaults to color)
+  series items: { value:, short_label:, unit:, secondary: (optional) }
+%>
+<% ct = chart_theme(color) %>
+<% line_points = weight_activity_line_points(series) %>
+<% plot_points = weight_activity_plot_points(series) %>
+<% gid = local_assigns[:gradient_id] || color %>
+
+<div class="rounded-2xl border <%= ct[:border] %> <%= ct[:bg] %> p-3">
+  <div class="relative h-32">
+    <div class="absolute inset-0 grid grid-rows-4">
+      <% 4.times do %><div class="border-b <%= ct[:border] %> last:border-b-0"></div><% end %>
+    </div>
+    <svg viewBox="0 0 100 60" preserveAspectRatio="none" class="relative h-full w-full">
+      <defs>
+        <linearGradient id="<%= gid %>-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="<%= ct[:gradient][0] %>" />
+          <stop offset="55%" stop-color="<%= ct[:gradient][1] %>" />
+          <stop offset="100%" stop-color="<%= ct[:gradient][2] %>" />
+        </linearGradient>
+      </defs>
+      <polyline fill="none" stroke="url(#<%= gid %>-line-gradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="<%= line_points %>" />
+      <% plot_points.each do |point| %>
+        <circle cx="<%= point[:x] %>" cy="<%= point[:y] %>" r="2.3" fill="#ffffff" stroke="<%= ct[:point] %>" stroke-width="1.3" />
+      <% end %>
+    </svg>
+  </div>
+  <div class="mt-2 grid gap-2" style="grid-template-columns: repeat(<%= series.length %>, minmax(0, 1fr));">
+    <% series.each do |point| %>
+      <div class="text-center">
+        <div class="text-[11px] font-semibold text-slate-900">
+          <% if point[:secondary] %>
+            <%= point[:value].to_i %>/<%= point[:secondary].to_i %>
+          <% else %>
+            <%= number_with_precision(point[:value], precision: point[:value] % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %>
+            <span class="text-[10px] font-medium <%= ct[:label_color] %>"><%= point[:unit] %></span>
+          <% end %>
+        </div>
+        <div class="mt-1 text-[10px] font-semibold text-slate-500"><%= point[:short_label] %></div>
+      </div>
+    <% end %>
+  </div>
+</div>

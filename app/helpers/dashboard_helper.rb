@@ -59,6 +59,35 @@ module DashboardHelper
     end
   end
 
+  def widget_theme(color = "amber")
+    {
+      "amber"   => { border: "border-amber-200",   ring: "ring-amber-100",   label: "text-amber-700",   label_dark: "text-amber-200",   bg_accent: "bg-amber-50/50",   border_accent: "border-amber-100" },
+      "violet"  => { border: "border-violet-200",  ring: "ring-violet-100",  label: "text-violet-700",  label_dark: "text-violet-200",  bg_accent: "bg-violet-50/50",  border_accent: "border-violet-100" },
+      "cyan"    => { border: "border-cyan-200",    ring: "ring-cyan-100",    label: "text-cyan-700",    label_dark: "text-cyan-200",    bg_accent: "bg-cyan-50/50",    border_accent: "border-cyan-100" },
+      "rose"    => { border: "border-rose-200",    ring: "ring-rose-100",    label: "text-rose-700",    label_dark: "text-rose-200",    bg_accent: "bg-rose-50/50",    border_accent: "border-rose-100" },
+      "orange"  => { border: "border-orange-200",  ring: "ring-orange-100",  label: "text-orange-700",  label_dark: "text-orange-200",  bg_accent: "bg-orange-50/50",  border_accent: "border-orange-100" },
+      "sky"     => { border: "border-sky-200",     ring: "ring-sky-100",     label: "text-sky-700",     label_dark: "text-sky-200",     bg_accent: "bg-sky-50/50",     border_accent: "border-sky-100" },
+      "emerald" => { border: "border-emerald-200", ring: "ring-emerald-100", label: "text-emerald-700", label_dark: "text-emerald-200", bg_accent: "bg-emerald-50/50", border_accent: "border-emerald-100" },
+      "indigo"  => { border: "border-indigo-200",  ring: "ring-indigo-100",  label: "text-indigo-700",  label_dark: "text-indigo-200",  bg_accent: "bg-indigo-50/50",  border_accent: "border-indigo-100" },
+      "blue"    => { border: "border-blue-200",    ring: "ring-blue-100",    label: "text-blue-700",    label_dark: "text-blue-200",    bg_accent: "bg-blue-50/50",    border_accent: "border-blue-100" },
+      "pink"    => { border: "border-pink-200",    ring: "ring-pink-100",    label: "text-pink-700",    label_dark: "text-pink-200",    bg_accent: "bg-pink-50/50",    border_accent: "border-pink-100" },
+      "fuchsia" => { border: "border-fuchsia-200", ring: "ring-fuchsia-100", label: "text-fuchsia-700", label_dark: "text-fuchsia-200", bg_accent: "bg-fuchsia-50/50", border_accent: "border-fuchsia-100" },
+      "slate"   => { border: "border-slate-200",   ring: "ring-slate-100",   label: "text-slate-700",   label_dark: "text-slate-200",   bg_accent: "bg-slate-50/50",   border_accent: "border-slate-100" }
+    }[color.to_s] || widget_theme("amber")
+  end
+
+  def chart_theme(color = "violet")
+    {
+      "violet"  => { border: "border-violet-100",  bg: "bg-violet-50/50",  label_color: "text-violet-700",  gradient: %w[#8b5cf6 #d946ef #f9a8d4], point: "#d946ef" },
+      "cyan"    => { border: "border-cyan-100",    bg: "bg-cyan-50/50",    label_color: "text-cyan-700",    gradient: %w[#06b6d4 #38bdf8 #a5f3fc], point: "#38bdf8" },
+      "rose"    => { border: "border-rose-100",    bg: "bg-rose-50/50",    label_color: "text-rose-700",    gradient: %w[#ef4444 #fb7185 #fecdd3], point: "#fb7185" },
+      "orange"  => { border: "border-orange-100",  bg: "bg-orange-50/50",  label_color: "text-orange-700",  gradient: %w[#f97316 #fb923c #fed7aa], point: "#fb923c" },
+      "sky"     => { border: "border-sky-100",     bg: "bg-sky-50/50",     label_color: "text-sky-700",     gradient: %w[#0284c7 #38bdf8 #bae6fd], point: "#38bdf8" },
+      "emerald" => { border: "border-emerald-100", bg: "bg-emerald-50/50", label_color: "text-emerald-700", gradient: %w[#10b981 #34d399 #a7f3d0], point: "#34d399" },
+      "amber"   => { border: "border-amber-100",   bg: "bg-amber-50/50",  label_color: "text-amber-700",   gradient: %w[#f59e0b #fbbf24 #fde68a], point: "#fbbf24" }
+    }[color.to_s] || chart_theme("violet")
+  end
+
   def settings_sidebar_item_class(active = false)
     base = "flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold transition"
 

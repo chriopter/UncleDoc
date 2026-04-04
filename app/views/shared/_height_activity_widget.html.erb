@@ -1,81 +1,22 @@
 <% current_range = overview_period_mode(params, :height) %>
 <% series = height_activity_series(person, period: current_range) %>
-<% if series.present? %>
-  <% min_value = series.map { |point| point[:value] }.min %>
-  <% max_value = series.map { |point| point[:value] }.max %>
-  <% latest = series.last %>
-  <% line_points = weight_activity_line_points(series) %>
-  <% plot_points = weight_activity_plot_points(series) %>
-
-  <div id="overview_height_activity" class="rounded-[2rem] border border-cyan-200 bg-white p-6 text-slate-900 shadow-sm ring-1 ring-cyan-100 <%= local_assigns[:card_classes] || chart_widget_card_classes %>">
-    <section class="flex flex-col gap-4">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-700"><%= t("entries.data_labels.height") %></p>
-          <h3 class="mt-1 text-lg font-bold text-slate-950"><%= t("person.overview.height.title") %></h3>
-        </div>
-        <div class="sm:text-right">
-          <div class="mb-2 inline-flex rounded-full border border-slate-200 bg-slate-50 p-1 text-[11px] font-semibold text-slate-600">
-            <% overview_period_options.each do |label, value| %>
-              <%= link_to label, person_widgets_path(person, height_range: value), class: "rounded-full px-3 py-1 transition #{current_range == value ? 'bg-white text-slate-950 shadow-sm' : 'hover:bg-white'}" %>
-            <% end %>
-          </div>
-          <p class="text-[10px] font-semibold text-slate-500"><%= number_with_precision(min_value, precision: min_value % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> - <%= number_with_precision(max_value, precision: max_value % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> <%= latest[:unit] %></p>
-        </div>
-      </div>
-
-      <div class="rounded-2xl border border-cyan-100 bg-cyan-50/50 p-3">
-        <div class="relative h-32">
-          <div class="absolute inset-0 grid grid-rows-4">
-            <% 4.times do %>
-              <div class="border-b border-cyan-100 last:border-b-0"></div>
-            <% end %>
-          </div>
-
-          <svg viewBox="0 0 100 60" preserveAspectRatio="none" class="relative h-full w-full">
-            <defs>
-              <linearGradient id="height-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#06b6d4" />
-                <stop offset="55%" stop-color="#38bdf8" />
-                <stop offset="100%" stop-color="#a5f3fc" />
-              </linearGradient>
-            </defs>
-            <polyline fill="none" stroke="url(#height-line-gradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="<%= line_points %>" />
-            <% plot_points.each do |point| %>
-              <circle cx="<%= point[:x] %>" cy="<%= point[:y] %>" r="2.3" fill="#ffffff" stroke="#38bdf8" stroke-width="1.3" />
-            <% end %>
-          </svg>
-        </div>
-
-        <div class="mt-2 grid gap-2" style="grid-template-columns: repeat(<%= series.length %>, minmax(0, 1fr));">
-          <% series.each do |point| %>
-            <div class="text-center">
-              <div class="text-[11px] font-semibold text-slate-900"><%= number_with_precision(point[:value], precision: point[:value] % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> <span class="text-[10px] font-medium text-cyan-700"><%= point[:unit] %></span></div>
-              <div class="mt-1 text-[10px] font-semibold text-slate-500"><%= point[:short_label] %></div>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </section>
+<%= render "shared/widget", id: "overview_height_activity", label: t("entries.data_labels.height"), title: t("person.overview.height.title"), color: "cyan", card_classes: local_assigns[:card_classes] || chart_widget_card_classes do %>
+  <div class="mb-3 flex items-center justify-between">
+    <div class="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1 text-[11px] font-semibold text-slate-600">
+      <% overview_period_options.each do |label, value| %>
+        <%= link_to label, person_widgets_path(person, height_range: value), class: "rounded-full px-3 py-1 transition #{current_range == value ? 'bg-white text-slate-950 shadow-sm' : 'hover:bg-white'}" %>
+      <% end %>
+    </div>
+    <% if series.present? %>
+      <% min_v = series.map { |p| p[:value] }.min; max_v = series.map { |p| p[:value] }.max %>
+      <p class="text-[10px] font-semibold text-slate-500"><%= number_with_precision(min_v, precision: min_v % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> - <%= number_with_precision(max_v, precision: max_v % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> <%= series.last[:unit] %></p>
+    <% end %>
   </div>
-<% else %>
-  <div id="overview_height_activity" class="rounded-[2rem] border border-cyan-200 bg-white p-6 text-slate-900 shadow-sm ring-1 ring-cyan-100 <%= local_assigns[:card_classes] || chart_widget_card_classes %>">
-    <section class="flex flex-col gap-4">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-700"><%= t("entries.data_labels.height") %></p>
-          <h3 class="mt-1 text-lg font-bold text-slate-950"><%= t("person.overview.height.title") %></h3>
-        </div>
-        <div class="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1 text-[11px] font-semibold text-slate-600">
-          <% overview_period_options.each do |label, value| %>
-            <%= link_to label, person_widgets_path(person, height_range: value), class: "rounded-full px-3 py-1 transition #{current_range == value ? 'bg-white text-slate-950 shadow-sm' : 'hover:bg-white'}" %>
-          <% end %>
-        </div>
-      </div>
-
-      <div class="flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-cyan-200 bg-cyan-50/50 px-4 py-10 text-center text-sm text-slate-500">
-        <%= height_activity_available?(person) ? t("person.overview.height.empty_range") : t("person.overview.height.empty") %>
-      </div>
-    </section>
-  </div>
+  <% if series.present? %>
+    <%= render "shared/line_chart", series: series, color: "cyan", gradient_id: "height" %>
+  <% else %>
+    <div class="flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-cyan-200 bg-cyan-50/50 px-4 py-10 text-center text-sm text-slate-500">
+      <%= height_activity_available?(person) ? t("person.overview.height.empty_range") : t("person.overview.height.empty") %>
+    </div>
+  <% end %>
 <% end %>
