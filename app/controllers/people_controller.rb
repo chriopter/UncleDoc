@@ -7,6 +7,10 @@ class PeopleController < ApplicationController
     @entry = Entry.new
   end
 
+  def trends
+    @person = Person.find_by!(name: params[:person_slug])
+  end
+
   def baby
     @person = Person.find_by!(name: params[:person_slug])
     head :not_found and return unless @person.baby_mode?

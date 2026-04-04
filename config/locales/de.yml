@@ -35,11 +35,13 @@ de:
   nav:
     home: "Startseite"
     overview: "Übersicht"
+    trends: "Trends"
     baby: "Baby"
     files: "Dokumente"
     timeline: "Zeitlinie"
     reports: "Berichte"
     settings: "Einstellungen"
+    calendar: "Kalender"
     back: "Zurück"
     log: "Protokoll"
     research: "Recherche"
@@ -399,6 +401,13 @@ de:
       count: "%{count} Zeile"
       count_plural: "%{count} Zeilen"
       empty: "Noch keine Zeilen."
+      columns: "%{count} Spalten"
+      view: "Anzeigen"
+    groups:
+      data: "Benutzerdaten"
+      logs: "Protokolle"
+      system: "System"
+      other: "Sonstige"
 
   # Family/Header
   family:

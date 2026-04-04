@@ -1,30 +1,9 @@
-<% recent_range = overview_period_mode(params, :recent) %>
-<% visible_entries = overview_recent_entries(person, sort_mode: "entered", period: recent_range, limit: local_assigns[:entry_limit] || 5) %>
-<% composer_entry = local_assigns[:entry] || Entry.new(occurred_at: Time.current) %>
-<div id="overview_recent_activity" class="flex h-full flex-col rounded-[2rem] border border-amber-100 bg-white/95 p-6 text-slate-900 shadow-sm ring-1 ring-amber-100/80 <%= local_assigns[:card_classes] || recent_activity_card_classes_for(person) %>">
-  <div class="mb-5">
-    <%= render "entries/form", entry: composer_entry, person: person %>
-  </div>
+<% visible_entries = overview_recent_entries(person, sort_mode: "entered", period: "1w", limit: local_assigns[:entry_limit] || 5) %>
 
-  <div class="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-    <div>
-      <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("person.overview.recent_activity") %></p>
-      <h2 class="mt-1 text-lg font-bold text-slate-950"><%= t("dashboard.entries.title", name: person.name) %></h2>
-      <% if visible_entries.any? %>
-        <p class="mt-1 text-xs text-slate-500"><%= t("person.overview.stats.last_activity") %> <%= l(visible_entries.first.created_at, format: :long) %></p>
-      <% end %>
-    </div>
-    <div class="flex flex-col gap-2 lg:items-end">
-      <div class="inline-flex w-full flex-wrap rounded-full border border-slate-200 bg-amber-50/70 p-1 text-[11px] font-semibold text-slate-600 lg:w-auto">
-        <% overview_period_options.each do |label, value| %>
-          <%= link_to label, person_widgets_path(person, recent_range: value, sort: "entered"), class: "rounded-full px-3 py-1 transition #{recent_range == value ? 'bg-white text-slate-950 shadow-sm' : 'hover:bg-white hover:text-slate-950'}" %>
-        <% end %>
-      </div>
-
-      <%= link_to person_log_path(person_slug: person.name, sort: "entered"), class: "inline-flex items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100" do %>
-        <%= t("person.overview.view_log") %>
-      <% end %>
-    </div>
+<%= render "shared/widget", id: "overview_recent_activity", color: "amber", card_classes: local_assigns[:card_classes] do %>
+  <div class="mb-2 flex items-center justify-between">
+    <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700"><%= t("person.overview.recent_activity") %></p>
+    <%= link_to t("person.overview.view_log"), person_log_path(person_slug: person.name, sort: "entered"), class: "text-[11px] font-semibold text-amber-700 hover:text-amber-900" %>
   </div>
 
   <% if visible_entries.any? %>
@@ -34,8 +13,6 @@
       <% end %>
     </div>
   <% else %>
-    <div class="flex min-h-56 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
-      <%= t("dashboard.protocol.empty") %>
-    </div>
+    <p class="py-6 text-center text-sm text-slate-400"><%= t("dashboard.protocol.empty") %></p>
   <% end %>
-</div>
+<% end %>

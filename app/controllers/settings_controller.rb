@@ -2,8 +2,8 @@ class SettingsController < ApplicationController
   def show
     save_preferences if params[:locale].present? || params[:llm_provider].present?
 
-    @section = params[:section].in?(%w[profile llm llm_prompt llm_logs db users]) ? params[:section] : "profile"
-    @database_snapshot = database_snapshot if @section == "db"
+    @section = params[:section].in?(%w[profile llm llm_prompt llm_logs db db_table users]) ? params[:section] : "profile"
+    @database_table = database_table_detail(params[:table]) if @section == "db_table" && params[:table].present?
     @people = Person.recent_first if @section == "users"
     @person = Person.new if @section == "users"
     @llm_logs = LlmLog.order(created_at: :desc).limit(200) if @section == "llm_logs"
@@ -50,7 +50,7 @@ class SettingsController < ApplicationController
   end
 
   def resolved_section
-    params[:section].in?(%w[profile llm llm_prompt llm_logs db users]) ? params[:section] : "profile"
+    params[:section].in?(%w[profile llm llm_prompt llm_logs db db_table users]) ? params[:section] : "profile"
   end
 
   def llm_stats
@@ -80,28 +80,17 @@ class SettingsController < ApplicationController
     t("settings.llm.model_status.loaded", count: result.models.size)
   end
 
-  def database_snapshot
+  def database_table_detail(table_name)
     connection = ActiveRecord::Base.connection
+    return nil unless connection.tables.include?(table_name)
 
-    tables = connection.tables.sort.map do |table_name|
-      quoted_table = connection.quote_table_name(table_name)
-
-      {
-        name: table_name,
-        columns: connection.columns(table_name).map(&:name),
-        rows: connection.select_all("SELECT * FROM #{quoted_table} LIMIT 200").to_a,
-        count: connection.select_value("SELECT COUNT(*) FROM #{quoted_table}").to_i
-      }
-    end
-
-    # Group tables into data and system tables
-    data_tables = %w[entries people llm_logs]
-    system_tables = %w[ar_internal_metadata schema_migrations user_preferences]
+    quoted_table = connection.quote_table_name(table_name)
 
     {
-      all: tables,
-      data: tables.select { |t| data_tables.include?(t[:name]) },
-      system: tables.select { |t| system_tables.include?(t[:name]) }
+      name: table_name,
+      columns: connection.columns(table_name).map(&:name),
+      rows: connection.select_all("SELECT * FROM #{quoted_table} LIMIT 200").to_a,
+      count: connection.select_value("SELECT COUNT(*) FROM #{quoted_table}").to_i
     }
   end
 end

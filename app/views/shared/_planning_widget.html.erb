@@ -1,68 +1,41 @@
-<% appointments = appointment_entries(person) %>
-<% todos = todo_entries(person) %>
-<%= render "shared/widget", id: "overview_planning", color: "amber", card_classes: local_assigns[:card_classes] do %>
-  <div class="mb-5 flex items-start justify-between gap-4">
-    <div>
-      <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("person.overview.planning.label") %></p>
-      <h2 class="mt-1 text-2xl font-bold text-slate-950"><%= t("person.overview.planning.title") %></h2>
-    </div>
-    <div class="flex gap-2 text-xs font-semibold">
-      <span class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-800"><%= appointments.size %></span>
-      <span class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-800"><%= todos.size %></span>
-    </div>
-  </div>
-
+<% appointments = appointment_entries(person, limit: 3) %>
+<% todos = todo_entries(person, limit: 3) %>
+<%= render "shared/widget", id: "overview_planning", label: t("person.overview.planning.label"), title: t("person.overview.planning.title"), color: "amber", card_classes: local_assigns[:card_classes] do %>
   <div class="grid gap-4 lg:grid-cols-2">
-    <section class="rounded-[1.5rem] border border-amber-200 bg-amber-50/80 p-4">
-      <div class="mb-3">
-        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700"><%= t("entries.data_labels.appointment") %></p>
-        <h3 class="mt-1 text-lg font-bold text-slate-950"><%= t("person.overview.appointments.title") %></h3>
-      </div>
+    <div>
+      <p class="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700"><%= t("entries.data_labels.appointment") %></p>
       <% if appointments.present? %>
         <div class="space-y-2">
           <% appointments.each do |entry| %>
-            <div class="rounded-2xl border border-amber-200 bg-white px-3 py-3 shadow-sm">
-              <div class="text-xs font-semibold uppercase tracking-[0.14em] text-amber-700"><%= l(entry.display_time, format: :long) %></div>
-              <div class="mt-1 text-sm font-semibold text-slate-900"><%= entry.fact_summary.presence || entry.appointment_title %></div>
-              <% if entry.appointment_data["location"].present? %>
-                <div class="mt-1 text-xs text-slate-500"><%= entry.appointment_data["location"] %></div>
-              <% end %>
+            <div class="rounded-xl border border-amber-100 bg-amber-50/60 px-3 py-2">
+              <p class="text-[10px] font-semibold tabular-nums text-amber-600"><%= l(entry.display_time, format: "%-d.%m %H:%M") %></p>
+              <p class="text-sm font-semibold text-slate-900"><%= entry.fact_summary.presence || entry.appointment_title %></p>
             </div>
           <% end %>
         </div>
       <% else %>
-        <div class="flex min-h-32 items-center justify-center rounded-2xl border border-dashed border-amber-200 bg-white/60 px-4 py-8 text-center text-sm text-slate-500"><%= t("person.overview.appointments.empty") %></div>
+        <p class="py-4 text-center text-xs text-slate-400"><%= t("person.overview.appointments.empty") %></p>
       <% end %>
-    </section>
+    </div>
 
-    <section class="rounded-[1.5rem] border border-emerald-200 bg-emerald-50/80 p-4">
-      <div class="mb-3">
-        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700"><%= t("entries.data_labels.todo") %></p>
-        <h3 class="mt-1 text-lg font-bold text-slate-950"><%= t("person.overview.todos.title") %></h3>
-      </div>
+    <div>
+      <p class="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700"><%= t("entries.data_labels.todo") %></p>
       <% if todos.present? %>
         <div class="space-y-2">
           <% todos.each do |entry| %>
-            <div class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-white px-3 py-3 shadow-sm <%= entry.todo_done? ? 'opacity-60' : '' %>">
-              <%= button_to toggle_todo_person_entry_path(entry.person, entry), method: :patch, class: "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border #{entry.todo_done? ? 'border-emerald-400 bg-emerald-400 text-white' : 'border-emerald-300 bg-transparent text-emerald-700'}" do %>
+            <div class="flex items-start gap-2 rounded-xl border border-emerald-100 bg-emerald-50/60 px-3 py-2 <%= entry.todo_done? ? 'opacity-50' : '' %>">
+              <%= button_to toggle_todo_person_entry_path(entry.person, entry), method: :patch, class: "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border #{entry.todo_done? ? 'border-emerald-400 bg-emerald-400 text-white' : 'border-emerald-300'}" do %>
                 <% if entry.todo_done? %>
-                  <svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8.5 6.2 11.5 13 4.5"/></svg>
+                  <svg class="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8.5 6.2 11.5 13 4.5"/></svg>
                 <% end %>
               <% end %>
-              <div class="min-w-0 flex-1">
-                <div class="text-sm font-semibold text-slate-900"><%= entry.todo_title || entry.fact_summary %></div>
-                <% if entry.todo_data["due_at"].present? %>
-                  <div class="mt-1 text-xs text-slate-500"><%= entry.todo_data["due_at"] %></div>
-                <% elsif entry.todo_done_at.present? %>
-                  <div class="mt-1 text-xs text-slate-500"><%= t("person.overview.todos.done_at", time: l(entry.todo_done_at, format: :long)) %></div>
-                <% end %>
-              </div>
+              <p class="text-sm font-medium text-slate-900"><%= entry.todo_title || entry.fact_summary %></p>
             </div>
           <% end %>
         </div>
       <% else %>
-        <div class="flex min-h-32 items-center justify-center rounded-2xl border border-dashed border-emerald-200 bg-white/60 px-4 py-8 text-center text-sm text-slate-500"><%= t("person.overview.todos.empty") %></div>
+        <p class="py-4 text-center text-xs text-slate-400"><%= t("person.overview.todos.empty") %></p>
       <% end %>
-    </section>
+    </div>
   </div>
 <% end %>

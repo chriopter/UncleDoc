@@ -14,42 +14,48 @@ def create_general_timeline(person, now:)
   90.times do |day_offset|
     day = now - day_offset.days
 
+    weight = (31.5 - day_offset * 0.03).round(1)
     upsert_entry(
       person: person,
       occurred_at: day.change(hour: 8, min: 15),
-      input: "Weight check #{(31.5 + day_offset * 0.03).round(1)}kg",
-      facts: [ "Weight #{(31.5 + day_offset * 0.03).round(1)} kg" ],
-      parseable_data: [ { "type" => "weight", "value" => (31.5 + day_offset * 0.03).round(1), "unit" => "kg" } ],
+      input: "Weight check #{weight}kg",
+      facts: [ "Weight #{weight} kg" ],
+      parseable_data: [ { "type" => "weight", "value" => weight, "unit" => "kg" } ],
       parse_status: "parsed"
     ) if day_offset % 6 == 0
 
+    height = (96 - day_offset * 0.05).round(1)
     upsert_entry(
       person: person,
       occurred_at: day.change(hour: 9, min: 10),
-      input: "Height check #{(96 + day_offset * 0.05).round(1)}cm",
-      facts: [ "Height #{(96 + day_offset * 0.05).round(1)} cm" ],
-      parseable_data: [ { "type" => "height", "value" => (96 + day_offset * 0.05).round(1), "unit" => "cm" } ],
+      input: "Height check #{height}cm",
+      facts: [ "Height #{height} cm" ],
+      parseable_data: [ { "type" => "height", "value" => height, "unit" => "cm" } ],
       parse_status: "parsed"
     ) if day_offset % 15 == 0
 
+    temp = (36.7 + ((day_offset % 5) * 0.1)).round(1)
+    pulse = 78 + (day_offset % 16)
     upsert_entry(
       person: person,
       occurred_at: day.change(hour: 12, min: 20),
-      input: "Temperature #{(36.7 + ((day_offset % 5) * 0.1)).round(1)}C and pulse #{78 + (day_offset % 16)} bpm",
-      facts: [ "Temperature #{(36.7 + ((day_offset % 5) * 0.1)).round(1)} C", "Pulse #{78 + (day_offset % 16)} bpm" ],
+      input: "Temperature #{temp}C and pulse #{pulse} bpm",
+      facts: [ "Temperature #{temp} C", "Pulse #{pulse} bpm" ],
       parseable_data: [
-        { "type" => "temperature", "value" => (36.7 + ((day_offset % 5) * 0.1)).round(1), "unit" => "C" },
-        { "type" => "pulse", "value" => 78 + (day_offset % 16), "unit" => "bpm" }
+        { "type" => "temperature", "value" => temp, "unit" => "C" },
+        { "type" => "pulse", "value" => pulse, "unit" => "bpm" }
       ],
       parse_status: "parsed"
     )
 
+    systolic = 116 + (day_offset % 8)
+    diastolic = 74 + (day_offset % 6)
     upsert_entry(
       person: person,
       occurred_at: day.change(hour: 18, min: 45),
-      input: "Blood pressure #{116 + (day_offset % 8)}/#{74 + (day_offset % 6)} after school",
-      facts: [ "Blood pressure #{116 + (day_offset % 8)}/#{74 + (day_offset % 6)} mmHg" ],
-      parseable_data: [ { "type" => "blood_pressure", "systolic" => 116 + (day_offset % 8), "diastolic" => 74 + (day_offset % 6), "unit" => "mmHg" } ],
+      input: "Blood pressure #{systolic}/#{diastolic} after school",
+      facts: [ "Blood pressure #{systolic}/#{diastolic} mmHg" ],
+      parseable_data: [ { "type" => "blood_pressure", "systolic" => systolic, "diastolic" => diastolic, "unit" => "mmHg" } ],
       parse_status: "parsed"
     ) if day_offset % 2 == 0
 
@@ -137,23 +143,77 @@ def create_baby_timeline(person, now:)
       parse_status: "parsed"
     )
 
+    weight = (7.1 - day_offset * 0.02).round(2)
     upsert_entry(
       person: person,
       occurred_at: day.change(hour: 9, min: 0),
-      input: "Weight #{(4.2 + day_offset * 0.02).round(2)} kg",
-      facts: [ "Weight #{(4.2 + day_offset * 0.02).round(2)} kg" ],
-      parseable_data: [ { "type" => "weight", "value" => (4.2 + day_offset * 0.02).round(2), "unit" => "kg" } ],
+      input: "Weight #{weight} kg",
+      facts: [ "Weight #{weight} kg" ],
+      parseable_data: [ { "type" => "weight", "value" => weight, "unit" => "kg" } ],
       parse_status: "parsed"
     ) if day_offset % 5 == 0
 
+    height = (62.0 - day_offset * 0.04).round(1)
     upsert_entry(
       person: person,
       occurred_at: day.change(hour: 9, min: 30),
-      input: "Height #{(54 + day_offset * 0.04).round(1)} cm",
-      facts: [ "Height #{(54 + day_offset * 0.04).round(1)} cm" ],
-      parseable_data: [ { "type" => "height", "value" => (54 + day_offset * 0.04).round(1), "unit" => "cm" } ],
+      input: "Height #{height} cm",
+      facts: [ "Height #{height} cm" ],
+      parseable_data: [ { "type" => "height", "value" => height, "unit" => "cm" } ],
       parse_status: "parsed"
     ) if day_offset % 10 == 0
+
+    temp = (36.5 + ((day_offset % 7) * 0.15)).round(1)
+    pulse = 115 + ((day_offset * 7) % 15)
+    upsert_entry(
+      person: person,
+      occurred_at: day.change(hour: 10, min: 0),
+      input: "Temperature #{temp}C, pulse #{pulse} bpm",
+      facts: [ "Temperature #{temp} C", "Pulse #{pulse} bpm" ],
+      parseable_data: [
+        { "type" => "temperature", "value" => temp, "unit" => "C" },
+        { "type" => "pulse", "value" => pulse, "unit" => "bpm" }
+      ],
+      parse_status: "parsed"
+    )
+
+    systolic = 80 + ((day_offset * 3) % 10)
+    diastolic = 50 + ((day_offset * 5) % 8)
+    upsert_entry(
+      person: person,
+      occurred_at: day.change(hour: 17, min: 30),
+      input: "Blood pressure #{systolic}/#{diastolic}",
+      facts: [ "Blood pressure #{systolic}/#{diastolic} mmHg" ],
+      parseable_data: [ { "type" => "blood_pressure", "systolic" => systolic, "diastolic" => diastolic, "unit" => "mmHg" } ],
+      parse_status: "parsed"
+    ) if day_offset % 3 == 0
+  end
+
+  8.times do |index|
+    scheduled_at = now.beginning_of_day + (index + 2).days + 10.hours
+    upsert_entry(
+      person: person,
+      occurred_at: scheduled_at,
+      input: "Appointment #{index + 1}",
+      facts: [ "Appointment #{index + 1}" ],
+      parseable_data: [ { "type" => "appointment", "value" => "Appointment #{index + 1}", "location" => [ "Pediatrician", "Vaccination clinic", "Children's hospital" ][index % 3], "scheduled_for" => scheduled_at.iso8601 } ],
+      parse_status: "parsed"
+    )
+  end
+
+  10.times do |index|
+    due_at = (now.beginning_of_day + index.days + 18.hours).iso8601
+    done = index % 3 == 0
+    upsert_entry(
+      person: person,
+      occurred_at: now.beginning_of_day - index.days + 17.hours,
+      input: "Todo #{index + 1}: #{[ 'Buy diapers', 'Schedule vaccination', 'Prepare formula', 'Wash baby clothes', 'Book pediatrician' ][index % 5]}",
+      facts: [ "#{[ 'Buy diapers', 'Schedule vaccination', 'Prepare formula', 'Wash baby clothes', 'Book pediatrician' ][index % 5]} #{index + 1}" ],
+      parseable_data: [ { "type" => "todo", "value" => "#{[ 'Buy diapers', 'Schedule vaccination', 'Prepare formula', 'Wash baby clothes', 'Book pediatrician' ][index % 5]} #{index + 1}", "due_at" => due_at } ],
+      parse_status: "parsed",
+      todo_done: done,
+      todo_done_at: (done ? now.beginning_of_day - index.days + 19.hours : nil)
+    )
   end
 end
 

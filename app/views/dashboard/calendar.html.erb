@@ -1,0 +1,87 @@
+<% appointments_by_date = @appointments.each_with_object({}) do |entry, hash|
+  date = entry.occurred_at.to_date
+  (hash[date] ||= []) << entry
+end %>
+<% today = Time.zone.today %>
+<% year_start = Date.new(@year, 1, 1) %>
+<% year_end = Date.new(@year, 12, 31) %>
+<% grid_start = year_start - ((year_start.wday + 6) % 7) %>
+<% grid_end = year_end + (6 - (year_end.wday + 6) % 7) %>
+<% all_days = (grid_start..grid_end).to_a %>
+<% weeks = all_days.each_slice(7).to_a %>
+<%# Group weeks by which month they primarily belong to %>
+<% current_month = nil %>
+
+<div class="space-y-3">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-black tracking-tight text-slate-950"><%= @year %></h1>
+    <div class="flex items-center gap-1">
+      <%= link_to person_calendar_path(person_slug: @person.name, year: @year - 1), class: "flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50" do %>
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+      <% end %>
+      <%= link_to person_calendar_path(person_slug: @person.name, year: @year + 1), class: "flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50" do %>
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+      <% end %>
+    </div>
+  </div>
+
+  <div id="calendar-grid" class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm" style="min-width: 800px;">
+    <% weeks.each do |week| %>
+      <%# Detect month change — if any day in this week is the 1st, show month header %>
+      <% month_start_day = week.find { |d| d.day == 1 && d.year == @year } %>
+      <% if month_start_day && month_start_day.month != current_month %>
+        <% current_month = month_start_day.month %>
+        <%# Month divider %>
+        <div id="month-<%= month_start_day.month %>" class="sticky top-0 z-10 flex items-center gap-3 border-b-2 border-amber-200 bg-amber-50 px-4 py-2">
+          <span class="text-sm font-black uppercase tracking-wide text-amber-800"><%= I18n.l(month_start_day, format: "%B") %></span>
+          <span class="text-xs font-medium text-amber-600"><%= @year %></span>
+        </div>
+      <% end %>
+
+      <%# Week row %>
+      <div class="grid grid-cols-7">
+        <% week.each_with_index do |date, i| %>
+          <% in_year = date.year == @year %>
+          <% is_today = date == today %>
+          <% is_weekend = i >= 5 %>
+          <% day_appts = in_year ? appointments_by_date[date] : nil %>
+
+          <div class="border-b border-r border-slate-100 px-2 py-1.5 last:border-r-0 <%= is_weekend ? 'bg-stone-50' : '' %> <%= in_year ? '' : 'opacity-20' %>" style="min-height: 2.5rem;">
+            <div class="flex items-center justify-between">
+              <div class="flex items-baseline gap-1.5">
+                <% if is_today %>
+                  <span class="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-[11px] font-bold text-white"><%= date.day %></span>
+                <% else %>
+                  <span class="text-[13px] font-bold <%= in_year ? 'text-slate-800' : 'text-slate-400' %>"><%= date.day %></span>
+                <% end %>
+                <span class="text-[10px] font-medium text-slate-400"><%= I18n.l(date, format: "%a") %></span>
+              </div>
+            </div>
+
+            <% if day_appts.present? %>
+              <div class="mt-1 space-y-0.5">
+                <% day_appts.each do |entry| %>
+                  <div class="truncate rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900">
+                    <%= (entry.fact_summary.presence || entry.appointment_title).to_s.truncate(24) %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% if @year == today.year %>
+  <script>
+    document.addEventListener("turbo:load", function() {
+      const el = document.getElementById("month-<%= today.month %>");
+      if (el) el.scrollIntoView({ behavior: "instant", block: "start" });
+    }, { once: true });
+    // Also fire immediately for non-Turbo loads
+    const el = document.getElementById("month-<%= today.month %>");
+    if (el) el.scrollIntoView({ behavior: "instant", block: "start" });
+  </script>
+<% end %>

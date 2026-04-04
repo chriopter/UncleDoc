@@ -173,7 +173,11 @@ module ApplicationHelper
 
   def person_widgets_path(person, overrides = {})
     path_params = { person_slug: person.name, **overview_widget_params(overrides) }
-    params[:action] == "baby" ? person_baby_path(**path_params) : person_overview_path(**path_params)
+    case params[:action]
+    when "baby" then person_baby_path(**path_params)
+    when "trends" then person_trends_path(**path_params)
+    else person_overview_path(**path_params)
+    end
   end
 
   def widget_context_for(person)
@@ -422,6 +426,38 @@ module ApplicationHelper
 
   def weight_activity_line_points(series)
     weight_activity_plot_points(series).map { |point| "#{point[:x]},#{point[:y]}" }.join(" ")
+  end
+
+  def chart_smooth_path(plot_points)
+    return "" if plot_points.length < 2
+
+    pts = plot_points
+    d = "M #{pts[0][:x]},#{pts[0][:y]}"
+    return "#{d} L #{pts[1][:x]},#{pts[1][:y]}" if pts.length == 2
+
+    y_vals = pts.map { |p| p[:y] }
+    y_min = y_vals.min
+    y_max = y_vals.max
+    tension = 0.2
+
+    pts.each_cons(2).with_index do |(p0, p1), i|
+      prev_pt = i > 0 ? pts[i - 1] : p0
+      next_pt = i + 2 < pts.length ? pts[i + 2] : p1
+
+      cp1x = (p0[:x] + (p1[:x] - prev_pt[:x]) * tension).round(2)
+      cp1y = (p0[:y] + (p1[:y] - prev_pt[:y]) * tension).clamp(y_min, y_max).round(2)
+      cp2x = (p1[:x] - (next_pt[:x] - p0[:x]) * tension).round(2)
+      cp2y = (p1[:y] - (next_pt[:y] - p0[:y]) * tension).clamp(y_min, y_max).round(2)
+
+      d += " C #{cp1x},#{cp1y} #{cp2x},#{cp2y} #{p1[:x]},#{p1[:y]}"
+    end
+    d
+  end
+
+  def chart_area_path(plot_points, y_bottom: 60)
+    smooth = chart_smooth_path(plot_points)
+    return "" if smooth.blank?
+    "#{smooth} L #{plot_points.last[:x]},#{y_bottom} L #{plot_points.first[:x]},#{y_bottom} Z"
   end
 
   def build_day_buckets(start_date, count, step)
