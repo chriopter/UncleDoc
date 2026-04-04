@@ -1,13 +1,11 @@
 <% appointments = appointment_entries(person) %>
 <% todos = todo_entries(person) %>
-
-<div id="overview_planning" class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur <%= local_assigns[:card_classes] %>">
+<%= render "shared/widget", id: "overview_planning", color: "amber", card_classes: local_assigns[:card_classes] do %>
   <div class="mb-5 flex items-start justify-between gap-4">
     <div>
       <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("person.overview.planning.label") %></p>
       <h2 class="mt-1 text-2xl font-bold text-slate-950"><%= t("person.overview.planning.title") %></h2>
     </div>
-
     <div class="flex gap-2 text-xs font-semibold">
       <span class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-800"><%= appointments.size %></span>
       <span class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-800"><%= todos.size %></span>
@@ -20,7 +18,6 @@
         <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700"><%= t("entries.data_labels.appointment") %></p>
         <h3 class="mt-1 text-lg font-bold text-slate-950"><%= t("person.overview.appointments.title") %></h3>
       </div>
-
       <% if appointments.present? %>
         <div class="space-y-2">
           <% appointments.each do |entry| %>
@@ -34,9 +31,7 @@
           <% end %>
         </div>
       <% else %>
-        <div class="flex min-h-32 items-center justify-center rounded-2xl border border-dashed border-amber-200 bg-white/60 px-4 py-8 text-center text-sm text-slate-500">
-          <%= t("person.overview.appointments.empty") %>
-        </div>
+        <div class="flex min-h-32 items-center justify-center rounded-2xl border border-dashed border-amber-200 bg-white/60 px-4 py-8 text-center text-sm text-slate-500"><%= t("person.overview.appointments.empty") %></div>
       <% end %>
     </section>
 
@@ -45,7 +40,6 @@
         <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700"><%= t("entries.data_labels.todo") %></p>
         <h3 class="mt-1 text-lg font-bold text-slate-950"><%= t("person.overview.todos.title") %></h3>
       </div>
-
       <% if todos.present? %>
         <div class="space-y-2">
           <% todos.each do |entry| %>
@@ -67,11 +61,8 @@
           <% end %>
         </div>
       <% else %>
-        <div class="flex min-h-32 items-center justify-center rounded-2xl border border-dashed border-emerald-200 bg-white/60 px-4 py-8 text-center text-sm text-slate-500">
-          <%= t("person.overview.todos.empty") %>
-        </div>
+        <div class="flex min-h-32 items-center justify-center rounded-2xl border border-dashed border-emerald-200 bg-white/60 px-4 py-8 text-center text-sm text-slate-500"><%= t("person.overview.todos.empty") %></div>
       <% end %>
     </section>
-
   </div>
-</div>
+<% end %>
