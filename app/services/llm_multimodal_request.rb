@@ -8,40 +8,42 @@ require "tmpdir"
 
 class LlmMultimodalRequest
   Response = Struct.new(:content, :status_code, :body, keyword_init: true)
+  RETRIABLE_ERRORS = [Errno::ECONNRESET, EOFError, Net::ReadTimeout, Net::OpenTimeout, IOError].freeze
 
-  def self.call(request_kind:, preference:, instructions:, prompt:, attachments:, person: nil, entry: nil, temperature: nil)
+  def self.call(request_kind:, preference:, instructions:, prompt:, attachments:, person: nil, entry: nil, temperature: nil, model: nil)
     endpoint = "#{preference.llm_api_base.chomp('/')}/chat/completions"
-    payload = build_payload(preference:, instructions:, prompt:, attachments:, temperature:)
+    payload = build_payload(preference:, instructions:, prompt:, attachments:, temperature:, model:)
 
     log = LlmLog.create!(
       person: person,
       entry: entry,
       request_kind: request_kind,
       provider: preference.llm_provider,
-      model: preference.llm_model,
+      model: payload[:model],
       endpoint: endpoint,
       request_payload: JSON.pretty_generate(payload)
     )
 
     response = perform_request(endpoint:, payload:, preference:)
 
-    log.update!(status_code: response.code.to_i, response_body: response.body)
+    normalized_body = normalize_body(response.body)
+    log.update!(status_code: response.code.to_i, response_body: normalized_body)
 
     raise "LLM request failed with status #{response.code}" unless response.code.to_i.between?(200, 299)
 
     Response.new(
-      content: JSON.parse(response.body).dig("choices", 0, "message", "content").to_s,
+      content: JSON.parse(normalized_body).dig("choices", 0, "message", "content").to_s,
       status_code: response.code.to_i,
-      body: response.body
+      body: normalized_body
     )
   rescue StandardError => error
     log&.update!(error_message: error.message, response_body: log.response_body.presence)
     raise
   end
 
-  def self.build_payload(preference:, instructions:, prompt:, attachments:, temperature: nil)
+  def self.build_payload(preference:, instructions:, prompt:, attachments:, temperature: nil, model: nil)
     payload = {
-      model: preference.llm_model,
+      model: model || preference.llm_model,
       messages: [
         { role: "system", content: instructions },
         { role: "user", content: build_content(prompt:, attachments:) }
@@ -119,8 +121,22 @@ class LlmMultimodalRequest
 
     request.body = payload.to_json
 
-    Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https") do |http|
-      http.request(request)
+    attempts = 0
+
+    begin
+      attempts += 1
+
+      Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https") do |http|
+        http.request(request)
+      end
+    rescue *RETRIABLE_ERRORS
+      raise if attempts >= 3
+
+      retry
     end
+  end
+
+  def self.normalize_body(body)
+    body.to_s.dup.force_encoding("UTF-8").scrub
   end
 end

@@ -33,17 +33,22 @@ class LlmChatRequest
       http.request(request)
     end
 
-    log.update!(status_code: response.code.to_i, response_body: response.body)
+    normalized_body = normalize_body(response.body)
+    log.update!(status_code: response.code.to_i, response_body: normalized_body)
 
     raise "LLM request failed with status #{response.code}" unless response.code.to_i.between?(200, 299)
 
     Response.new(
-      content: JSON.parse(response.body).dig("choices", 0, "message", "content").to_s,
+      content: JSON.parse(normalized_body).dig("choices", 0, "message", "content").to_s,
       status_code: response.code.to_i,
-      body: response.body
+      body: normalized_body
     )
   rescue StandardError => error
     log&.update!(error_message: error.message, response_body: log.response_body.presence)
     raise
+  end
+
+  def self.normalize_body(body)
+    body.to_s.dup.force_encoding("UTF-8").scrub
   end
 end

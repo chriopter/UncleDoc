@@ -46,4 +46,18 @@ class EntryDataParserTest < ActiveSupport::TestCase
       chat_singleton.remove_method :__original_chat_call_for_fallback_test
     end
   end
+
+  test "sanitizes lab result items" do
+    payload = [
+      { "type" => "lab_result", "value" => "Hemoglobin", "result" => "15.2", "unit" => "g/dl", "ref" => "13.5-17.5" }
+    ]
+
+    result = EntryDataParser.sanitize_parseable_data(payload)
+
+    assert_equal "lab_result", result.first["type"]
+    assert_equal "Hemoglobin", result.first["value"]
+    assert_equal 15.2, result.first["result"]
+    assert_equal "g/dl", result.first["unit"]
+    assert_equal "13.5-17.5", result.first["ref"]
+  end
 end

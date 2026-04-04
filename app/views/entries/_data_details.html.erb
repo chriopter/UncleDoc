@@ -20,6 +20,8 @@
         [states.join(" + ")]
       when "medication"
         [[item["value"], item["dose"]].compact.join(" ")]
+      when "lab_result"
+        [[item["value"], item["result"], item["unit"]].compact.join(" "), item["ref"].presence, item["flag"].presence]
       when "vaccination"
         [[item["value"], item["dose"]].compact.join(" ")]
       when "appointment"
