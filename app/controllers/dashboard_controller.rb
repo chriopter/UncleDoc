@@ -12,11 +12,7 @@ class DashboardController < ApplicationController
 
   def log
     @person = Person.find_by!(name: params[:person_slug])
-    @entry = Entry.new
-    @entry_sort = entry_sort_mode(params)
-    @available_log_filters = available_log_filters(@person)
-    @entries = filtered_entries(@person, @entry_sort)
-    @log_summary_state = :idle
+    @entries = @person.entries
   end
 
   def calendar
@@ -32,6 +28,39 @@ class DashboardController < ApplicationController
     @person = Person.find_by!(name: params[:person_slug])
     @document_entries = @person.entries.with_documents.recent_first
     @document_count = @document_entries.sum(&:document_count)
+  end
+
+  def chat
+    @person = Person.find_by!(name: params[:person_slug])
+    entries = @person.entries.order(occurred_at: :asc)
+    preference = user_preference
+
+    error = EntryDataParser.configuration_error_for(preference)
+    if error
+      render json: { error: I18n.t("log_summary.states.#{error}") } and return
+    end
+
+    if entries.blank?
+      render json: { error: I18n.t("log_summary.states.no_entries") } and return
+    end
+
+    system = LogSummaryGenerator.system_prompt
+    patientenakte = build_patientenakte(@person, entries)
+
+    result = LlmChatRequest.call(
+      request_kind: "chat",
+      preference: preference,
+      person: @person,
+      messages: [
+        { role: "system", content: "#{system}\n\n# Patientenakte: #{@person.name}\n\n#{patientenakte}" },
+        { role: "user", content: params[:message].to_s }
+      ]
+    )
+
+    render json: { reply: result.content }
+  rescue StandardError => e
+    Rails.logger.warn("Chat failed: #{e.class}: #{e.message}")
+    render json: { error: I18n.t("log_summary.states.request_failed") }
   end
 
   def summarize_log
@@ -53,6 +82,24 @@ class DashboardController < ApplicationController
   end
 
   private
+
+  def build_patientenakte(person, entries)
+    lines = entries.map do |entry|
+      date = entry.occurred_at ? I18n.l(entry.occurred_at, format: :long) : "unknown date"
+      parts = []
+      parts << entry.fact_summary if entry.respond_to?(:fact_summary) && entry.facts.present?
+      parts << entry.input if entry.input.present?
+      if entry.parseable_data.present?
+        data_parts = Array(entry.parseable_data).filter_map do |item|
+          next unless item.is_a?(Hash)
+          item.map { |k, v| "#{k}: #{v}" }.join(", ")
+        end
+        parts << data_parts.join("; ") if data_parts.any?
+      end
+      "- #{date}: #{parts.compact_blank.join(' — ')}"
+    end
+    lines.join("\n")
+  end
 
   def entry_sort_mode(params_hash)
     params_hash[:sort].to_s == "entered" ? "entered" : "occurred"

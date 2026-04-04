@@ -117,6 +117,12 @@ en:
       empty: "Protocol is empty"
       empty_subtitle: "Add your first entry above to start documenting health events."
 
+  chat:
+    title: "%{name} — Health Chat"
+    subtitle: "%{count} entries in Patientenakte"
+    welcome: "Hello! I have the complete health record for %{name}. Ask me anything — summaries, patterns, medication history, upcoming appointments, or anything else from the log."
+    placeholder: "Ask a question about the health record…"
+
   log_summary:
     label: "AI"
     title: "AI Summary"
@@ -373,6 +379,16 @@ en:
       label: "LLM prompt"
       title: "Parser system prompt"
       description: "Inspect the exact parser system prompt used for entry extraction, including uploaded documents."
+    llm_prompt_preview:
+      nav: "Previewer"
+      label: "Prompt previewer"
+      title: "Assembled prompts"
+      description: "Preview the final prompts as they are sent to the LLM, combining system instructions with live user data."
+      system_label: "System"
+      user_label: "User"
+      sections:
+        parser: "Entry parser"
+        summary: "Log summary"
     flash:
       saved: "Settings saved."
 
