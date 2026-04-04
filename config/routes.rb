@@ -29,5 +29,6 @@ Rails.application.routes.draw do
     get "log", to: "dashboard#log", as: :person_log
     get "files", to: "dashboard#files", as: :person_files
     post "log_summary", to: "dashboard#summarize_log", as: :person_log_summary
+    post "chat", to: "dashboard#chat", as: :person_chat
   end
 end

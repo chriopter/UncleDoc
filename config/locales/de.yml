@@ -117,6 +117,12 @@ de:
       empty: "Protokoll ist leer"
       empty_subtitle: "Fügen Sie oben Ihren ersten Eintrag hinzu, um Gesundheitsereignisse zu dokumentieren."
 
+  chat:
+    title: "%{name} — Gesundheits-Chat"
+    subtitle: "%{count} Einträge in der Patientenakte"
+    welcome: "Hallo! Ich habe die vollständige Patientenakte für %{name}. Frag mich alles — Zusammenfassungen, Muster, Medikamentenhistorie, anstehende Termine oder alles andere aus dem Protokoll."
+    placeholder: "Frage zur Patientenakte stellen…"
+
   log_summary:
     label: "KI"
     title: "KI-Zusammenfassung"
@@ -373,6 +379,16 @@ de:
       label: "LLM-Prompt"
       title: "Parser-System-Prompt"
       description: "Prufen Sie den genauen Parser-System-Prompt fur die Extraktion von Eintragen inklusive hochgeladener Dokumente."
+    llm_prompt_preview:
+      nav: "Vorschau"
+      label: "Prompt-Vorschau"
+      title: "Zusammengesetzte Prompts"
+      description: "Vorschau der finalen Prompts, wie sie an das LLM gesendet werden – Systemanweisungen kombiniert mit aktuellen Nutzerdaten."
+      system_label: "System"
+      user_label: "Benutzer"
+      sections:
+        parser: "Eintrags-Parser"
+        summary: "Log-Zusammenfassung"
     flash:
       saved: "Einstellungen gespeichert."
 
