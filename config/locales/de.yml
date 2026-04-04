@@ -32,6 +32,8 @@ de:
   # Navigation
   nav:
     home: "Startseite"
+    overview: "Übersicht"
+    baby: "Baby"
     timeline: "Zeitlinie"
     reports: "Berichte"
     settings: "Einstellungen"
@@ -230,12 +232,13 @@ de:
     person:
       birth_date_label: "Geburtsdatum:"
       created_ago: "Vor %{time} erstellt"
-      delete_confirm: "%{name} löschen?"
-      remove_confirm: "%{name} entfernen?"
+      delete_confirm: "%{name} und alle verknüpften Einträge löschen?"
+      remove_confirm: "%{name} und alle verknüpften Einträge entfernen?"
     flash:
       created: "Person hinzugefügt."
       destroyed: "Person entfernt."
       updated: "Person aktualisiert."
+      destroy_error: "Person konnte nicht entfernt werden."
       update_error: "Person konnte nicht aktualisiert werden."
 
   # Settings

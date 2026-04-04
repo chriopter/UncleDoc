@@ -184,18 +184,18 @@ module ApplicationHelper
   end
 
   def chart_widget_card_classes
-    "xl:col-span-2 xl:row-span-2 h-full"
+    "xl:col-span-1"
   end
 
   def baby_quick_card_classes_for(person)
-    widget_context_for(person) == :baby ? "xl:col-span-2 xl:row-span-3 h-full" : nil
+    widget_context_for(person) == :baby ? "xl:col-span-1" : nil
   end
 
   def recent_activity_card_classes_for(person)
     if widget_context_for(person) == :baby
-      "xl:col-span-4 xl:row-span-4 h-full"
+      "md:col-span-2 xl:col-span-2"
     else
-      "xl:col-span-2 xl:row-span-3 h-full"
+      "xl:col-span-1"
     end
   end
 
