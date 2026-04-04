@@ -4,13 +4,16 @@ service: uncle_doc
 # Name of the container image (use your-user/app-name on external registries).
 image: uncle_doc
 
+# Keep machine-specific targets in untracked destination files like config/deploy.lan.yml.
+require_destination: true
+allow_empty_roles: true
+
 # Deploy to these servers.
 servers:
-  web:
-    - 192.168.0.1
+  web: []
   # job:
   #   hosts:
-  #     - 192.168.0.1
+  #     - your-server.example
   #   cmd: bin/jobs
 
 # Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.
@@ -53,7 +56,7 @@ env:
 
     # Match this to any external database server to configure Active Record correctly
     # Use uncle_doc-db for a db accessory server on same machine via local kamal docker network.
-    # DB_HOST: 192.168.0.2
+    # DB_HOST: your-db-host
 
     # Log everything from Rails
     # RAILS_LOG_LEVEL: debug
@@ -98,7 +101,7 @@ builder:
 # accessories:
 #   db:
 #     image: mysql:8.0
-#     host: 192.168.0.2
+#     host: your-db-host
 #     # Change to 3306 to expose port to the world instead of just local network.
 #     port: "127.0.0.1:3306:3306"
 #     env:
@@ -113,7 +116,7 @@ builder:
 #       - data:/var/lib/mysql
 #   redis:
 #     image: valkey/valkey:8
-#     host: 192.168.0.2
+#     host: your-redis-host
 #     port: 6379
 #     directories:
 #       - data:/data
