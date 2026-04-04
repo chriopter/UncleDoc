@@ -26,6 +26,8 @@ en:
   app:
     name: "UncleDoc"
     tagline: "Family health tracker"
+    revision:
+      tooltip: "Last commit: %{subject} (%{sha})"
 
   # Navigation
   nav:
