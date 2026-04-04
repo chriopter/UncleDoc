@@ -60,15 +60,18 @@ class PeopleController < ApplicationController
 
   def destroy
     @person = Person.find(params[:id])
-    @person.destroy
-    @people = Person.recent_first
+    if @person.destroy
+      @people = Person.recent_first
 
-    # After deleting a person, switch to another family member or go to root
-    remaining_person = @people.first
+      # After deleting a person, switch to another family member or go to root
+      remaining_person = @people.first
 
-    respond_to do |format|
-      format.html { redirect_to root_path(person_slug: remaining_person&.name, tab: "log"), notice: t("people.flash.destroyed") }
-      format.turbo_stream
+      respond_to do |format|
+        format.html { redirect_to root_path(person_slug: remaining_person&.name, tab: "log"), notice: t("people.flash.destroyed") }
+        format.turbo_stream
+      end
+    else
+      redirect_to request.referer || settings_path(section: "users"), alert: t("people.flash.destroy_error")
     end
   end
 

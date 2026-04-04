@@ -7,28 +7,28 @@
   <% line_points = weight_activity_line_points(series) %>
   <% plot_points = weight_activity_plot_points(series) %>
 
-  <div id="overview_weight_activity" class="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm ring-1 ring-black/5 <%= local_assigns[:card_classes] || chart_widget_card_classes %>">
-    <section class="flex h-full flex-col rounded-[1.5rem] border border-violet-300/20 bg-violet-400/10 p-4">
-      <div class="mb-3 flex items-start justify-between gap-3">
+  <div id="overview_weight_activity" class="rounded-[2rem] border border-violet-200 bg-white p-6 text-slate-900 shadow-sm ring-1 ring-violet-100 <%= local_assigns[:card_classes] || chart_widget_card_classes %>">
+    <section class="flex flex-col gap-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-200"><%= t("entries.data_labels.weight") %></p>
-          <h3 class="mt-1 text-lg font-bold text-white"><%= t("person.overview.weight.title") %></h3>
+          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-700"><%= t("entries.data_labels.weight") %></p>
+          <h3 class="mt-1 text-lg font-bold text-slate-950"><%= t("person.overview.weight.title") %></h3>
         </div>
-        <div class="text-right">
-          <div class="mb-2 inline-flex rounded-full border border-white/10 bg-white/5 p-1 text-[11px] font-semibold text-slate-300">
+        <div class="sm:text-right">
+          <div class="mb-2 inline-flex rounded-full border border-slate-200 bg-slate-50 p-1 text-[11px] font-semibold text-slate-600">
             <% overview_period_options.each do |label, value| %>
-              <%= link_to label, person_widgets_path(person, weight_range: value), class: "rounded-full px-3 py-1 transition #{current_range == value ? 'bg-white text-slate-950 shadow-sm' : 'hover:bg-white/10'}" %>
+              <%= link_to label, person_widgets_path(person, weight_range: value), class: "rounded-full px-3 py-1 transition #{current_range == value ? 'bg-white text-slate-950 shadow-sm' : 'hover:bg-white'}" %>
             <% end %>
           </div>
-          <p class="text-[10px] font-semibold text-slate-300"><%= number_with_precision(min_value, precision: min_value % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> - <%= number_with_precision(max_value, precision: max_value % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> <%= latest[:unit] %></p>
+          <p class="text-[10px] font-semibold text-slate-500"><%= number_with_precision(min_value, precision: min_value % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> - <%= number_with_precision(max_value, precision: max_value % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> <%= latest[:unit] %></p>
         </div>
       </div>
 
-      <div class="rounded-2xl border border-violet-300/10 bg-slate-950/40 p-3">
+      <div class="rounded-2xl border border-violet-100 bg-violet-50/50 p-3">
         <div class="relative h-32">
           <div class="absolute inset-0 grid grid-rows-4">
             <% 4.times do %>
-              <div class="border-b border-white/5 last:border-b-0"></div>
+              <div class="border-b border-violet-100 last:border-b-0"></div>
             <% end %>
           </div>
 
@@ -42,7 +42,7 @@
             </defs>
             <polyline fill="none" stroke="url(#weight-line-gradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="<%= line_points %>" />
             <% plot_points.each do |point| %>
-              <circle cx="<%= point[:x] %>" cy="<%= point[:y] %>" r="2.3" fill="#f8fafc" stroke="#d946ef" stroke-width="1.3" />
+              <circle cx="<%= point[:x] %>" cy="<%= point[:y] %>" r="2.3" fill="#ffffff" stroke="#d946ef" stroke-width="1.3" />
             <% end %>
           </svg>
         </div>
@@ -50,8 +50,8 @@
         <div class="mt-2 grid gap-2" style="grid-template-columns: repeat(<%= series.length %>, minmax(0, 1fr));">
           <% series.each do |point| %>
             <div class="text-center">
-              <div class="text-[11px] font-semibold text-white"><%= number_with_precision(point[:value], precision: point[:value] % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> <span class="text-[10px] font-medium text-violet-200"><%= point[:unit] %></span></div>
-              <div class="mt-1 text-[10px] font-semibold text-slate-200"><%= point[:short_label] %></div>
+              <div class="text-[11px] font-semibold text-slate-900"><%= number_with_precision(point[:value], precision: point[:value] % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> <span class="text-[10px] font-medium text-violet-700"><%= point[:unit] %></span></div>
+              <div class="mt-1 text-[10px] font-semibold text-slate-500"><%= point[:short_label] %></div>
             </div>
           <% end %>
         </div>
@@ -59,21 +59,21 @@
     </section>
   </div>
 <% else %>
-  <div id="overview_weight_activity" class="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm ring-1 ring-black/5 <%= local_assigns[:card_classes] || chart_widget_card_classes %>">
-    <section class="flex h-full flex-col rounded-[1.5rem] border border-violet-300/20 bg-violet-400/10 p-4">
-      <div class="mb-4 flex items-start justify-between gap-3">
+  <div id="overview_weight_activity" class="rounded-[2rem] border border-violet-200 bg-white p-6 text-slate-900 shadow-sm ring-1 ring-violet-100 <%= local_assigns[:card_classes] || chart_widget_card_classes %>">
+    <section class="flex flex-col gap-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-200"><%= t("entries.data_labels.weight") %></p>
-          <h3 class="mt-1 text-lg font-bold text-white"><%= t("person.overview.weight.title") %></h3>
+          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-700"><%= t("entries.data_labels.weight") %></p>
+          <h3 class="mt-1 text-lg font-bold text-slate-950"><%= t("person.overview.weight.title") %></h3>
         </div>
-        <div class="inline-flex rounded-full border border-white/10 bg-white/5 p-1 text-[11px] font-semibold text-slate-300">
+        <div class="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1 text-[11px] font-semibold text-slate-600">
           <% overview_period_options.each do |label, value| %>
-            <%= link_to label, person_widgets_path(person, weight_range: value), class: "rounded-full px-3 py-1 transition #{current_range == value ? 'bg-white text-slate-950 shadow-sm' : 'hover:bg-white/10'}" %>
+            <%= link_to label, person_widgets_path(person, weight_range: value), class: "rounded-full px-3 py-1 transition #{current_range == value ? 'bg-white text-slate-950 shadow-sm' : 'hover:bg-white'}" %>
           <% end %>
         </div>
       </div>
 
-      <div class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-violet-300/20 bg-slate-950/30 px-4 py-10 text-center text-sm text-slate-300">
+      <div class="flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-violet-200 bg-violet-50/50 px-4 py-10 text-center text-sm text-slate-500">
         <%= weight_activity_available?(person) ? t("person.overview.weight.empty_range") : t("person.overview.weight.empty") %>
       </div>
     </section>

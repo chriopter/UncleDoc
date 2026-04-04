@@ -21,25 +21,27 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.28),_transparent_32%),linear-gradient(180deg,_#f8f4ec_0%,_#f2ede2_100%)] text-slate-900 antialiased">
+  <% nav_items = shell_nav_items(current_person, request.path) %>
+
+  <body class="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(254,243,199,0.9),_transparent_30%),linear-gradient(180deg,_#fffdf8_0%,_#f7f1e6_100%)] text-slate-900 antialiased">
     <%# Skip to content link for accessibility %>
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:rounded-xl focus:bg-amber-500 focus:px-4 focus:py-3 focus:text-white focus:text-sm focus:font-semibold focus:shadow-lg">
       <%= t("accessibility.skip_to_content") %>
     </a>
 
     <main id="main-content" class="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 md:px-6 md:py-8">
-      <header class="mb-6 rounded-[2rem] border border-white/70 bg-white/75 p-4 shadow-sm ring-1 ring-black/5 md:p-5 relative z-50">
+      <header class="relative z-50 mb-6 rounded-[2rem] border border-amber-100 bg-white/90 p-4 shadow-sm ring-1 ring-amber-100/80 md:p-5">
         <div class="flex flex-col gap-4 xl:flex-row xl:items-center">
           <%# Left: UncleDoc branding %>
           <div class="hidden xl:flex xl:w-32 xl:items-center">
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-700" title="<%= app_revision_tooltip %>">UncleDoc!</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-700" title="<%= app_revision_tooltip %>"><%= t("app.name") %></p>
           </div>
 
           <%# Center: Name dropdown and navigation %>
-          <div class="flex flex-1 flex-col xl:flex-row items-center justify-center gap-4 xl:gap-8">
-            <div class="relative" data-controller="dropdown">
+          <div class="flex flex-1 flex-col items-stretch gap-4 xl:flex-row xl:items-center xl:justify-center xl:gap-8">
+            <div class="relative mx-auto xl:mx-0" data-controller="dropdown">
               <button type="button" data-action="dropdown#toggle" class="flex items-center gap-3 text-left group">
-                <h1 class="text-xl font-black tracking-tight text-slate-950 md:text-2xl group-hover:text-amber-700 transition-colors"><%= current_person&.name || t("family.default_name") %></h1>
+                <h1 class="max-w-[14rem] break-words text-xl font-black tracking-tight text-slate-950 transition-colors group-hover:text-amber-700 md:max-w-[20rem] md:text-2xl"><%= current_person&.name || t("family.default_name") %></h1>
                 <svg class="h-5 w-5 text-slate-400 group-hover:text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                 </svg>
@@ -63,29 +65,17 @@
 
             <%# Desktop navigation next to name %>
             <nav class="hidden xl:flex min-w-max items-center gap-2">
-              <% if current_person %>
-                <%= link_to "Overview", person_overview_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/overview")) %>
-                <% if current_person.baby_mode? %>
-                  <%= link_to "Baby", person_baby_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/baby")) %>
-                <% end %>
-                <%= link_to "Log", person_log_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/log")) %>
-              <% else %>
-                <%= link_to t("nav.home"), root_path, class: shell_menu_item_class(current_page?(root_path)) %>
+              <% nav_items.each do |item| %>
+                <%= link_to item[:label], item[:path], class: shell_menu_item_class(item[:active]) %>
               <% end %>
             </nav>
           </div>
 
           <%# Right: Mobile nav + Settings %>
-          <div class="flex items-center gap-3 overflow-x-auto xl:overflow-visible xl:w-32 xl:justify-end">
-            <nav class="flex xl:hidden min-w-max items-center gap-2">
-              <% if current_person %>
-                <%= link_to "Overview", person_overview_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/overview")) %>
-                <% if current_person.baby_mode? %>
-                  <%= link_to "Baby", person_baby_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/baby")) %>
-                <% end %>
-                <%= link_to "Log", person_log_path(person_slug: current_person.name), class: shell_menu_item_class(request.path.include?("/log")) %>
-              <% else %>
-                <%= link_to t("nav.home"), root_path, class: shell_menu_item_class(current_page?(root_path)) %>
+          <div class="flex items-center justify-between gap-3 xl:w-32 xl:justify-end">
+            <nav class="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto xl:hidden">
+              <% nav_items.each do |item| %>
+                <%= link_to item[:label], item[:path], class: shell_menu_item_class(item[:active]) %>
               <% end %>
             </nav>
 

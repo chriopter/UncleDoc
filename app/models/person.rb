@@ -1,5 +1,6 @@
 class Person < ApplicationRecord
   has_many :entries, dependent: :destroy
+  has_many :llm_logs, dependent: :destroy
 
   validates :name, presence: true
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_04_140106) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_04_170500) do
   create_table "entries", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.json "facts", default: [], null: false
@@ -64,7 +64,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_04_140106) do
     t.datetime "updated_at", null: false
   end
 
-  add_foreign_key "entries", "people"
-  add_foreign_key "llm_logs", "entries"
-  add_foreign_key "llm_logs", "people"
+  add_foreign_key "entries", "people", on_delete: :cascade
+  add_foreign_key "llm_logs", "entries", on_delete: :cascade
+  add_foreign_key "llm_logs", "people", on_delete: :cascade
 end
