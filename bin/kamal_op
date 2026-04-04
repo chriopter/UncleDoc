@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+command -v op >/dev/null || { echo "op CLI not found"; exit 127; }
+op whoami &>/dev/null || { echo "Not signed into 1Password (run: op signin)"; exit 1; }
+
+if [[ -f ".kamal/secrets.lan.template" ]]; then
+  cp ".kamal/secrets.lan.template" ".kamal/secrets.lan"
+fi
+
+op run --env-file=<(cat <<'EOF'
+KAMAL_LAN_HOST=op://default/UncleDoc Production Secrets/KAMAL_LAN_HOST
+EOF
+) -- bin/kamal "$@"
