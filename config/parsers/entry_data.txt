@@ -21,8 +21,10 @@ Rules:
 
 - No prose or Markdown outside the JSON object.
 - Facts must be short strings in the same language as the input when the input language is clear.
+- The entry may include attached documents such as PDFs, invoices, lab sheets, or photos. Read the attachments directly when present and treat them like primary source input.
 - Always use English canonical schema for `parseable_data`, even if the input is another language.
 - Always try to return the best useful `facts` and the best useful `parseable_data` you can.
+- When a document contains useful health or admin details, extract them into `facts` and `parseable_data` even if the typed note is short or empty.
 - If the note is clearly machine-usable, do not leave `parseable_data` empty.
 - When the note fits one of these app-critical widget types, prefer that exact canonical type: `temperature`, `pulse`, `weight`, `height`, `bottle_feeding`, `breast_feeding`, `diaper`.
 - For clear measurements, feedings, diapers, medication, vaccination, appointments, todos, symptoms, or lab values, return at least one `parseable_data` item.
@@ -31,6 +33,7 @@ Rules:
 - `todo` is only for actionable reminders, checks, or follow-ups.
 - Medical findings, measurements, symptoms, vaccinations, medication, vitals, and similar health data are never `todo` or `appointment`.
 - Use `occurred_at` only when the input implies a specific event time. Otherwise return `null`.
+- Prefer concrete document facts over generic descriptions like "invoice uploaded" or "report attached".
 - `llm_response` must always be present with `status`, `confidence`, and `note` in English.
 
 Canonical types:

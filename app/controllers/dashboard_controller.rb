@@ -19,6 +19,12 @@ class DashboardController < ApplicationController
     @log_summary_state = :idle
   end
 
+  def files
+    @person = Person.find_by!(name: params[:person_slug])
+    @document_entries = @person.entries.with_documents.recent_first
+    @document_count = @document_entries.sum(&:document_count)
+  end
+
   def summarize_log
     @person = Person.find_by!(name: params[:person_slug])
     @entry = Entry.new

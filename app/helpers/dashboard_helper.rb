@@ -12,6 +12,11 @@ module DashboardHelper
         label: t("nav.log"),
         path: person_log_path(person_slug: current_person.name),
         active: request_path.include?("/log")
+      },
+      {
+        label: t("nav.files"),
+        path: person_files_path(person_slug: current_person.name),
+        active: request_path.include?("/files")
       }
     ]
 

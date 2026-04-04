@@ -49,7 +49,7 @@ class EntryDataParser
   }.freeze
 
   def self.call(input:, preference: UserPreference.current, entry: nil)
-    return Result.new(facts: [], parseable_data: [], occurred_at: nil, llm_response: {}, error: :blank_input) if input.blank?
+    return Result.new(facts: [], parseable_data: [], occurred_at: nil, llm_response: {}, error: :blank_input) if input.blank? && entry_documents(entry).blank?
 
     configuration_error = configuration_error_for(preference)
     return Result.new(facts: [], parseable_data: [], occurred_at: nil, llm_response: {}, error: configuration_error) if configuration_error.present?
@@ -82,6 +82,8 @@ class EntryDataParser
   end
 
   def self.request_completion(input, preference, entry: nil)
+    return request_multimodal_completion(input, preference, entry: entry) if entry_documents(entry).present?
+
     LlmChatRequest.call(
       request_kind: "entry_parse",
       preference: preference,
@@ -89,6 +91,19 @@ class EntryDataParser
         { role: "system", content: system_prompt },
         { role: "user", content: user_prompt(input) }
       ],
+      person: entry&.person,
+      entry: entry,
+      temperature: 0
+    ).content
+  end
+
+  def self.request_multimodal_completion(input, preference, entry: nil)
+    LlmMultimodalRequest.call(
+      request_kind: "entry_parse",
+      preference: preference,
+      instructions: system_prompt,
+      prompt: user_prompt(input, entry: entry),
+      attachments: entry_documents(entry),
       person: entry&.person,
       entry: entry,
       temperature: 0
@@ -116,11 +131,12 @@ class EntryDataParser
     File.read(Rails.root.join("config/parsers/entry_data.txt"))
   end
 
-  def self.user_prompt(input)
+  def self.user_prompt(input, entry: nil)
     <<~PROMPT.strip
       Current time: #{Time.current.iso8601}
       Time zone: #{Time.zone.tzinfo.name}
-      Input: #{input}
+      Input: #{input.presence || "(none)"}
+      Attached documents: #{document_list(entry)}
     PROMPT
   end
 
@@ -250,5 +266,17 @@ class EntryDataParser
     else
       value
     end
+  end
+
+  def self.entry_documents(entry)
+    return [] unless entry&.respond_to?(:documents)
+    return [] unless entry.documents.attached?
+
+    entry.documents.blobs
+  end
+
+  def self.document_list(entry)
+    names = entry_documents(entry).map { |document| document.filename.to_s }
+    names.any? ? names.join(", ") : "none"
   end
 end

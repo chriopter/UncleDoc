@@ -1,0 +1,16 @@
+<div class="rounded-[1.25rem] border <%= local_assigns[:dark] ? 'border-white/10 bg-white/[0.04]' : 'border-dashed border-amber-200 bg-amber-50/60' %> p-4">
+  <p class="text-sm font-semibold <%= local_assigns[:dark] ? 'text-white' : 'text-slate-800' %>"><%= t("entries.documents.upload_title") %></p>
+  <p class="mt-1 text-xs <%= local_assigns[:dark] ? 'text-slate-400' : 'text-slate-500' %>"><%= t("entries.documents.upload_hint") %></p>
+
+  <% if local_assigns[:show_existing] && entry.documents_attached? %>
+    <div class="mt-4">
+      <%= render "entries/documents", entry: entry, compact: false %>
+    </div>
+  <% end %>
+
+  <%= form.file_field :documents,
+      multiple: true,
+      direct_upload: false,
+      accept: ".pdf,.png,.jpg,.jpeg,.txt,text/plain,application/pdf,image/png,image/jpeg",
+      class: "mt-4 block w-full rounded-[1.25rem] border #{local_assigns[:dark] ? 'border-white/10 bg-slate-950/70 text-white file:bg-amber-400 file:text-slate-950' : 'border-slate-300 bg-white text-slate-700 file:bg-slate-950 file:text-white'} px-3 py-3 text-sm file:mr-3 file:rounded-lg file:border-0 file:px-3 file:py-2 file:text-sm file:font-semibold" %>
+</div>

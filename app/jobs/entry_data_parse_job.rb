@@ -39,6 +39,20 @@ class EntryDataParseJob < ApplicationJob
       locals: { person: person, entries: person.entries.recent_first }
     )
 
+    Turbo::StreamsChannel.broadcast_replace_to(
+      [ person, :entries ],
+      target: "files_list",
+      partial: "dashboard/files_list",
+      locals: { document_entries: person.entries.with_documents.recent_first }
+    )
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      [ person, :entries ],
+      target: "files_stats",
+      partial: "dashboard/files_stats",
+      locals: { document_entries: person.entries.with_documents.recent_first, document_count: person.entries.with_documents.sum(&:document_count) }
+    )
+
     if person.baby_mode?
       Turbo::StreamsChannel.broadcast_replace_to(
         [ person, :entries ],
