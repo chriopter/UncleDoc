@@ -105,6 +105,8 @@ final class AppCoordinator: NSObject, ObservableObject {
 
     func handleNativeMenuAction(named action: String) {
         switch action {
+        case "health_sync":
+            shellViewController?.presentHealthRecords()
         case "app_settings":
             shellViewController?.presentAppSettings()
         case "health_records":
@@ -282,12 +284,19 @@ final class NativeMenuScriptBridge: NSObject, WKScriptMessageHandler {
     private static let scriptSource = #"""
     (() => {
       const handlerName = "uncleDocNativeMenu";
+      const healthSyncComplete = __HEALTH_SYNC_COMPLETE__;
       const config = {
         mobile: [
           { action: "app_settings", label: "App Settings", icon: "M4.5 12a7.5 7.5 0 1 0 15 0 7.5 7.5 0 0 0-15 0Zm7.5-3v3l2.25 2.25" }
         ],
         desktop: [
           { action: "app_settings", label: "App Settings", icon: "M4.5 12a7.5 7.5 0 1 0 15 0 7.5 7.5 0 0 0-15 0Zm7.5-3v3l2.25 2.25" }
+        ],
+        "data-mobile": [
+          { action: "health_sync", label: "Health Sync", icon: "M12 21c4.5-2.55 7.5-6.18 7.5-10.41A4.59 4.59 0 0 0 15 6c-1.35 0-2.58.57-3 1.5C11.58 6.57 10.35 6 9 6a4.59 4.59 0 0 0-4.5 4.59C4.5 14.82 7.5 18.45 12 21", complete: healthSyncComplete }
+        ],
+        "data-desktop": [
+          { action: "health_sync", label: "Health Sync", icon: "M12 21c4.5-2.55 7.5-6.18 7.5-10.41A4.59 4.59 0 0 0 15 6c-1.35 0-2.58.57-3 1.5C11.58 6.57 10.35 6 9 6a4.59 4.59 0 0 0-4.5 4.59C4.5 14.82 7.5 18.45 12 21", complete: healthSyncComplete }
         ]
       };
 
@@ -324,6 +333,12 @@ final class NativeMenuScriptBridge: NSObject, WKScriptMessageHandler {
         button.appendChild(iconWrap);
         button.appendChild(label);
 
+        if (item.complete) {
+          const dot = document.createElement("span");
+          dot.className = "ml-auto inline-block h-2.5 w-2.5 rounded-full bg-emerald-500";
+          button.appendChild(dot);
+        }
+
         button.addEventListener("click", () => {
           window.webkit?.messageHandlers?.[handlerName]?.postMessage({ action: item.action });
         });
@@ -354,7 +369,7 @@ final class NativeMenuScriptBridge: NSObject, WKScriptMessageHandler {
       document.addEventListener("turbo:load", boot);
       document.addEventListener("turbo:render", boot);
     })();
-    """#
+    """#.replacingOccurrences(of: "__HEALTH_SYNC_COMPLETE__", with: HealthKitSyncService.shared.configuration.lastSuccessfulSyncAt != nil ? "true" : "false")
 }
 
 final class AuthenticationChallengeResponder: @unchecked Sendable {
@@ -996,11 +1011,6 @@ private final class AppSettingsViewController: UIViewController {
             stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24)
         ])
 
-        stackView.addArrangedSubview(makeActionButton(title: "Health Sync", subtitle: "Connect this device to one UncleDoc person and sync HealthKit history.", systemImageName: "heart.text.square") { [weak self] in
-            self?.dismiss(animated: true) {
-                self?.onShowHealthRecords()
-            }
-        })
         stackView.addArrangedSubview(makeActionButton(title: "Reload", subtitle: "Reload the current UncleDoc page.", systemImageName: "arrow.clockwise") { [weak self] in
             self?.dismiss(animated: true) {
                 self?.onReload()
@@ -1051,10 +1061,12 @@ private final class HealthSyncViewController: UIViewController {
     private let detailLabel = UILabel()
     private let personLabel = UILabel()
     private let countLabel = UILabel()
+    private let progressLabel = UILabel()
     private let sampleTypeLabel = UILabel()
     private let choosePersonButton = UIButton(type: .system)
     private let grantAccessButton = UIButton(type: .system)
     private let syncNowButton = UIButton(type: .system)
+    private let debugButton = UIButton(type: .system)
 
     init(syncService: HealthKitSyncService) {
         self.syncService = syncService
@@ -1077,7 +1089,7 @@ private final class HealthSyncViewController: UIViewController {
         stackView.axis = .vertical
         stackView.spacing = 16
 
-        [statusLabel, detailLabel, personLabel, countLabel, sampleTypeLabel].forEach {
+        [statusLabel, detailLabel, personLabel, countLabel, progressLabel, sampleTypeLabel].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             $0.numberOfLines = 0
         }
@@ -1087,6 +1099,7 @@ private final class HealthSyncViewController: UIViewController {
         detailLabel.textColor = .secondaryLabel
         personLabel.font = .systemFont(ofSize: 15, weight: .semibold)
         countLabel.font = .systemFont(ofSize: 15, weight: .semibold)
+        progressLabel.font = .systemFont(ofSize: 15, weight: .semibold)
         sampleTypeLabel.font = .monospacedSystemFont(ofSize: 13, weight: .regular)
         sampleTypeLabel.textColor = .secondaryLabel
 
@@ -1103,6 +1116,7 @@ private final class HealthSyncViewController: UIViewController {
         introCard.addArrangedSubview(detailLabel)
         introCard.addArrangedSubview(personLabel)
         introCard.addArrangedSubview(countLabel)
+        introCard.addArrangedSubview(progressLabel)
         introCard.addArrangedSubview(sampleTypeLabel)
         stackView.addArrangedSubview(introCard)
 
@@ -1111,6 +1125,15 @@ private final class HealthSyncViewController: UIViewController {
         grantAccessButton.addTarget(self, action: #selector(didTapGrantAccess), for: .touchUpInside)
         stackView.addArrangedSubview(makeActionButton(button: syncNowButton, title: "Sync Now", subtitle: "Run or resume the HealthKit sync immediately.", systemImageName: "arrow.triangle.2.circlepath") )
         syncNowButton.addTarget(self, action: #selector(didTapSyncNow), for: .touchUpInside)
+        var debugConfiguration = UIButton.Configuration.plain()
+        debugConfiguration.title = "Debug sync scope"
+        debugConfiguration.image = UIImage(systemName: "ladybug")
+        debugConfiguration.imagePlacement = .leading
+        debugConfiguration.imagePadding = 8
+        debugButton.configuration = debugConfiguration
+        debugButton.contentHorizontalAlignment = .leading
+        debugButton.addTarget(self, action: #selector(didTapDebug), for: .touchUpInside)
+        stackView.addArrangedSubview(debugButton)
 
         bind()
         syncService.bootstrap()
@@ -1130,8 +1153,13 @@ private final class HealthSyncViewController: UIViewController {
         detailLabel.text = snapshot.detailText
         personLabel.text = snapshot.selectedPersonName.map { "Person: \($0)" } ?? "Person: not selected"
         countLabel.text = snapshot.estimatedRecordCount.map { "Estimated first sync: \($0) records" } ?? "Estimated first sync: -"
+        progressLabel.text = snapshot.progressText.map { "Progress: \($0)" } ?? "Progress: -"
         sampleTypeLabel.text = snapshot.currentSampleTypeIdentifier.map { "Current type: \($0)" } ?? ""
         syncNowButton.isEnabled = snapshot.selectedPersonUUID != nil
+
+        applyState(to: choosePersonButton, title: "Choose Person", subtitle: snapshot.selectedPersonName.map { "Done: \($0)" } ?? "One device maps to one UncleDoc person.", systemImageName: snapshot.personSelected ? "checkmark.circle.fill" : "person.crop.circle.badge.checkmark", complete: snapshot.personSelected)
+        applyState(to: grantAccessButton, title: "Grant Health Access", subtitle: snapshot.accessReady ? "Done: HealthKit access is ready." : "Authorize the stable HealthKit types UncleDoc can sync.", systemImageName: snapshot.accessReady ? "checkmark.circle.fill" : "heart", complete: snapshot.accessReady)
+        applyState(to: syncNowButton, title: "Sync Now", subtitle: snapshot.syncCompleted ? "Done: synced at \((snapshot.lastSuccessfulSyncAt ?? Date()).formatted())" : "Run or resume the HealthKit sync immediately.", systemImageName: snapshot.syncCompleted ? "checkmark.circle.fill" : "arrow.triangle.2.circlepath", complete: snapshot.syncCompleted)
     }
 
     private func makeCard() -> UIStackView {
@@ -1147,22 +1175,26 @@ private final class HealthSyncViewController: UIViewController {
     }
 
     private func makeActionButton(button: UIButton, title: String, subtitle: String, systemImageName: String, action: Selector? = nil) -> UIButton {
+        applyState(to: button, title: title, subtitle: subtitle, systemImageName: systemImageName, complete: false)
+        button.contentHorizontalAlignment = .leading
+        if let action {
+            button.addTarget(self, action: action, for: .touchUpInside)
+        }
+        return button
+    }
+
+    private func applyState(to button: UIButton, title: String, subtitle: String, systemImageName: String, complete: Bool) {
         var configuration = UIButton.Configuration.gray()
         configuration.title = title
         configuration.subtitle = subtitle
         configuration.image = UIImage(systemName: systemImageName)
         configuration.imagePlacement = .leading
         configuration.imagePadding = 14
-        configuration.baseForegroundColor = .label
+        configuration.baseForegroundColor = complete ? .systemGreen : .label
         configuration.background.backgroundColor = .secondarySystemGroupedBackground
         configuration.background.cornerRadius = 20
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 18, leading: 18, bottom: 18, trailing: 18)
         button.configuration = configuration
-        button.contentHorizontalAlignment = .leading
-        if let action {
-            button.addTarget(self, action: action, for: .touchUpInside)
-        }
-        return button
     }
 
     @objc private func didTapChoosePerson() {
@@ -1205,8 +1237,67 @@ private final class HealthSyncViewController: UIViewController {
         Task { await syncService.syncNow() }
     }
 
+    @objc private func didTapDebug() {
+        let debugViewController = HealthSyncDebugViewController(syncService: syncService)
+        navigationController?.pushViewController(debugViewController, animated: true)
+    }
+
     @objc private func dismissSheet() {
         dismiss(animated: true)
+    }
+}
+
+@MainActor
+private final class HealthSyncDebugViewController: UIViewController {
+    private let syncService: HealthKitSyncService
+    private let textView = UITextView()
+    private let spinner = UIActivityIndicatorView(style: .medium)
+
+    init(syncService: HealthKitSyncService) {
+        self.syncService = syncService
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Sync Debug"
+        view.backgroundColor = .systemBackground
+
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        textView.font = .monospacedSystemFont(ofSize: 13, weight: .regular)
+        textView.isEditable = false
+        textView.text = "Loading sync scope..."
+
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        spinner.startAnimating()
+
+        view.addSubview(textView)
+        view.addSubview(spinner)
+
+        NSLayoutConstraint.activate([
+            textView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            textView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            textView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            textView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            spinner.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
+            spinner.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor)
+        ])
+
+        Task {
+            do {
+                let counts = try await syncService.loadDebugTypeCounts()
+                let body = counts.map { "\($0.0): \($0.1)" }.joined(separator: "\n")
+                textView.text = body
+            } catch {
+                textView.text = error.localizedDescription
+            }
+            spinner.stopAnimating()
+        }
     }
 }
 
