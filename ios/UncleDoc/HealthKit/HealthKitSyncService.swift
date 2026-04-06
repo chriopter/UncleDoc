@@ -53,14 +53,14 @@ struct HealthKitSyncSnapshot: Sendable {
         phase == .synced || lastSuccessfulSyncAt != nil
     }
 
-    var syncedCountText: String {
-        "\(syncedRecordCount) records synced"
+    var displayedTotalCount: Int {
+        max(estimatedRecordCount ?? 0, syncedRecordCount)
     }
 
-    var progressText: String? {
-        guard let estimatedRecordCount, estimatedRecordCount > 0 else { return nil }
+    var syncedCountText: String {
         let visibleCount = max(syncedRecordCount, currentSyncUploadedCount)
-        return "\(min(visibleCount, estimatedRecordCount)) / \(estimatedRecordCount) records synced"
+        let totalCount = max(displayedTotalCount, visibleCount)
+        return "\(min(visibleCount, totalCount)) / \(totalCount) records synced"
     }
 }
 
@@ -106,6 +106,7 @@ final class HealthKitSyncService: ObservableObject {
         Task {
             await loadAvailablePeopleIfNeeded()
             await refreshRemoteStatusIfPossible()
+            await syncIfNeededOnForeground()
         }
     }
 
@@ -206,11 +207,6 @@ final class HealthKitSyncService: ObservableObject {
 
         if !configuration.initialSyncCompleted {
             _ = await performInitialSync(trigger: "foreground")
-            return
-        }
-
-        if let lastSuccessfulSyncAt = configuration.lastSuccessfulSyncAt,
-           Date().timeIntervalSince(lastSuccessfulSyncAt) < 15 * 60 {
             return
         }
 
