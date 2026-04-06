@@ -99,25 +99,14 @@ private enum HealthKitCoverage {
         )
     ]
 
-    static let correlationIdentifiers: [HKCorrelationTypeIdentifier] = [
-        .bloodPressure,
-        .food
-    ]
-
     static let specialSampleTypes: [HKSampleType] = [
         HKObjectType.workoutType(),
         HKObjectType.audiogramSampleType(),
         HKObjectType.electrocardiogramType(),
         HKSeriesType.workoutRoute(),
         HKSeriesType.heartbeat(),
-        HKObjectType.visionPrescriptionType(),
-        HKObjectType.stateOfMindType(),
-        HKObjectType.medicationDoseEventType()
+        HKObjectType.stateOfMindType()
     ]
-
-    static let documentTypes: [HKDocumentType] = [
-        .init(.CDA)
-    ].compactMap { $0 }
 }
 
 struct HealthRecordPreview: Identifiable, Sendable {
@@ -143,10 +132,6 @@ final class HealthKitManager: @unchecked Sendable {
 
     private lazy var characteristicTypes: [HKCharacteristicType] = HealthKitCoverage.characteristicIdentifiers.compactMap(HKCharacteristicType.init)
 
-    private lazy var correlationTypes: [HKCorrelationType] = HealthKitCoverage.correlationIdentifiers.compactMap(HKCorrelationType.init)
-
-    private lazy var documentTypes: [HKDocumentType] = HealthKitCoverage.documentTypes
-
     private lazy var sampleTypes: [HKSampleType] = {
         var types: [HKSampleType] = []
 
@@ -162,14 +147,16 @@ final class HealthKitManager: @unchecked Sendable {
             }
         }
 
-        types.append(contentsOf: correlationTypes)
         types.append(contentsOf: HealthKitCoverage.specialSampleTypes)
-        types.append(contentsOf: documentTypes)
 
         return Array(Set(types)).sorted { $0.identifier < $1.identifier }
     }()
 
-    private lazy var readTypes: Set<HKObjectType> = Set(sampleTypes).union(characteristicTypes)
+    private lazy var readTypes: Set<HKObjectType> = {
+        Set(sampleTypes)
+            .union(characteristicTypes)
+            .filter { !$0.requiresPerObjectAuthorization() }
+    }()
 
     var isAvailable: Bool {
         HKHealthStore.isHealthDataAvailable()
@@ -183,20 +170,20 @@ final class HealthKitManager: @unchecked Sendable {
         try await healthStore.requestAuthorization(toShare: [], read: readTypes)
     }
 
-    func loadRecentRecords(limit: Int = 20, maxPerType: Int = 3) async throws -> [HealthRecordPreview] {
+    func loadRecentRecords(limit: Int = 20, maxPerType: Int = 2) async throws -> [HealthRecordPreview] {
         guard isAvailable else {
             throw HealthKitManagerError.notAvailable
         }
 
         let perTypeLimit = max(maxPerType, 1)
-        let collected = try await withThrowingTaskGroup(of: [HealthRecordPreview].self) { group in
+        let collected = await withTaskGroup(of: [HealthRecordPreview].self) { group in
             for sampleType in sampleTypes {
                 group.addTask { [healthStore] in
-                    if let documentType = sampleType as? HKDocumentType {
-                        return try await Self.fetchDocumentRecords(for: documentType, healthStore: healthStore, limit: perTypeLimit)
+                    do {
+                        return try await Self.fetchRecords(for: sampleType, healthStore: healthStore, limit: perTypeLimit)
+                    } catch {
+                        return []
                     }
-
-                    return try await Self.fetchRecords(for: sampleType, healthStore: healthStore, limit: perTypeLimit)
                 }
             }
 
@@ -205,7 +192,7 @@ final class HealthKitManager: @unchecked Sendable {
             }
 
             var rows: [HealthRecordPreview] = []
-            for try await result in group {
+            for await result in group {
                 rows.append(contentsOf: result)
             }
 
@@ -237,30 +224,6 @@ final class HealthKitManager: @unchecked Sendable {
         return samples.prefix(limit).map { sample in
             makePreview(from: sample)
         }
-    }
-
-    private static func fetchDocumentRecords(for documentType: HKDocumentType, healthStore: HKHealthStore, limit: Int) async throws -> [HealthRecordPreview] {
-        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
-
-        let samples = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[HKDocumentSample], Error>) in
-            let query = HKDocumentQuery(
-                documentType: documentType,
-                predicate: nil,
-                limit: limit,
-                sortDescriptors: [sortDescriptor],
-                includeDocumentData: true
-            ) { _, results, done, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else if done {
-                    continuation.resume(returning: results ?? [])
-                }
-            }
-
-            healthStore.execute(query)
-        }
-
-        return samples.map { makePreview(from: $0) }
     }
 
     private static func fetchCharacteristicRecords(healthStore: HKHealthStore) -> [HealthRecordPreview] {
@@ -344,24 +307,6 @@ final class HealthKitManager: @unchecked Sendable {
             lines.append("workoutEvents.count: \(workout.workoutEvents?.count ?? 0)")
         }
 
-        if let correlation = sample as? HKCorrelation {
-            lines.append("correlationType: \(correlation.correlationType.identifier)")
-            lines.append("objects.count: \(correlation.objects.count)")
-            lines.append("objects: \(correlation.objects.map { $0.sampleType.identifier })")
-        }
-
-        if let cdaDocument = sample as? HKCDADocumentSample {
-            lines.append("documentType: \(cdaDocument.documentType.identifier)")
-            lines.append("documentTitle: \(cdaDocument.document?.title ?? "-")")
-            lines.append("patientName: \(cdaDocument.document?.patientName ?? "-")")
-            lines.append("authorName: \(cdaDocument.document?.authorName ?? "-")")
-            lines.append("custodianName: \(cdaDocument.document?.custodianName ?? "-")")
-            if let documentData = cdaDocument.document?.documentData,
-               let xml = String(data: documentData, encoding: .utf8) {
-                lines.append("documentData: \(xml)")
-            }
-        }
-
         if let audiogram = sample as? HKAudiogramSample {
             lines.append("sensitivityPoints.count: \(audiogram.sensitivityPoints.count)")
             lines.append("sensitivityPoints: \(audiogram.sensitivityPoints)")
@@ -375,16 +320,8 @@ final class HealthKitManager: @unchecked Sendable {
             lines.append("symptomsStatus: \(electrocardiogram.symptomsStatus.rawValue)")
         }
 
-        if let visionPrescription = sample as? HKVisionPrescription {
-            lines.append("visionPrescription: \(String(describing: visionPrescription))")
-        }
-
         if let stateOfMind = sample as? HKStateOfMind {
             lines.append("stateOfMind: \(String(describing: stateOfMind))")
-        }
-
-        if let medicationDoseEvent = sample as? HKMedicationDoseEvent {
-            lines.append("medicationDoseEvent: \(String(describing: medicationDoseEvent))")
         }
 
         if let heartbeatSeries = sample as? HKHeartbeatSeriesSample {
@@ -396,11 +333,20 @@ final class HealthKitManager: @unchecked Sendable {
         }
 
         if let metadata = sample.metadata, !metadata.isEmpty {
-            lines.append("metadata: \(metadata)")
+            lines.append("metadata: \(clipped(String(describing: metadata), field: "metadata"))")
         }
 
-        lines.append("debug: \(String(describing: sample))")
-        return lines.joined(separator: "\n")
+        lines.append("debug: \(clipped(String(describing: sample), field: "debug"))")
+        return clipped(lines.joined(separator: "\n"), field: "sample")
+    }
+
+    private static func clipped(_ value: String, field: String, limit: Int = 4000) -> String {
+        guard value.count > limit else {
+            return value
+        }
+
+        let prefix = value.prefix(limit)
+        return "\(prefix)\n... [truncated \(field), total chars: \(value.count)]"
     }
 }
 
