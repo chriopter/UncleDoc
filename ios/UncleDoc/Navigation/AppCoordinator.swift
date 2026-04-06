@@ -105,6 +105,8 @@ final class AppCoordinator: NSObject, ObservableObject {
 
     func handleNativeMenuAction(named action: String) {
         switch action {
+        case "app_settings":
+            shellViewController?.presentAppSettings()
         case "health_records":
             shellViewController?.presentHealthRecords()
         case "reload":
@@ -282,16 +284,10 @@ final class NativeMenuScriptBridge: NSObject, WKScriptMessageHandler {
       const handlerName = "uncleDocNativeMenu";
       const config = {
         mobile: [
-          { action: "health_records", label: "Health Records", icon: "M7.5 4.5h9A2.25 2.25 0 0 1 18.75 6.75v10.5A2.25 2.25 0 0 1 16.5 19.5h-9a2.25 2.25 0 0 1-2.25-2.25V6.75A2.25 2.25 0 0 1 7.5 4.5Z M12 8.25v6 M9 11.25h6" },
-          { action: "reload", label: "Reload", icon: "M4.5 4.5v5h5" },
-          { action: "open_in_safari", label: "Open in Safari", icon: "M16.5 7.5h3m0 0v3m0-3-7.5 7.5" },
-          { action: "change_server", label: "Change Server", icon: "M4.5 7.5h15m-15 4.5h15m-15 4.5h15" }
+          { action: "app_settings", label: "App Settings", icon: "M4.5 12a7.5 7.5 0 1 0 15 0 7.5 7.5 0 0 0-15 0Zm7.5-3v3l2.25 2.25" }
         ],
         desktop: [
-          { action: "health_records", label: "Health Records", icon: "M7.5 4.5h9A2.25 2.25 0 0 1 18.75 6.75v10.5A2.25 2.25 0 0 1 16.5 19.5h-9a2.25 2.25 0 0 1-2.25-2.25V6.75A2.25 2.25 0 0 1 7.5 4.5Z M12 8.25v6 M9 11.25h6" },
-          { action: "reload", label: "Reload", icon: "M4.5 4.5v5h5" },
-          { action: "open_in_safari", label: "Open in Safari", icon: "M16.5 7.5h3m0 0v3m0-3-7.5 7.5" },
-          { action: "change_server", label: "Change Server", icon: "M4.5 7.5h15m-15 4.5h15m-15 4.5h15" }
+          { action: "app_settings", label: "App Settings", icon: "M4.5 12a7.5 7.5 0 1 0 15 0 7.5 7.5 0 0 0-15 0Zm7.5-3v3l2.25 2.25" }
         ]
       };
 
@@ -563,6 +559,25 @@ private final class UncleDocShellViewController: UIViewController {
 
     func presentHealthRecords() {
         let viewController = HealthRecordsViewController()
+        let navigationController = UINavigationController(rootViewController: viewController)
+        navigationController.modalPresentationStyle = .pageSheet
+
+        if let sheetPresentationController = navigationController.sheetPresentationController {
+            sheetPresentationController.detents = [.medium(), .large()]
+            sheetPresentationController.prefersGrabberVisible = true
+        }
+
+        present(navigationController, animated: true)
+    }
+
+    func presentAppSettings() {
+        let viewController = AppSettingsViewController(
+            onReload: { [weak self] in self?.reloadCurrentPage() },
+            onOpenInSafari: { [weak self] in self?.openCurrentPageInSafari() },
+            onChangeServer: { [weak self] in self?.presentServerActions() },
+            onShowHealthRecords: { [weak self] in self?.presentHealthRecords() }
+        )
+
         let navigationController = UINavigationController(rootViewController: viewController)
         navigationController.modalPresentationStyle = .pageSheet
 
@@ -906,6 +921,107 @@ private final class UncleDocShellViewController: UIViewController {
         if gestureRecognizer.state == .recognized {
             setSidebarVisible(true, animated: true)
         }
+    }
+}
+
+@MainActor
+private final class AppSettingsViewController: UIViewController {
+    private let stackView = UIStackView()
+    private let onReload: () -> Void
+    private let onOpenInSafari: () -> Void
+    private let onChangeServer: () -> Void
+    private let onShowHealthRecords: () -> Void
+
+    init(
+        onReload: @escaping () -> Void,
+        onOpenInSafari: @escaping () -> Void,
+        onChangeServer: @escaping () -> Void,
+        onShowHealthRecords: @escaping () -> Void
+    ) {
+        self.onReload = onReload
+        self.onOpenInSafari = onOpenInSafari
+        self.onChangeServer = onChangeServer
+        self.onShowHealthRecords = onShowHealthRecords
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        title = "App Settings"
+        view.backgroundColor = .systemGroupedBackground
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: self, action: #selector(dismissSheet))
+
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.axis = .vertical
+        stackView.spacing = 14
+
+        let introLabel = UILabel()
+        introLabel.translatesAutoresizingMaskIntoConstraints = false
+        introLabel.numberOfLines = 0
+        introLabel.font = .systemFont(ofSize: 16, weight: .medium)
+        introLabel.textColor = .secondaryLabel
+        introLabel.text = "Device-only actions for the UncleDoc iOS app."
+
+        view.addSubview(introLabel)
+        view.addSubview(stackView)
+
+        NSLayoutConstraint.activate([
+            introLabel.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+            introLabel.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+            introLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 18),
+            stackView.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+            stackView.topAnchor.constraint(equalTo: introLabel.bottomAnchor, constant: 20)
+        ])
+
+        stackView.addArrangedSubview(makeActionButton(title: "Health Records", subtitle: "Request Health access and show recent records.", systemImageName: "heart.text.square") { [weak self] in
+            self?.dismiss(animated: true) {
+                self?.onShowHealthRecords()
+            }
+        })
+        stackView.addArrangedSubview(makeActionButton(title: "Reload", subtitle: "Reload the current UncleDoc page.", systemImageName: "arrow.clockwise") { [weak self] in
+            self?.dismiss(animated: true) {
+                self?.onReload()
+            }
+        })
+        stackView.addArrangedSubview(makeActionButton(title: "Open in Safari", subtitle: "Open the current page in Safari.", systemImageName: "safari") { [weak self] in
+            self?.dismiss(animated: true) {
+                self?.onOpenInSafari()
+            }
+        })
+        stackView.addArrangedSubview(makeActionButton(title: "Change Server", subtitle: "Reconfigure the UncleDoc server URL.", systemImageName: "server.rack") { [weak self] in
+            self?.dismiss(animated: true) {
+                self?.onChangeServer()
+            }
+        })
+    }
+
+    private func makeActionButton(title: String, subtitle: String, systemImageName: String, action: @escaping () -> Void) -> UIButton {
+        let button = UIButton(type: .system)
+        var configuration = UIButton.Configuration.gray()
+        configuration.title = title
+        configuration.subtitle = subtitle
+        configuration.image = UIImage(systemName: systemImageName)
+        configuration.imagePlacement = .leading
+        configuration.imagePadding = 14
+        configuration.baseForegroundColor = .label
+        configuration.background.backgroundColor = .secondarySystemGroupedBackground
+        configuration.background.cornerRadius = 20
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 18, leading: 18, bottom: 18, trailing: 18)
+        button.configuration = configuration
+        button.contentHorizontalAlignment = .leading
+        button.addAction(UIAction { _ in action() }, for: .touchUpInside)
+        return button
+    }
+
+    @objc private func dismissSheet() {
+        dismiss(animated: true)
     }
 }
 

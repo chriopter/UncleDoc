@@ -33,7 +33,7 @@ de:
 
   # Navigation
   nav:
-    app: "App"
+    app_settings: "App-Einstellungen"
     home: "Startseite"
     overview: "Übersicht"
     trends: "Trends"
