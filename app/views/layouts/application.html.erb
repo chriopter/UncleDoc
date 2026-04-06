@@ -67,20 +67,26 @@
             <% end %>
 
             <%# Navigation %>
-            <div class="space-y-0.5">
-              <% nav_items.each do |item| %>
-                <% if item[:child] %>
-                  <%= link_to item[:path], class: "ml-7 block rounded-lg px-3 py-1.5 text-sm font-medium #{item[:active] ? 'text-amber-800 bg-amber-50' : 'text-slate-500 hover:text-slate-900 hover:bg-amber-50'}" do %>
-                    <%= item[:label] %>
-                  <% end %>
-                <% else %>
-                  <%= link_to item[:path], class: "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold #{item[:active] ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-amber-50'}" do %>
+            <div class="space-y-1">
+              <% shell_mobile_nav_groups(current_person, request.path).each do |group| %>
+                <div class="rounded-2xl <%= group[:children].any? ? 'bg-amber-50/70 px-2 py-2' : '' %>">
+                  <%= link_to group[:path], class: "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold #{group[:active] ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-amber-50'}" do %>
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="<%= shell_nav_icon(item[:label]) %>" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="<%= shell_nav_icon(group[:label]) %>" />
                     </svg>
-                    <span><%= item[:label] %></span>
+                    <span><%= group[:label] %></span>
                   <% end %>
-                <% end %>
+
+                  <% if group[:children].any? %>
+                    <div class="mt-1 border-l border-amber-200/80 pl-7">
+                      <% group[:children].each do |item| %>
+                        <%= link_to item[:path], class: "block rounded-lg px-3 py-1.5 text-sm font-medium #{item[:active] ? 'bg-white text-amber-800 shadow-sm' : 'text-slate-500 hover:bg-white/80 hover:text-slate-900'}" do %>
+                          <%= item[:label] %>
+                        <% end %>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
               <% end %>
             </div>
 

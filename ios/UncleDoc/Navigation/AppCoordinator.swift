@@ -414,6 +414,12 @@ enum AppDestination: CaseIterable {
 
 @MainActor
 private final class UncleDocShellViewController: UIViewController {
+    private enum LaunchState {
+        case connecting
+        case connected
+        case failed(String)
+    }
+
     let baseURL: URL
 
     private unowned let coordinator: AppCoordinator
@@ -424,6 +430,11 @@ private final class UncleDocShellViewController: UIViewController {
     private let sidebarViewController = SidebarViewController()
     private let contentContainerView = UIView()
     private let dimmingButton = UIButton(type: .system)
+    private let launchOverlayView = UIView()
+    private let launchSpinner = UIActivityIndicatorView(style: .large)
+    private let launchTitleLabel = UILabel()
+    private let launchMessageLabel = UILabel()
+    private let launchActionsStackView = UIStackView()
     private let compactSidebarWidth: CGFloat = 304
     private let regularSidebarWidth: CGFloat = 286
     private var sidebarLeadingConstraint: NSLayoutConstraint?
@@ -433,6 +444,7 @@ private final class UncleDocShellViewController: UIViewController {
     private var didStartNavigator = false
     private var isSidebarPresented = false
     private var currentURL: URL?
+    private var launchState: LaunchState = .connecting
 
     init(baseURL: URL, coordinator: AppCoordinator) {
         self.baseURL = baseURL
@@ -454,6 +466,7 @@ private final class UncleDocShellViewController: UIViewController {
         }
         setupSidebar()
         setupContentContainer()
+        setupLaunchOverlay()
         setupGestures()
         refreshChrome()
 
@@ -482,6 +495,11 @@ private final class UncleDocShellViewController: UIViewController {
         configureNavigationBarAppearance()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigator.rootViewController.setNavigationBarHidden(true, animated: false)
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         refreshChrome()
@@ -495,6 +513,7 @@ private final class UncleDocShellViewController: UIViewController {
     }
 
     func reloadCurrentPage() {
+        updateLaunchOverlay(for: .connecting)
         navigator.reload()
     }
 
@@ -505,6 +524,7 @@ private final class UncleDocShellViewController: UIViewController {
 
     func syncSelection(with url: URL) {
         currentURL = url
+        updateLaunchOverlay(for: .connected)
         sidebarViewController.updateSelection(for: AppDestination.bestMatch(for: url, baseURL: baseURL), currentURL: url)
         updateNavigationButtons()
     }
@@ -580,7 +600,7 @@ private final class UncleDocShellViewController: UIViewController {
 
     private func setupContentContainer() {
         contentContainerView.translatesAutoresizingMaskIntoConstraints = false
-        contentContainerView.backgroundColor = .systemBackground
+        contentContainerView.backgroundColor = UIColor(red: 0.98, green: 0.97, blue: 0.94, alpha: 1)
         contentContainerView.clipsToBounds = true
 
         view.addSubview(contentContainerView)
@@ -608,6 +628,78 @@ private final class UncleDocShellViewController: UIViewController {
         navigator.rootViewController.didMove(toParent: self)
     }
 
+    private func setupLaunchOverlay() {
+        launchOverlayView.translatesAutoresizingMaskIntoConstraints = false
+        launchOverlayView.backgroundColor = UIColor(red: 0.98, green: 0.97, blue: 0.94, alpha: 1)
+
+        let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialLight))
+        blurView.translatesAutoresizingMaskIntoConstraints = false
+        blurView.layer.cornerRadius = 28
+        blurView.layer.cornerCurve = .continuous
+        blurView.clipsToBounds = true
+
+        let panelView = UIView()
+        panelView.translatesAutoresizingMaskIntoConstraints = false
+
+        launchSpinner.translatesAutoresizingMaskIntoConstraints = false
+        launchSpinner.hidesWhenStopped = true
+        launchSpinner.color = .darkGray
+
+        launchTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        launchTitleLabel.font = .systemFont(ofSize: 24, weight: .black)
+        launchTitleLabel.textColor = .label
+        launchTitleLabel.textAlignment = .center
+        launchTitleLabel.numberOfLines = 0
+
+        launchMessageLabel.translatesAutoresizingMaskIntoConstraints = false
+        launchMessageLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        launchMessageLabel.textColor = .secondaryLabel
+        launchMessageLabel.textAlignment = .center
+        launchMessageLabel.numberOfLines = 0
+
+        launchActionsStackView.translatesAutoresizingMaskIntoConstraints = false
+        launchActionsStackView.axis = .vertical
+        launchActionsStackView.spacing = 12
+
+        contentContainerView.addSubview(launchOverlayView)
+        launchOverlayView.addSubview(blurView)
+        blurView.contentView.addSubview(panelView)
+        panelView.addSubview(launchSpinner)
+        panelView.addSubview(launchTitleLabel)
+        panelView.addSubview(launchMessageLabel)
+        panelView.addSubview(launchActionsStackView)
+
+        NSLayoutConstraint.activate([
+            launchOverlayView.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor),
+            launchOverlayView.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor),
+            launchOverlayView.topAnchor.constraint(equalTo: contentContainerView.topAnchor),
+            launchOverlayView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor),
+            blurView.centerXAnchor.constraint(equalTo: launchOverlayView.centerXAnchor),
+            blurView.centerYAnchor.constraint(equalTo: launchOverlayView.centerYAnchor),
+            blurView.leadingAnchor.constraint(greaterThanOrEqualTo: launchOverlayView.leadingAnchor, constant: 24),
+            blurView.trailingAnchor.constraint(lessThanOrEqualTo: launchOverlayView.trailingAnchor, constant: -24),
+            blurView.widthAnchor.constraint(lessThanOrEqualToConstant: 360),
+            panelView.leadingAnchor.constraint(equalTo: blurView.contentView.leadingAnchor, constant: 24),
+            panelView.trailingAnchor.constraint(equalTo: blurView.contentView.trailingAnchor, constant: -24),
+            panelView.topAnchor.constraint(equalTo: blurView.contentView.topAnchor, constant: 24),
+            panelView.bottomAnchor.constraint(equalTo: blurView.contentView.bottomAnchor, constant: -24),
+            launchSpinner.centerXAnchor.constraint(equalTo: panelView.centerXAnchor),
+            launchSpinner.topAnchor.constraint(equalTo: panelView.topAnchor),
+            launchTitleLabel.leadingAnchor.constraint(equalTo: panelView.leadingAnchor),
+            launchTitleLabel.trailingAnchor.constraint(equalTo: panelView.trailingAnchor),
+            launchTitleLabel.topAnchor.constraint(equalTo: launchSpinner.bottomAnchor, constant: 18),
+            launchMessageLabel.leadingAnchor.constraint(equalTo: panelView.leadingAnchor),
+            launchMessageLabel.trailingAnchor.constraint(equalTo: panelView.trailingAnchor),
+            launchMessageLabel.topAnchor.constraint(equalTo: launchTitleLabel.bottomAnchor, constant: 10),
+            launchActionsStackView.leadingAnchor.constraint(equalTo: panelView.leadingAnchor),
+            launchActionsStackView.trailingAnchor.constraint(equalTo: panelView.trailingAnchor),
+            launchActionsStackView.topAnchor.constraint(equalTo: launchMessageLabel.bottomAnchor, constant: 20),
+            launchActionsStackView.bottomAnchor.constraint(equalTo: panelView.bottomAnchor)
+        ])
+
+        updateLaunchOverlay(for: .connecting)
+    }
+
     private func setupGestures() {
         let edgePan = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleEdgePan(_:)))
         edgePan.edges = .left
@@ -615,26 +707,7 @@ private final class UncleDocShellViewController: UIViewController {
     }
 
     private func updateNavigationButtons() {
-        guard let topViewController = navigator.rootViewController.topViewController else {
-            return
-        }
-
-        topViewController.navigationItem.title = nil
-        topViewController.navigationItem.backButtonTitle = ""
-
-        if isCompactLayout {
-            topViewController.navigationItem.leftItemsSupplementBackButton = true
-            topViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(
-                image: UIImage(systemName: "sidebar.leading"),
-                style: .plain,
-                target: self,
-                action: #selector(didTapSidebarButton)
-            )
-        } else {
-            topViewController.navigationItem.leftBarButtonItem = nil
-        }
-
-        topViewController.navigationItem.rightBarButtonItem = nil
+        navigator.rootViewController.setNavigationBarHidden(true, animated: false)
     }
 
     private func configureNavigationBarAppearance() {
@@ -652,6 +725,64 @@ private final class UncleDocShellViewController: UIViewController {
         navigationBar.compactScrollEdgeAppearance = appearance
         navigationBar.isTranslucent = false
         navigator.rootViewController.navigationBar.prefersLargeTitles = false
+        navigator.rootViewController.setNavigationBarHidden(true, animated: false)
+    }
+
+    private func updateLaunchOverlay(for state: LaunchState) {
+        launchState = state
+        launchActionsStackView.arrangedSubviews.forEach { view in
+            launchActionsStackView.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+
+        switch state {
+        case .connecting:
+            launchOverlayView.isHidden = false
+            launchOverlayView.alpha = 1
+            launchSpinner.startAnimating()
+            launchTitleLabel.text = "Connecting to UncleDoc"
+            launchMessageLabel.text = baseURL.host.map { "Opening \($0) and waiting for the first page..." } ?? baseURL.absoluteString
+            launchActionsStackView.addArrangedSubview(makeLaunchActionButton(title: "Change Server", systemImageName: "server.rack") { [weak self] in
+                self?.coordinator.resetServerURL()
+            })
+        case .connected:
+            launchSpinner.stopAnimating()
+            UIView.animate(withDuration: 0.2, animations: {
+                self.launchOverlayView.alpha = 0
+            }, completion: { _ in
+                self.launchOverlayView.isHidden = true
+                self.launchOverlayView.alpha = 1
+            })
+        case .failed(let message):
+            launchOverlayView.isHidden = false
+            launchOverlayView.alpha = 1
+            launchSpinner.stopAnimating()
+            launchTitleLabel.text = "Connection Problem"
+            launchMessageLabel.text = message
+            launchActionsStackView.addArrangedSubview(makeLaunchActionButton(title: "Reload", systemImageName: "arrow.clockwise") { [weak self] in
+                self?.updateLaunchOverlay(for: .connecting)
+                self?.reloadCurrentPage()
+            })
+            launchActionsStackView.addArrangedSubview(makeLaunchActionButton(title: "Change Server", systemImageName: "server.rack") { [weak self] in
+                self?.coordinator.resetServerURL()
+            })
+        }
+    }
+
+    private func makeLaunchActionButton(title: String, systemImageName: String, action: @escaping () -> Void) -> UIButton {
+        let button = UIButton(type: .system)
+        var configuration = UIButton.Configuration.filled()
+        configuration.title = title
+        configuration.image = UIImage(systemName: systemImageName)
+        configuration.imagePlacement = .leading
+        configuration.imagePadding = 10
+        configuration.cornerStyle = .large
+        configuration.baseBackgroundColor = .black
+        configuration.baseForegroundColor = .white
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16)
+        button.configuration = configuration
+        button.addAction(UIAction { _ in action() }, for: .touchUpInside)
+        return button
     }
 
     private func setSidebarVisible(_ visible: Bool, animated: Bool) {
@@ -754,6 +885,8 @@ extension UncleDocShellViewController: NavigatorDelegate {
             guard let self else {
                 return
             }
+
+            self.updateLaunchOverlay(for: .failed(error.localizedDescription))
 
             if self.isCompactLayout {
                 self.setSidebarVisible(true, animated: true)
