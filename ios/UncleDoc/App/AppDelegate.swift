@@ -5,6 +5,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        HealthKitSyncService.shared.registerBackgroundTasks()
         return true
+    }
+
+    func applicationDidEnterBackground(_ application: UIApplication) {
+        HealthKitSyncService.shared.scheduleBackgroundTasks()
     }
 }

@@ -134,6 +134,12 @@ struct HealthRecordPreview: Identifiable, Sendable {
     }
 }
 
+struct HealthKitSyncBatch: Sendable {
+    let records: [HealthKitRecordPayload]
+    let anchorData: Data?
+    let hasMore: Bool
+}
+
 enum HealthRecordXMLExporter {
     static func exportXML(records: [HealthRecordPreview], limit: Int = 100) -> String {
         let formatter = ISO8601DateFormatter()
@@ -208,6 +214,10 @@ final class HealthKitManager: @unchecked Sendable {
         HKQuantityTypeIdentifier.heartRate.rawValue
     ]
 
+    var syncableSampleTypes: [HKSampleType] {
+        sampleTypes
+    }
+
     var isAvailable: Bool {
         HKHealthStore.isHealthDataAvailable()
     }
@@ -218,6 +228,79 @@ final class HealthKitManager: @unchecked Sendable {
         }
 
         try await healthStore.requestAuthorization(toShare: [], read: readTypes)
+    }
+
+    func estimateInitialRecordCount() async throws -> Int {
+        guard isAvailable else {
+            throw HealthKitManagerError.notAvailable
+        }
+
+        let counts = await withTaskGroup(of: Int.self) { group in
+            for sampleType in sampleTypes {
+                group.addTask { [healthStore] in
+                    do {
+                        if sampleType is HKSeriesType {
+                            return 0
+                        }
+
+                        return try await Self.countRecords(for: sampleType, healthStore: healthStore)
+                    } catch {
+                        return 0
+                    }
+                }
+            }
+
+            var total = 0
+            for await count in group {
+                total += count
+            }
+            return total
+        }
+
+        return counts + HealthKitCoverage.characteristicIdentifiers.count
+    }
+
+    func characteristicSyncRecords(deviceID: String) -> [HealthKitRecordPayload] {
+        let baseDate = Date(timeIntervalSince1970: 0).ISO8601Format()
+
+        return Self.fetchCharacteristicRecords(healthStore: healthStore).map { record in
+            HealthKitRecordPayload(
+                externalID: "\(deviceID)-\(record.title)",
+                recordType: record.title,
+                sourceName: "HealthKit Characteristic",
+                startAt: baseDate,
+                endAt: nil,
+                payload: [
+                    "title": record.title,
+                    "raw_text": record.rawText,
+                    "device_id": deviceID,
+                    "kind": "characteristic"
+                ]
+            )
+        }
+    }
+
+    func fetchAnchoredBatch(for sampleType: HKSampleType, anchorData: Data?, limit: Int) async throws -> HealthKitSyncBatch {
+        guard isAvailable else {
+            throw HealthKitManagerError.notAvailable
+        }
+
+        let anchor = anchorData.flatMap(Self.decodeAnchor)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKAnchoredObjectQuery(type: sampleType, predicate: nil, anchor: anchor, limit: limit, resultsHandler: { _, samples, _, newAnchor, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+
+                let records = (samples ?? []).compactMap(Self.makeSyncPayload(from:))
+                let encodedAnchor = newAnchor.flatMap(Self.encodeAnchor)
+                continuation.resume(returning: HealthKitSyncBatch(records: records, anchorData: encodedAnchor, hasMore: (samples ?? []).count >= limit))
+            })
+
+            healthStore.execute(query)
+        }
     }
 
     func loadRecentRecords(limit: Int = 20, maxPerType: Int = 2) async throws -> [HealthRecordPreview] {
@@ -331,11 +414,11 @@ final class HealthKitManager: @unchecked Sendable {
 
     private static func fetchCharacteristicRecords(healthStore: HKHealthStore) -> [HealthRecordPreview] {
         var records: [HealthRecordPreview] = []
-        let now = Date()
+        let stableDate = Date(timeIntervalSince1970: 0)
 
         func append(_ title: String, value: String?) {
             guard let value else { return }
-            records.append(HealthRecordPreview(title: title, rawText: value, startDate: now, endDate: nil))
+            records.append(HealthRecordPreview(title: title, rawText: value, startDate: stableDate, endDate: nil))
         }
 
         do {
@@ -512,6 +595,71 @@ final class HealthKitManager: @unchecked Sendable {
 
         let prefix = value.prefix(limit)
         return "\(prefix)\n... [truncated \(field), total chars: \(value.count)]"
+    }
+
+    private static func countRecords(for sampleType: HKSampleType, healthStore: HKHealthStore) async throws -> Int {
+        try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: sampleType, predicate: nil, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: samples?.count ?? 0)
+                }
+            }
+
+            healthStore.execute(query)
+        }
+    }
+
+    private static func makeSyncPayload(from sample: HKSample) -> HealthKitRecordPayload? {
+        let sourceName = sample.sourceRevision.source.name
+        let payload = syncPayloadFields(for: sample)
+
+        return HealthKitRecordPayload(
+            externalID: sample.uuid.uuidString,
+            recordType: sample.sampleType.identifier,
+            sourceName: sourceName,
+            startAt: sample.startDate.ISO8601Format(),
+            endAt: sample.endDate.ISO8601Format(),
+            payload: payload
+        )
+    }
+
+    private static func syncPayloadFields(for sample: HKSample) -> [String: String] {
+        var payload: [String: String] = [
+            "type": sample.sampleType.identifier,
+            "uuid": sample.uuid.uuidString,
+            "start_date": sample.startDate.ISO8601Format(),
+            "end_date": sample.endDate.ISO8601Format(),
+            "device": String(describing: sample.device),
+            "source_name": sample.sourceRevision.source.name,
+            "source_bundle_identifier": sample.sourceRevision.source.bundleIdentifier,
+            "source_version": sample.sourceRevision.version ?? "",
+            "product_type": sample.sourceRevision.productType ?? "",
+            "raw_text": rawDump(for: sample)
+        ]
+
+        if let quantitySample = sample as? HKQuantitySample {
+            payload["quantity"] = String(describing: quantitySample.quantity)
+        }
+
+        if let categorySample = sample as? HKCategorySample {
+            payload["value"] = String(categorySample.value)
+        }
+
+        if let metadata = sample.metadata, !metadata.isEmpty {
+            payload["metadata"] = clipped(String(describing: metadata), field: "metadata")
+        }
+
+        return payload
+    }
+
+    private static func encodeAnchor(_ anchor: HKQueryAnchor) -> Data? {
+        try? NSKeyedArchiver.archivedData(withRootObject: anchor, requiringSecureCoding: true)
+    }
+
+    private static func decodeAnchor(_ data: Data) -> HKQueryAnchor? {
+        try? NSKeyedUnarchiver.unarchivedObject(ofClass: HKQueryAnchor.self, from: data)
     }
 }
 

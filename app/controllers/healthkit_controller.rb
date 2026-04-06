@@ -19,7 +19,7 @@ class HealthkitController < ApplicationController
         last_successful_sync_at: sync&.last_successful_sync_at,
         synced_record_count: sync&.synced_record_count.to_i,
         last_error: sync&.last_error,
-        details: sync&.details || {}
+        details: stringify_details(sync&.details || {})
       }
     }
   end
@@ -51,7 +51,7 @@ class HealthkitController < ApplicationController
         last_successful_sync_at: sync.last_successful_sync_at,
         synced_record_count: sync.synced_record_count,
         last_error: sync.last_error,
-        details: sync.details
+        details: stringify_details(sync.details)
       }
     }
   end
@@ -101,11 +101,15 @@ class HealthkitController < ApplicationController
 
   def sync_details_payload
     {}.tap do |details|
-      details[:phase] = params[:phase] if params[:phase].present?
-      details[:sample_type] = params[:sample_type] if params[:sample_type].present?
-      details[:batch_count] = params[:batch_count].to_i if params[:batch_count].present?
-      details[:estimated_total_count] = params[:estimated_total_count].to_i if params[:estimated_total_count].present?
-      details[:initial_sync_completed] = ActiveModel::Type::Boolean.new.cast(params[:initial_sync_completed]) if params.key?(:initial_sync_completed)
+      details[:phase] = params[:phase].to_s if params[:phase].present?
+      details[:sample_type] = params[:sample_type].to_s if params[:sample_type].present?
+      details[:batch_count] = params[:batch_count].to_s if params[:batch_count].present?
+      details[:estimated_total_count] = params[:estimated_total_count].to_s if params[:estimated_total_count].present?
+      details[:initial_sync_completed] = ActiveModel::Type::Boolean.new.cast(params[:initial_sync_completed]).to_s if params.key?(:initial_sync_completed)
     end
+  end
+
+  def stringify_details(details)
+    details.transform_values(&:to_s)
   end
 end
