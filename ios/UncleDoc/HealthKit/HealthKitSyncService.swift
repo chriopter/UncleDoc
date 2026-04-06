@@ -9,6 +9,8 @@ struct HealthKitSyncConfiguration: Codable, Sendable {
     var initialSyncCompleted = false
     var lastSuccessfulSyncAt: Date?
     var estimatedRecordCount: Int?
+    var estimatedRecordCountVersion: String?
+    var syncedRecordCount = 0
     var currentSampleTypeIdentifier: String?
     var sampleTypeAnchors: [String: Data] = [:]
 }
@@ -32,9 +34,27 @@ struct HealthKitSyncSnapshot: Sendable {
     var selectedPersonUUID: String?
     var selectedPersonName: String?
     var estimatedRecordCount: Int?
+    var syncedRecordCount: Int
     var lastSuccessfulSyncAt: Date?
     var currentSampleTypeIdentifier: String?
     var lastError: String?
+
+    var personSelected: Bool {
+        selectedPersonUUID != nil
+    }
+
+    var accessReady: Bool {
+        estimatedRecordCount != nil || [.confirming, .initialSyncing, .incrementalSyncing, .synced].contains(phase)
+    }
+
+    var syncCompleted: Bool {
+        phase == .synced || lastSuccessfulSyncAt != nil
+    }
+
+    var progressText: String? {
+        guard let estimatedRecordCount, estimatedRecordCount > 0 else { return nil }
+        return "\(min(syncedRecordCount, estimatedRecordCount)) / \(estimatedRecordCount) records synced"
+    }
 }
 
 @MainActor
@@ -43,6 +63,7 @@ final class HealthKitSyncService: ObservableObject {
 
     private static let refreshTaskIdentifier = "com.uncledoc.healthkit.refresh"
     private static let processingTaskIdentifier = "com.uncledoc.healthkit.processing"
+    private static let syncEstimateSchemaVersion = "3"
 
     @Published private(set) var snapshot = HealthKitSyncSnapshot(
         phase: .notConfigured,
@@ -51,6 +72,7 @@ final class HealthKitSyncService: ObservableObject {
         selectedPersonUUID: nil,
         selectedPersonName: nil,
         estimatedRecordCount: nil,
+        syncedRecordCount: 0,
         lastSuccessfulSyncAt: nil,
         currentSampleTypeIdentifier: nil,
         lastError: nil
@@ -69,6 +91,7 @@ final class HealthKitSyncService: ObservableObject {
     }
 
     func bootstrap() {
+        invalidateEstimatedCountIfNeeded()
         refreshSnapshot(statusOverride: nil)
         Task {
             await loadAvailablePeopleIfNeeded()
@@ -119,6 +142,7 @@ final class HealthKitSyncService: ObservableObject {
         config.lastSuccessfulSyncAt = nil
         config.estimatedRecordCount = nil
         config.currentSampleTypeIdentifier = nil
+        config.syncedRecordCount = 0
         config.sampleTypeAnchors = [:]
         configuration = config
         refreshSnapshot(statusOverride: nil)
@@ -159,6 +183,10 @@ final class HealthKitSyncService: ObservableObject {
         await performIncrementalSync(trigger: "foreground")
     }
 
+    func loadDebugTypeCounts() async throws -> [(String, Int)] {
+        try await healthKitManager.estimateSyncTypeCounts()
+    }
+
     private func refreshRemoteStatusIfPossible() async {
         guard let personUUID = configuration.selectedPersonUUID else { return }
 
@@ -166,6 +194,7 @@ final class HealthKitSyncService: ObservableObject {
             let status = try await apiClient.fetchSyncStatus(personUUID: personUUID)
             var config = configuration
             config.lastSuccessfulSyncAt = status.sync.lastSuccessfulSyncAt ?? status.sync.lastSyncedAt ?? config.lastSuccessfulSyncAt
+            config.syncedRecordCount = status.sync.syncedRecordCount
             if let personName = status.person.name as String? {
                 config.selectedPersonName = personName
             }
@@ -174,6 +203,24 @@ final class HealthKitSyncService: ObservableObject {
         } catch {
             // Keep local state as source of truth if the server status call fails.
         }
+    }
+
+    private func invalidateEstimatedCountIfNeeded() {
+        var config = configuration
+        guard config.estimatedRecordCountVersion != currentEstimateVersion else {
+            return
+        }
+
+        config.estimatedRecordCount = nil
+        config.estimatedRecordCountVersion = currentEstimateVersion
+        config.syncedRecordCount = 0
+        configuration = config
+    }
+
+    private var currentEstimateVersion: String {
+        let shortVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
+        let buildVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
+        return "\(shortVersion)-\(buildVersion)-sync-\(Self.syncEstimateSchemaVersion)"
     }
 
     private func prepareInitialSyncConfirmationAndStart(forceReestimate: Bool = false) async {
@@ -187,7 +234,10 @@ final class HealthKitSyncService: ObservableObject {
         var config = configuration
         if forceReestimate || config.estimatedRecordCount == nil {
             do {
-                config.estimatedRecordCount = try await healthKitManager.estimateInitialRecordCount()
+                let rawCount = try await healthKitManager.estimateInitialRecordCount()
+                let dailyAggregateCount = try await healthKitManager.estimateDailyAggregateCount()
+                config.estimatedRecordCount = rawCount + dailyAggregateCount
+                config.estimatedRecordCountVersion = currentEstimateVersion
                 configuration = config
             } catch {
                 refreshSnapshot(statusOverride: error.localizedDescription, phase: .failed)
@@ -211,6 +261,11 @@ final class HealthKitSyncService: ObservableObject {
             let characteristicRecords = healthKitManager.characteristicSyncRecords(deviceID: deviceID)
             if !characteristicRecords.isEmpty {
                 try await upload(records: characteristicRecords, status: "syncing", phase: "characteristics", sampleType: "characteristics", completed: false)
+            }
+
+            let aggregateRecords = try await healthKitManager.fetchDailyAggregateRecords(from: .distantPast, to: Date())
+            for chunk in aggregateRecords.chunked(into: 250) {
+                try await upload(records: chunk, status: "syncing", phase: trigger, sampleType: "daily_aggregates", completed: false)
             }
 
             for sampleType in healthKitManager.syncableSampleTypes {
@@ -268,6 +323,12 @@ final class HealthKitSyncService: ObservableObject {
                 try await upload(records: characteristicRecords, status: "syncing", phase: trigger, sampleType: "characteristics", completed: false)
             }
 
+            let aggregateStartDate = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+            let aggregateRecords = try await healthKitManager.fetchDailyAggregateRecords(from: aggregateStartDate, to: Date())
+            for chunk in aggregateRecords.chunked(into: 250) {
+                try await upload(records: chunk, status: "syncing", phase: trigger, sampleType: "daily_aggregates", completed: false)
+            }
+
             for sampleType in healthKitManager.syncableSampleTypes {
                 refreshSnapshot(statusOverride: "Checking \(sampleType.identifier)...", phase: .incrementalSyncing, currentSampleTypeIdentifier: sampleType.identifier)
                 let anchorData = configuration.sampleTypeAnchors[sampleType.identifier]
@@ -323,6 +384,7 @@ final class HealthKitSyncService: ObservableObject {
 
         var config = configuration
         config.lastSuccessfulSyncAt = sync.lastSuccessfulSyncAt ?? sync.lastSyncedAt ?? config.lastSuccessfulSyncAt
+        config.syncedRecordCount = sync.syncedRecordCount
         configuration = config
     }
 
@@ -336,6 +398,7 @@ final class HealthKitSyncService: ObservableObject {
             selectedPersonUUID: config.selectedPersonUUID,
             selectedPersonName: config.selectedPersonName,
             estimatedRecordCount: config.estimatedRecordCount,
+            syncedRecordCount: config.syncedRecordCount,
             lastSuccessfulSyncAt: config.lastSuccessfulSyncAt,
             currentSampleTypeIdentifier: currentSampleTypeIdentifier ?? config.currentSampleTypeIdentifier,
             lastError: currentPhase == .failed ? statusOverride : nil
@@ -454,6 +517,16 @@ enum HealthKitSyncError: LocalizedError {
         switch self {
         case .personNotSelected:
             return "Choose a person before syncing HealthKit data."
+        }
+    }
+}
+
+private extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        guard size > 0 else { return [self] }
+
+        return stride(from: 0, to: count, by: size).map { index in
+            Array(self[index..<Swift.min(index + size, count)])
         }
     }
 }

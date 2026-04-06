@@ -70,6 +70,13 @@
                                 <%= item[:label] %>
                               <% end %>
                             <% end %>
+                            <% if native_app_request? && group[:label] == t("nav.data") %>
+                              <div data-native-menu-slot="data-mobile" class="hidden mt-1 space-y-0.5"></div>
+                            <% end %>
+                          </div>
+                        <% elsif native_app_request? && group[:label] == t("nav.data") %>
+                          <div class="mt-1 border-l border-amber-200/80 pl-7">
+                            <div data-native-menu-slot="data-mobile" class="hidden space-y-0.5"></div>
                           </div>
                         <% end %>
                       </div>
@@ -199,6 +206,12 @@
                         </span>
                         <span><%= item[:label] %></span>
                       </span>
+                    <% end %>
+
+                    <% if native_app_request? && item[:label] == t("nav.data") %>
+                      <div class="ml-11 mt-1">
+                        <div data-native-menu-slot="data-desktop" class="hidden space-y-0.5"></div>
+                      </div>
                     <% end %>
                   <% end %>
                 <% end %>
