@@ -67,6 +67,7 @@ final class HealthKitSyncService: ObservableObject {
     private static let refreshTaskIdentifier = "com.uncledoc.healthkit.refresh"
     private static let processingTaskIdentifier = "com.uncledoc.healthkit.processing"
     private static let syncEstimateSchemaVersion = "4"
+    private static let syncBatchSize = 1000
 
     @Published private(set) var snapshot = HealthKitSyncSnapshot(
         phase: .notConfigured,
@@ -105,11 +106,15 @@ final class HealthKitSyncService: ObservableObject {
 
     func registerBackgroundTasks() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.refreshTaskIdentifier, using: nil) { task in
-            self.handleAppRefresh(task: task as! BGAppRefreshTask)
+            Task { @MainActor in
+                self.handleAppRefresh(task: task as! BGAppRefreshTask)
+            }
         }
 
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.processingTaskIdentifier, using: nil) { task in
-            self.handleProcessing(task: task as! BGProcessingTask)
+            Task { @MainActor in
+                self.handleProcessing(task: task as! BGProcessingTask)
+            }
         }
     }
 
@@ -291,7 +296,7 @@ final class HealthKitSyncService: ObservableObject {
 
                 while true {
                     refreshSnapshot(statusOverride: "Syncing \(sampleType.identifier)...", phase: .initialSyncing, currentSampleTypeIdentifier: sampleType.identifier)
-                    let batch = try await healthKitManager.fetchAnchoredBatch(for: sampleType, anchorData: localAnchor, limit: 250)
+                    let batch = try await healthKitManager.fetchAnchoredBatch(for: sampleType, anchorData: localAnchor, limit: Self.syncBatchSize)
                     localAnchor = batch.anchorData
 
                     if !batch.records.isEmpty {
@@ -348,7 +353,7 @@ final class HealthKitSyncService: ObservableObject {
             for sampleType in healthKitManager.syncableSampleTypes {
                 refreshSnapshot(statusOverride: "Checking \(sampleType.identifier)...", phase: .incrementalSyncing, currentSampleTypeIdentifier: sampleType.identifier)
                 let anchorData = configuration.sampleTypeAnchors[sampleType.identifier]
-                let batch = try await healthKitManager.fetchAnchoredBatch(for: sampleType, anchorData: anchorData, limit: 250)
+                let batch = try await healthKitManager.fetchAnchoredBatch(for: sampleType, anchorData: anchorData, limit: Self.syncBatchSize)
 
                 if !batch.records.isEmpty {
                     try await upload(records: batch.records, status: "syncing", phase: trigger, sampleType: sampleType.identifier, completed: false)
