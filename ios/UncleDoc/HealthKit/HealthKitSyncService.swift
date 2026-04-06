@@ -397,7 +397,7 @@ final class HealthKitSyncService: ObservableObject {
         )
 
         var config = configuration
-        if records.any? {
+        if !records.isEmpty {
             config.currentSyncUploadedCount += records.count
         }
         config.lastSuccessfulSyncAt = sync.lastSuccessfulSyncAt ?? sync.lastSyncedAt ?? config.lastSuccessfulSyncAt
