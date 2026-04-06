@@ -2,7 +2,7 @@ import Foundation
 import HealthKit
 
 private enum HealthKitCoverage {
-    // Review and extend these lists here when adding more public HealthKit coverage.
+    // Stable normal-app HealthKit coverage. Keep this list explicit and reviewable.
 
     static let characteristicIdentifiers: [HKCharacteristicTypeIdentifier] = [
         .activityMoveMode,
@@ -66,7 +66,11 @@ private enum HealthKitCoverage {
         (
             name: "Nutrition",
             identifiers: [
+                .dietaryCarbohydrates,
                 .dietaryEnergyConsumed,
+                .dietaryFatTotal,
+                .dietaryProtein,
+                .dietarySugar,
                 .dietaryWater
             ]
         )
@@ -76,6 +80,7 @@ private enum HealthKitCoverage {
         (
             name: "Activity and Environment",
             identifiers: [
+                .appleWalkingSteadinessEvent,
                 .appleStandHour,
                 .highHeartRateEvent,
                 .irregularHeartRhythmEvent,
@@ -87,6 +92,7 @@ private enum HealthKitCoverage {
         (
             name: "Sleep and Mindfulness",
             identifiers: [
+                .environmentalAudioExposureEvent,
                 .mindfulSession,
                 .sleepAnalysis
             ]
@@ -103,9 +109,12 @@ private enum HealthKitCoverage {
         HKObjectType.workoutType(),
         HKObjectType.audiogramSampleType(),
         HKObjectType.electrocardiogramType(),
-        HKSeriesType.workoutRoute(),
-        HKSeriesType.heartbeat(),
         HKObjectType.stateOfMindType()
+    ]
+
+    static let seriesTypes: [HKSeriesType] = [
+        HKSeriesType.workoutRoute(),
+        HKSeriesType.heartbeat()
     ]
 }
 
@@ -131,6 +140,7 @@ final class HealthKitManager: @unchecked Sendable {
     private let healthStore = HKHealthStore()
 
     private lazy var characteristicTypes: [HKCharacteristicType] = HealthKitCoverage.characteristicIdentifiers.compactMap(HKCharacteristicType.init)
+    private lazy var seriesTypes: [HKSeriesType] = HealthKitCoverage.seriesTypes
 
     private lazy var sampleTypes: [HKSampleType] = {
         var types: [HKSampleType] = []
@@ -148,6 +158,7 @@ final class HealthKitManager: @unchecked Sendable {
         }
 
         types.append(contentsOf: HealthKitCoverage.specialSampleTypes)
+        types.append(contentsOf: seriesTypes)
 
         return Array(Set(types)).sorted { $0.identifier < $1.identifier }
     }()
@@ -180,6 +191,10 @@ final class HealthKitManager: @unchecked Sendable {
             for sampleType in sampleTypes {
                 group.addTask { [healthStore] in
                     do {
+                        if sampleType is HKSeriesType {
+                            return []
+                        }
+
                         return try await Self.fetchRecords(for: sampleType, healthStore: healthStore, limit: perTypeLimit)
                     } catch {
                         return []
@@ -278,7 +293,94 @@ final class HealthKitManager: @unchecked Sendable {
     }
 
     private static func rawDump(for sample: HKSample) -> String {
-        var lines: [String] = [
+        var sections: [[String]] = [
+            baseLines(for: sample)
+        ]
+
+        if let quantitySample = sample as? HKQuantitySample {
+            sections.append([
+                "quantityType: quantity",
+                "quantity: \(quantitySample.quantity)"
+            ])
+        }
+
+        if let categorySample = sample as? HKCategorySample {
+            sections.append([
+                "sampleKind: category",
+                "value: \(categorySample.value)"
+            ])
+        }
+
+        if let workout = sample as? HKWorkout {
+            sections.append([
+                "sampleKind: workout",
+                "activityType: \(workout.workoutActivityType.rawValue)",
+                "duration: \(workout.duration)",
+                "totalDistance: \(String(describing: workout.totalDistance))",
+                "workoutEvents.count: \(workout.workoutEvents?.count ?? 0)"
+            ])
+        }
+
+        if let audiogram = sample as? HKAudiogramSample {
+            sections.append([
+                "sampleKind: audiogram",
+                "sensitivityPoints.count: \(audiogram.sensitivityPoints.count)",
+                "sensitivityPoints: \(clipped(String(describing: audiogram.sensitivityPoints), field: "sensitivityPoints"))"
+            ])
+        }
+
+        if let electrocardiogram = sample as? HKElectrocardiogram {
+            sections.append([
+                "sampleKind: electrocardiogram",
+                "numberOfVoltageMeasurements: \(electrocardiogram.numberOfVoltageMeasurements)",
+                "samplingFrequency: \(String(describing: electrocardiogram.samplingFrequency))",
+                "classification: \(electrocardiogram.classification.rawValue)",
+                "averageHeartRate: \(String(describing: electrocardiogram.averageHeartRate))",
+                "symptomsStatus: \(electrocardiogram.symptomsStatus.rawValue)"
+            ])
+        }
+
+        if let stateOfMind = sample as? HKStateOfMind {
+            sections.append([
+                "sampleKind: stateOfMind",
+                clipped(String(describing: stateOfMind), field: "stateOfMind")
+            ])
+        }
+
+        if let heartbeatSeries = sample as? HKHeartbeatSeriesSample {
+            sections.append([
+                "sampleKind: heartbeatSeries",
+                "heartbeatSeries.count: \(heartbeatSeries.count)"
+            ])
+        }
+
+        if let workoutRoute = sample as? HKWorkoutRoute {
+            sections.append([
+                "sampleKind: workoutRoute",
+                clipped(String(describing: workoutRoute), field: "workoutRoute")
+            ])
+        }
+
+        if let metadata = sample.metadata, !metadata.isEmpty {
+            sections.append([
+                "metadata: \(clipped(String(describing: metadata), field: "metadata"))"
+            ])
+        }
+
+        sections.append([
+            "debug: \(clipped(String(describing: sample), field: "debug"))"
+        ])
+
+        return clipped(
+            sections
+                .map { $0.joined(separator: "\n") }
+                .joined(separator: "\n\n"),
+            field: "sample"
+        )
+    }
+
+    private static func baseLines(for sample: HKSample) -> [String] {
+        [
             "type: \(sample.sampleType.identifier)",
             "uuid: \(sample.uuid.uuidString)",
             "startDate: \(sample.startDate.ISO8601Format())",
@@ -289,55 +391,6 @@ final class HealthKitManager: @unchecked Sendable {
             "source.version: \(sample.sourceRevision.version ?? "-")",
             "productType: \(sample.sourceRevision.productType ?? "-")"
         ]
-
-        if let quantitySample = sample as? HKQuantitySample {
-            lines.append("quantity: \(quantitySample.quantity)")
-        }
-
-        if let categorySample = sample as? HKCategorySample {
-            lines.append("value: \(categorySample.value)")
-        }
-
-        if let workout = sample as? HKWorkout {
-            lines.append("activityType: \(workout.workoutActivityType.rawValue)")
-            lines.append("duration: \(workout.duration)")
-            if let totalDistance = workout.totalDistance {
-                lines.append("totalDistance: \(totalDistance)")
-            }
-            lines.append("workoutEvents.count: \(workout.workoutEvents?.count ?? 0)")
-        }
-
-        if let audiogram = sample as? HKAudiogramSample {
-            lines.append("sensitivityPoints.count: \(audiogram.sensitivityPoints.count)")
-            lines.append("sensitivityPoints: \(audiogram.sensitivityPoints)")
-        }
-
-        if let electrocardiogram = sample as? HKElectrocardiogram {
-            lines.append("numberOfVoltageMeasurements: \(electrocardiogram.numberOfVoltageMeasurements)")
-            lines.append("samplingFrequency: \(String(describing: electrocardiogram.samplingFrequency))")
-            lines.append("classification: \(electrocardiogram.classification.rawValue)")
-            lines.append("averageHeartRate: \(String(describing: electrocardiogram.averageHeartRate))")
-            lines.append("symptomsStatus: \(electrocardiogram.symptomsStatus.rawValue)")
-        }
-
-        if let stateOfMind = sample as? HKStateOfMind {
-            lines.append("stateOfMind: \(String(describing: stateOfMind))")
-        }
-
-        if let heartbeatSeries = sample as? HKHeartbeatSeriesSample {
-            lines.append("heartbeatSeries.count: \(heartbeatSeries.count)")
-        }
-
-        if let workoutRoute = sample as? HKWorkoutRoute {
-            lines.append("workoutRoute: \(String(describing: workoutRoute))")
-        }
-
-        if let metadata = sample.metadata, !metadata.isEmpty {
-            lines.append("metadata: \(clipped(String(describing: metadata), field: "metadata"))")
-        }
-
-        lines.append("debug: \(clipped(String(describing: sample), field: "debug"))")
-        return clipped(lines.joined(separator: "\n"), field: "sample")
     }
 
     private static func clipped(_ value: String, field: String, limit: Int = 4000) -> String {
