@@ -172,6 +172,21 @@ final class HealthKitSyncService: ObservableObject {
         }
     }
 
+    func resetSync() async {
+        var config = configuration
+        config.initialSyncCompleted = false
+        config.lastSuccessfulSyncAt = nil
+        config.estimatedRecordCount = nil
+        config.estimatedRecordCountVersion = nil
+        config.syncedRecordCount = 0
+        config.currentSyncUploadedCount = 0
+        config.currentSampleTypeIdentifier = nil
+        config.sampleTypeAnchors = [:]
+        configuration = config
+
+        refreshSnapshot(statusOverride: "Sync state reset. A full HealthKit sync will run again.", phase: .ready)
+    }
+
     func syncIfNeededOnForeground() async {
         guard configuration.selectedPersonUUID != nil, !isSyncing else { return }
 

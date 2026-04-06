@@ -1066,6 +1066,7 @@ private final class HealthSyncViewController: UIViewController {
     private let choosePersonButton = UIButton(type: .system)
     private let grantAccessButton = UIButton(type: .system)
     private let syncNowButton = UIButton(type: .system)
+    private let resetSyncButton = UIButton(type: .system)
     private let debugButton = UIButton(type: .system)
 
     init(syncService: HealthKitSyncService) {
@@ -1125,6 +1126,8 @@ private final class HealthSyncViewController: UIViewController {
         grantAccessButton.addTarget(self, action: #selector(didTapGrantAccess), for: .touchUpInside)
         stackView.addArrangedSubview(makeActionButton(button: syncNowButton, title: "Sync Now", subtitle: "Run or resume the HealthKit sync immediately.", systemImageName: "arrow.triangle.2.circlepath") )
         syncNowButton.addTarget(self, action: #selector(didTapSyncNow), for: .touchUpInside)
+        stackView.addArrangedSubview(makeActionButton(button: resetSyncButton, title: "Reset Sync", subtitle: "Clear local sync progress and force a full HealthKit resync.", systemImageName: "exclamationmark.arrow.triangle.2.circlepath") )
+        resetSyncButton.addTarget(self, action: #selector(didTapResetSync), for: .touchUpInside)
         var debugConfiguration = UIButton.Configuration.plain()
         debugConfiguration.title = "Debug sync scope"
         debugConfiguration.image = UIImage(systemName: "ladybug")
@@ -1235,6 +1238,19 @@ private final class HealthSyncViewController: UIViewController {
 
     @objc private func didTapSyncNow() {
         Task { await syncService.syncNow() }
+    }
+
+    @objc private func didTapResetSync() {
+        let alertController = UIAlertController(
+            title: "Reset Health Sync?",
+            message: "This clears the app's local HealthKit sync progress and forces a fresh full sync on the next run.",
+            preferredStyle: .alert
+        )
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alertController.addAction(UIAlertAction(title: "Reset", style: .destructive) { _ in
+            Task { await self.syncService.resetSync() }
+        })
+        present(alertController, animated: true)
     }
 
     @objc private func didTapDebug() {
