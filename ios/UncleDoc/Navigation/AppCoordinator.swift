@@ -74,6 +74,19 @@ final class AppCoordinator: NSObject, ObservableObject {
         shellViewController?.reloadCurrentPage()
     }
 
+    func handleNativeMenuAction(named action: String) {
+        switch action {
+        case "reload":
+            reloadCurrentPage()
+        case "open_in_safari":
+            openCurrentPageInSafari()
+        case "change_server":
+            resetServerURL()
+        default:
+            break
+        }
+    }
+
     func handleFinishedRequest(at url: URL) {
         shellViewController?.syncSelection(with: url)
     }
@@ -87,6 +100,7 @@ final class AppCoordinator: NSObject, ObservableObject {
         Hotwire.config.showDoneButtonOnModals = true
         Hotwire.config.backButtonDisplayMode = .minimal
         Hotwire.config.makeCustomWebView = { configuration in
+            NativeMenuScriptBridge.shared.attach(to: configuration.userContentController)
             let webView = WKWebView(frame: .zero, configuration: configuration)
             webView.allowsBackForwardNavigationGestures = true
             webView.scrollView.contentInsetAdjustmentBehavior = .never
@@ -200,6 +214,115 @@ enum TrustedCertificateStore {
         let portSuffix = protectionSpace.port > 0 ? ":\(protectionSpace.port)" : ""
         return "\(protectionSpace.host.lowercased())\(portSuffix)"
     }
+}
+
+@MainActor
+final class NativeMenuScriptBridge: NSObject, WKScriptMessageHandler {
+    static let shared = NativeMenuScriptBridge()
+    static let handlerName = "uncleDocNativeMenu"
+
+    func attach(to userContentController: WKUserContentController) {
+        userContentController.removeScriptMessageHandler(forName: Self.handlerName)
+        userContentController.add(self, name: Self.handlerName)
+        userContentController.addUserScript(
+            WKUserScript(
+                source: Self.scriptSource,
+                injectionTime: .atDocumentEnd,
+                forMainFrameOnly: true
+            )
+        )
+    }
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.name == Self.handlerName,
+              let body = message.body as? [String: Any],
+              let action = body["action"] as? String else {
+            return
+        }
+
+        AppCoordinator.shared.handleNativeMenuAction(named: action)
+    }
+
+    private static let scriptSource = #"""
+    (() => {
+      const handlerName = "uncleDocNativeMenu";
+      const config = {
+        mobile: [
+          { action: "reload", label: "Reload", icon: "M4.5 4.5v5h5" },
+          { action: "open_in_safari", label: "Open in Safari", icon: "M16.5 7.5h3m0 0v3m0-3-7.5 7.5" },
+          { action: "change_server", label: "Change Server", icon: "M4.5 7.5h15m-15 4.5h15m-15 4.5h15" }
+        ],
+        desktop: [
+          { action: "reload", label: "Reload", icon: "M4.5 4.5v5h5" },
+          { action: "open_in_safari", label: "Open in Safari", icon: "M16.5 7.5h3m0 0v3m0-3-7.5 7.5" },
+          { action: "change_server", label: "Change Server", icon: "M4.5 7.5h15m-15 4.5h15m-15 4.5h15" }
+        ]
+      };
+
+      const buildButton = (item, variant) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.nativeMenuAction = item.action;
+        button.className = variant === "mobile"
+          ? "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-amber-50"
+          : "flex w-full items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold text-slate-700 transition hover:bg-white";
+
+        const iconWrap = document.createElement("span");
+        iconWrap.className = variant === "mobile"
+          ? "flex h-4 w-4 items-center justify-center text-slate-500"
+          : "flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-700";
+
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("fill", "none");
+        svg.setAttribute("stroke", "currentColor");
+        svg.setAttribute("stroke-width", variant === "mobile" ? "1.8" : "1.8");
+        svg.setAttribute("class", variant === "mobile" ? "h-4 w-4" : "h-4 w-4");
+
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("stroke-linecap", "round");
+        path.setAttribute("stroke-linejoin", "round");
+        path.setAttribute("d", item.icon);
+        svg.appendChild(path);
+        iconWrap.appendChild(svg);
+
+        const label = document.createElement("span");
+        label.textContent = item.label;
+
+        button.appendChild(iconWrap);
+        button.appendChild(label);
+
+        button.addEventListener("click", () => {
+          window.webkit?.messageHandlers?.[handlerName]?.postMessage({ action: item.action });
+        });
+
+        return button;
+      };
+
+      const renderSlot = (slot) => {
+        const variant = slot.dataset.nativeMenuSlot;
+        const items = config[variant] || [];
+        if (!items.length) return;
+
+        slot.innerHTML = "";
+        slot.classList.remove("hidden");
+
+        const wrapper = document.createElement("div");
+        wrapper.className = variant === "mobile" ? "space-y-0.5" : "space-y-1";
+
+        items.forEach((item) => wrapper.appendChild(buildButton(item, variant)));
+        slot.appendChild(wrapper);
+      };
+
+      const boot = () => {
+        document.querySelectorAll("[data-native-menu-slot]").forEach(renderSlot);
+      };
+
+      boot();
+      document.addEventListener("turbo:load", boot);
+      document.addEventListener("turbo:render", boot);
+    })();
+    """#
 }
 
 final class AuthenticationChallengeResponder: @unchecked Sendable {
@@ -355,6 +478,8 @@ private final class UncleDocShellViewController: UIViewController {
             didStartNavigator = true
             navigator.start()
         }
+
+        configureNavigationBarAppearance()
     }
 
     override func viewDidLayoutSubviews() {
@@ -494,6 +619,9 @@ private final class UncleDocShellViewController: UIViewController {
             return
         }
 
+        topViewController.navigationItem.title = nil
+        topViewController.navigationItem.backButtonTitle = ""
+
         if isCompactLayout {
             topViewController.navigationItem.leftItemsSupplementBackButton = true
             topViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(
@@ -512,6 +640,23 @@ private final class UncleDocShellViewController: UIViewController {
             target: self,
             action: #selector(didTapActions)
         )
+    }
+
+    private func configureNavigationBarAppearance() {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithTransparentBackground()
+        appearance.backgroundColor = .clear
+        appearance.backgroundEffect = nil
+        appearance.shadowColor = .clear
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.clear]
+
+        let navigationBar = navigator.rootViewController.navigationBar
+        navigationBar.standardAppearance = appearance
+        navigationBar.scrollEdgeAppearance = appearance
+        navigationBar.compactAppearance = appearance
+        navigationBar.compactScrollEdgeAppearance = appearance
+        navigationBar.isTranslucent = false
+        navigator.rootViewController.navigationBar.prefersLargeTitles = false
     }
 
     private func setSidebarVisible(_ visible: Bool, animated: Bool) {
