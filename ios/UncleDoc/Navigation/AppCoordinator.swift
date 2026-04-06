@@ -634,12 +634,7 @@ private final class UncleDocShellViewController: UIViewController {
             topViewController.navigationItem.leftBarButtonItem = nil
         }
 
-        topViewController.navigationItem.rightBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "ellipsis.circle"),
-            style: .plain,
-            target: self,
-            action: #selector(didTapActions)
-        )
+        topViewController.navigationItem.rightBarButtonItem = nil
     }
 
     private func configureNavigationBarAppearance() {
@@ -694,27 +689,6 @@ private final class UncleDocShellViewController: UIViewController {
 
     @objc private func didTapDimmingView() {
         setSidebarVisible(false, animated: true)
-    }
-
-    @objc private func didTapActions() {
-        let alertController = UIAlertController(title: "UncleDoc", message: nil, preferredStyle: .actionSheet)
-        alertController.addAction(UIAlertAction(title: "Reload", style: .default) { [weak self] _ in
-            self?.reloadCurrentPage()
-        })
-        alertController.addAction(UIAlertAction(title: "Open in Safari", style: .default) { [weak self] _ in
-            self?.openCurrentPageInSafari()
-        })
-        alertController.addAction(UIAlertAction(title: "Change Server", style: .destructive) { [weak self] _ in
-            self?.coordinator.resetServerURL()
-        })
-        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-
-        if let barButtonItem = navigator.rootViewController.topViewController?.navigationItem.rightBarButtonItem,
-           let popover = alertController.popoverPresentationController {
-            popover.barButtonItem = barButtonItem
-        }
-
-        present(alertController, animated: true)
     }
 
     @objc private func handleEdgePan(_ gestureRecognizer: UIScreenEdgePanGestureRecognizer) {
@@ -779,6 +753,10 @@ extension UncleDocShellViewController: NavigatorDelegate {
         Task { @MainActor [weak self] in
             guard let self else {
                 return
+            }
+
+            if self.isCompactLayout {
+                self.setSidebarVisible(true, animated: true)
             }
 
             let alertController = UIAlertController(
