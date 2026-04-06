@@ -926,6 +926,8 @@ private final class UncleDocShellViewController: UIViewController {
 
 @MainActor
 private final class AppSettingsViewController: UIViewController {
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
     private let stackView = UIStackView()
     private let onReload: () -> Void
     private let onOpenInSafari: () -> Void
@@ -957,6 +959,8 @@ private final class AppSettingsViewController: UIViewController {
         view.backgroundColor = .systemGroupedBackground
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: self, action: #selector(dismissSheet))
 
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.translatesAutoresizingMaskIntoConstraints = false
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
         stackView.spacing = 14
@@ -968,16 +972,28 @@ private final class AppSettingsViewController: UIViewController {
         introLabel.textColor = .secondaryLabel
         introLabel.text = "Device-only actions for the UncleDoc iOS app."
 
-        view.addSubview(introLabel)
-        view.addSubview(stackView)
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+        contentView.addSubview(introLabel)
+        contentView.addSubview(stackView)
 
         NSLayoutConstraint.activate([
-            introLabel.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
-            introLabel.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
-            introLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 18),
-            stackView.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
-            stackView.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
-            stackView.topAnchor.constraint(equalTo: introLabel.bottomAnchor, constant: 20)
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+            introLabel.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+            introLabel.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+            introLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 18),
+            stackView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+            stackView.topAnchor.constraint(equalTo: introLabel.bottomAnchor, constant: 20),
+            stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24)
         ])
 
         stackView.addArrangedSubview(makeActionButton(title: "Health Records", subtitle: "Request Health access and show recent records.", systemImageName: "heart.text.square") { [weak self] in
@@ -1153,12 +1169,13 @@ private final class HealthRecordsViewController: UIViewController, UITableViewDa
         let cell = tableView.dequeueReusableCell(withIdentifier: "HealthRecordCell", for: indexPath)
         let record = records[indexPath.row]
         var content = cell.defaultContentConfiguration()
-        content.text = record.typeTitle
+        content.text = record.title
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .short
         let when = formatter.localizedString(for: record.startDate, relativeTo: Date())
-        content.secondaryText = "\(record.summary) • \(when) • \(record.sourceName)"
-        content.secondaryTextProperties.numberOfLines = 2
+        content.secondaryText = "\(when)\n\n\(record.rawText)"
+        content.secondaryTextProperties.numberOfLines = 0
+        content.secondaryTextProperties.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
         cell.contentConfiguration = content
         cell.selectionStyle = .none
         return cell

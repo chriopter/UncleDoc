@@ -1,21 +1,138 @@
 import Foundation
 import HealthKit
 
+private enum HealthKitCoverage {
+    // Review and extend these lists here when adding more public HealthKit coverage.
+
+    static let characteristicIdentifiers: [HKCharacteristicTypeIdentifier] = [
+        .activityMoveMode,
+        .biologicalSex,
+        .bloodType,
+        .dateOfBirth,
+        .fitzpatrickSkinType,
+        .wheelchairUse
+    ]
+
+    static let quantityGroups: [(name: String, identifiers: [HKQuantityTypeIdentifier])] = [
+        (
+            name: "Activity and Fitness",
+            identifiers: [
+                .activeEnergyBurned,
+                .basalEnergyBurned,
+                .distanceCycling,
+                .distanceWalkingRunning,
+                .flightsClimbed,
+                .nikeFuel,
+                .stepCount,
+                .vo2Max,
+                .walkingHeartRateAverage,
+                .walkingSpeed,
+                .walkingStepLength
+            ]
+        ),
+        (
+            name: "Heart and Cardiovascular",
+            identifiers: [
+                .bloodPressureDiastolic,
+                .bloodPressureSystolic,
+                .heartRate,
+                .heartRateVariabilitySDNN,
+                .oxygenSaturation,
+                .peripheralPerfusionIndex,
+                .restingHeartRate,
+                .respiratoryRate
+            ]
+        ),
+        (
+            name: "Body Measurements",
+            identifiers: [
+                .bodyFatPercentage,
+                .bodyMass,
+                .bodyMassIndex,
+                .bodyTemperature,
+                .height,
+                .leanBodyMass
+            ]
+        ),
+        (
+            name: "Respiratory and Labs",
+            identifiers: [
+                .bloodGlucose,
+                .forcedExpiratoryVolume1,
+                .forcedVitalCapacity,
+                .peakExpiratoryFlowRate
+            ]
+        ),
+        (
+            name: "Nutrition",
+            identifiers: [
+                .dietaryEnergyConsumed,
+                .dietaryWater
+            ]
+        )
+    ]
+
+    static let categoryGroups: [(name: String, identifiers: [HKCategoryTypeIdentifier])] = [
+        (
+            name: "Activity and Environment",
+            identifiers: [
+                .appleStandHour,
+                .highHeartRateEvent,
+                .irregularHeartRhythmEvent,
+                .lowCardioFitnessEvent,
+                .lowHeartRateEvent,
+                .toothbrushingEvent
+            ]
+        ),
+        (
+            name: "Sleep and Mindfulness",
+            identifiers: [
+                .mindfulSession,
+                .sleepAnalysis
+            ]
+        ),
+        (
+            name: "Reproductive Health",
+            identifiers: [
+                .intermenstrualBleeding
+            ]
+        )
+    ]
+
+    static let correlationIdentifiers: [HKCorrelationTypeIdentifier] = [
+        .bloodPressure,
+        .food
+    ]
+
+    static let specialSampleTypes: [HKSampleType] = [
+        HKObjectType.workoutType(),
+        HKObjectType.audiogramSampleType(),
+        HKObjectType.electrocardiogramType(),
+        HKSeriesType.workoutRoute(),
+        HKSeriesType.heartbeat(),
+        HKObjectType.visionPrescriptionType(),
+        HKObjectType.stateOfMindType(),
+        HKObjectType.medicationDoseEventType()
+    ]
+
+    static let documentTypes: [HKDocumentType] = [
+        .init(.CDA)
+    ].compactMap { $0 }
+}
+
 struct HealthRecordPreview: Identifiable, Sendable {
     let id: UUID
-    let typeTitle: String
-    let summary: String
+    let title: String
+    let rawText: String
     let startDate: Date
     let endDate: Date?
-    let sourceName: String
 
-    init(id: UUID = UUID(), typeTitle: String, summary: String, startDate: Date, endDate: Date? = nil, sourceName: String) {
+    init(id: UUID = UUID(), title: String, rawText: String, startDate: Date, endDate: Date? = nil) {
         self.id = id
-        self.typeTitle = typeTitle
-        self.summary = summary
+        self.title = title
+        self.rawText = rawText
         self.startDate = startDate
         self.endDate = endDate
-        self.sourceName = sourceName
     }
 }
 
@@ -24,62 +141,35 @@ final class HealthKitManager: @unchecked Sendable {
 
     private let healthStore = HKHealthStore()
 
-    private struct RecordType: Sendable {
-        let sampleType: HKSampleType
-        let title: String
-        let preferredUnit: HKUnit?
-        let unitLabel: String?
-    }
+    private lazy var characteristicTypes: [HKCharacteristicType] = HealthKitCoverage.characteristicIdentifiers.compactMap(HKCharacteristicType.init)
 
-    private lazy var recordTypes: [RecordType] = {
-        var types: [RecordType] = []
+    private lazy var correlationTypes: [HKCorrelationType] = HealthKitCoverage.correlationIdentifiers.compactMap(HKCorrelationType.init)
 
-        func quantity(_ identifier: HKQuantityTypeIdentifier, title: String, unit: HKUnit, unitLabel: String) {
-            guard let sampleType = HKObjectType.quantityType(forIdentifier: identifier) else { return }
-            types.append(RecordType(sampleType: sampleType, title: title, preferredUnit: unit, unitLabel: unitLabel))
+    private lazy var documentTypes: [HKDocumentType] = HealthKitCoverage.documentTypes
+
+    private lazy var sampleTypes: [HKSampleType] = {
+        var types: [HKSampleType] = []
+
+        HealthKitCoverage.quantityGroups.flatMap(\.identifiers).forEach { identifier in
+            if let type = HKObjectType.quantityType(forIdentifier: identifier) {
+                types.append(type)
+            }
         }
 
-        func category(_ identifier: HKCategoryTypeIdentifier, title: String) {
-            guard let sampleType = HKObjectType.categoryType(forIdentifier: identifier) else { return }
-            types.append(RecordType(sampleType: sampleType, title: title, preferredUnit: nil, unitLabel: nil))
+        HealthKitCoverage.categoryGroups.flatMap(\.identifiers).forEach { identifier in
+            if let type = HKObjectType.categoryType(forIdentifier: identifier) {
+                types.append(type)
+            }
         }
 
-        if let workoutType = HKObjectType.workoutType() as HKSampleType? {
-            types.append(RecordType(sampleType: workoutType, title: "Workout", preferredUnit: nil, unitLabel: nil))
-        }
+        types.append(contentsOf: correlationTypes)
+        types.append(contentsOf: HealthKitCoverage.specialSampleTypes)
+        types.append(contentsOf: documentTypes)
 
-        quantity(.heartRate, title: "Heart Rate", unit: HKUnit.count().unitDivided(by: .minute()), unitLabel: "/min")
-        quantity(.stepCount, title: "Step Count", unit: .count(), unitLabel: "count")
-        quantity(.activeEnergyBurned, title: "Active Energy Burned", unit: .kilocalorie(), unitLabel: "kcal")
-        quantity(.basalEnergyBurned, title: "Basal Energy Burned", unit: .kilocalorie(), unitLabel: "kcal")
-        quantity(.bodyMass, title: "Body Mass", unit: .gramUnit(with: .kilo), unitLabel: "kg")
-        quantity(.height, title: "Height", unit: .meterUnit(with: .centi), unitLabel: "cm")
-        quantity(.bodyMassIndex, title: "BMI", unit: .count(), unitLabel: "")
-        quantity(.bodyTemperature, title: "Body Temperature", unit: .degreeCelsius(), unitLabel: "C")
-        quantity(.bloodPressureSystolic, title: "Blood Pressure Systolic", unit: .millimeterOfMercury(), unitLabel: "mmHg")
-        quantity(.bloodPressureDiastolic, title: "Blood Pressure Diastolic", unit: .millimeterOfMercury(), unitLabel: "mmHg")
-        quantity(.oxygenSaturation, title: "Oxygen Saturation", unit: .percent(), unitLabel: "%")
-        quantity(.respiratoryRate, title: "Respiratory Rate", unit: HKUnit.count().unitDivided(by: .minute()), unitLabel: "/min")
-        quantity(.restingHeartRate, title: "Resting Heart Rate", unit: HKUnit.count().unitDivided(by: .minute()), unitLabel: "/min")
-        quantity(.walkingHeartRateAverage, title: "Walking Heart Rate Average", unit: HKUnit.count().unitDivided(by: .minute()), unitLabel: "/min")
-        quantity(.distanceWalkingRunning, title: "Walking + Running Distance", unit: .meterUnit(with: .kilo), unitLabel: "km")
-        quantity(.flightsClimbed, title: "Flights Climbed", unit: .count(), unitLabel: "count")
-        quantity(.bloodGlucose, title: "Blood Glucose", unit: HKUnit.gramUnit(with: .milli).unitDivided(by: .literUnit(with: .deci)), unitLabel: "mg/dL")
-        quantity(.dietaryEnergyConsumed, title: "Dietary Energy", unit: .kilocalorie(), unitLabel: "kcal")
-        quantity(.dietaryWater, title: "Dietary Water", unit: .literUnit(with: .milli), unitLabel: "mL")
-
-        category(.sleepAnalysis, title: "Sleep Analysis")
-        category(.mindfulSession, title: "Mindful Session")
-        category(.intermenstrualBleeding, title: "Intermenstrual Bleeding")
-        category(.lowHeartRateEvent, title: "Low Heart Rate Event")
-        category(.highHeartRateEvent, title: "High Heart Rate Event")
-        category(.irregularHeartRhythmEvent, title: "Irregular Heart Rhythm Event")
-        category(.toothbrushingEvent, title: "Toothbrushing Event")
-
-        return types
+        return Array(Set(types)).sorted { $0.identifier < $1.identifier }
     }()
 
-    private lazy var readTypes: Set<HKObjectType> = Set(recordTypes.map(\.sampleType))
+    private lazy var readTypes: Set<HKObjectType> = Set(sampleTypes).union(characteristicTypes)
 
     var isAvailable: Bool {
         HKHealthStore.isHealthDataAvailable()
@@ -100,10 +190,18 @@ final class HealthKitManager: @unchecked Sendable {
 
         let perTypeLimit = max(maxPerType, 1)
         let collected = try await withThrowingTaskGroup(of: [HealthRecordPreview].self) { group in
-            for recordType in recordTypes {
+            for sampleType in sampleTypes {
                 group.addTask { [healthStore] in
-                    try await Self.fetchRecords(for: recordType, healthStore: healthStore, limit: perTypeLimit)
+                    if let documentType = sampleType as? HKDocumentType {
+                        return try await Self.fetchDocumentRecords(for: documentType, healthStore: healthStore, limit: perTypeLimit)
+                    }
+
+                    return try await Self.fetchRecords(for: sampleType, healthStore: healthStore, limit: perTypeLimit)
                 }
+            }
+
+            group.addTask { [healthStore] in
+                Self.fetchCharacteristicRecords(healthStore: healthStore)
             }
 
             var rows: [HealthRecordPreview] = []
@@ -120,12 +218,12 @@ final class HealthKitManager: @unchecked Sendable {
             .map { $0 }
     }
 
-    private static func fetchRecords(for recordType: RecordType, healthStore: HKHealthStore, limit: Int) async throws -> [HealthRecordPreview] {
+    private static func fetchRecords(for sampleType: HKSampleType, healthStore: HKHealthStore, limit: Int) async throws -> [HealthRecordPreview] {
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
         let queryLimit = max(limit * 2, limit)
 
         let samples = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[HKSample], Error>) in
-            let query = HKSampleQuery(sampleType: recordType.sampleType, predicate: nil, limit: queryLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
+            let query = HKSampleQuery(sampleType: sampleType, predicate: nil, limit: queryLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
                 if let error {
                     continuation.resume(throwing: error)
                 } else {
@@ -136,57 +234,173 @@ final class HealthKitManager: @unchecked Sendable {
             healthStore.execute(query)
         }
 
-        return samples.prefix(limit).compactMap { sample in
-            makePreview(from: sample, recordType: recordType)
+        return samples.prefix(limit).map { sample in
+            makePreview(from: sample)
         }
     }
 
-    private static func makePreview(from sample: HKSample, recordType: RecordType) -> HealthRecordPreview? {
-        let sourceName = sample.sourceRevision.source.name
+    private static func fetchDocumentRecords(for documentType: HKDocumentType, healthStore: HKHealthStore, limit: Int) async throws -> [HealthRecordPreview] {
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
 
-        if let quantitySample = sample as? HKQuantitySample,
-           let unit = recordType.preferredUnit {
-            let rawValue = quantitySample.quantity.doubleValue(for: unit)
-            return HealthRecordPreview(
-                typeTitle: recordType.title,
-                summary: formatQuantity(rawValue, unitLabel: recordType.unitLabel),
-                startDate: quantitySample.startDate,
-                endDate: quantitySample.endDate,
-                sourceName: sourceName
-            )
+        let samples = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[HKDocumentSample], Error>) in
+            let query = HKDocumentQuery(
+                documentType: documentType,
+                predicate: nil,
+                limit: limit,
+                sortDescriptors: [sortDescriptor],
+                includeDocumentData: true
+            ) { _, results, done, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if done {
+                    continuation.resume(returning: results ?? [])
+                }
+            }
+
+            healthStore.execute(query)
+        }
+
+        return samples.map { makePreview(from: $0) }
+    }
+
+    private static func fetchCharacteristicRecords(healthStore: HKHealthStore) -> [HealthRecordPreview] {
+        var records: [HealthRecordPreview] = []
+        let now = Date()
+
+        func append(_ title: String, value: String?) {
+            guard let value else { return }
+            records.append(HealthRecordPreview(title: title, rawText: value, startDate: now, endDate: nil))
+        }
+
+        do {
+            let value = try healthStore.dateOfBirthComponents()
+            append("characteristic.dateOfBirth", value: String(describing: value))
+        } catch {}
+
+        do {
+            let value = try healthStore.biologicalSex()
+            append("characteristic.biologicalSex", value: String(describing: value))
+        } catch {}
+
+        do {
+            let value = try healthStore.bloodType()
+            append("characteristic.bloodType", value: String(describing: value))
+        } catch {}
+
+        do {
+            let value = try healthStore.fitzpatrickSkinType()
+            append("characteristic.fitzpatrickSkinType", value: String(describing: value))
+        } catch {}
+
+        do {
+            let value = try healthStore.wheelchairUse()
+            append("characteristic.wheelchairUse", value: String(describing: value))
+        } catch {}
+
+        do {
+            let value = try healthStore.activityMoveMode()
+            append("characteristic.activityMoveMode", value: String(describing: value))
+        } catch {}
+
+        return records
+    }
+
+    private static func makePreview(from sample: HKSample) -> HealthRecordPreview {
+        HealthRecordPreview(
+            title: sample.sampleType.identifier,
+            rawText: rawDump(for: sample),
+            startDate: sample.startDate,
+            endDate: sample.endDate
+        )
+    }
+
+    private static func rawDump(for sample: HKSample) -> String {
+        var lines: [String] = [
+            "type: \(sample.sampleType.identifier)",
+            "uuid: \(sample.uuid.uuidString)",
+            "startDate: \(sample.startDate.ISO8601Format())",
+            "endDate: \(sample.endDate.ISO8601Format())",
+            "device: \(String(describing: sample.device))",
+            "source: \(sample.sourceRevision.source.name)",
+            "source.bundleIdentifier: \(sample.sourceRevision.source.bundleIdentifier)",
+            "source.version: \(sample.sourceRevision.version ?? "-")",
+            "productType: \(sample.sourceRevision.productType ?? "-")"
+        ]
+
+        if let quantitySample = sample as? HKQuantitySample {
+            lines.append("quantity: \(quantitySample.quantity)")
         }
 
         if let categorySample = sample as? HKCategorySample {
-            return HealthRecordPreview(
-                typeTitle: recordType.title,
-                summary: "Value \(categorySample.value)",
-                startDate: categorySample.startDate,
-                endDate: categorySample.endDate,
-                sourceName: sourceName
-            )
+            lines.append("value: \(categorySample.value)")
         }
 
         if let workout = sample as? HKWorkout {
-            let minutes = max(Int(workout.duration / 60), 1)
-            return HealthRecordPreview(
-                typeTitle: recordType.title,
-                summary: "\(minutes) min",
-                startDate: workout.startDate,
-                endDate: workout.endDate,
-                sourceName: sourceName
-            )
+            lines.append("activityType: \(workout.workoutActivityType.rawValue)")
+            lines.append("duration: \(workout.duration)")
+            if let totalDistance = workout.totalDistance {
+                lines.append("totalDistance: \(totalDistance)")
+            }
+            lines.append("workoutEvents.count: \(workout.workoutEvents?.count ?? 0)")
         }
 
-        return nil
-    }
-
-    private static func formatQuantity(_ value: Double, unitLabel: String?) -> String {
-        let formattedNumber = value == floor(value) ? String(Int(value)) : String(format: "%.2f", value)
-        guard let unitLabel, !unitLabel.isEmpty else {
-            return formattedNumber
+        if let correlation = sample as? HKCorrelation {
+            lines.append("correlationType: \(correlation.correlationType.identifier)")
+            lines.append("objects.count: \(correlation.objects.count)")
+            lines.append("objects: \(correlation.objects.map { $0.sampleType.identifier })")
         }
 
-        return "\(formattedNumber) \(unitLabel)"
+        if let cdaDocument = sample as? HKCDADocumentSample {
+            lines.append("documentType: \(cdaDocument.documentType.identifier)")
+            lines.append("documentTitle: \(cdaDocument.document?.title ?? "-")")
+            lines.append("patientName: \(cdaDocument.document?.patientName ?? "-")")
+            lines.append("authorName: \(cdaDocument.document?.authorName ?? "-")")
+            lines.append("custodianName: \(cdaDocument.document?.custodianName ?? "-")")
+            if let documentData = cdaDocument.document?.documentData,
+               let xml = String(data: documentData, encoding: .utf8) {
+                lines.append("documentData: \(xml)")
+            }
+        }
+
+        if let audiogram = sample as? HKAudiogramSample {
+            lines.append("sensitivityPoints.count: \(audiogram.sensitivityPoints.count)")
+            lines.append("sensitivityPoints: \(audiogram.sensitivityPoints)")
+        }
+
+        if let electrocardiogram = sample as? HKElectrocardiogram {
+            lines.append("numberOfVoltageMeasurements: \(electrocardiogram.numberOfVoltageMeasurements)")
+            lines.append("samplingFrequency: \(String(describing: electrocardiogram.samplingFrequency))")
+            lines.append("classification: \(electrocardiogram.classification.rawValue)")
+            lines.append("averageHeartRate: \(String(describing: electrocardiogram.averageHeartRate))")
+            lines.append("symptomsStatus: \(electrocardiogram.symptomsStatus.rawValue)")
+        }
+
+        if let visionPrescription = sample as? HKVisionPrescription {
+            lines.append("visionPrescription: \(String(describing: visionPrescription))")
+        }
+
+        if let stateOfMind = sample as? HKStateOfMind {
+            lines.append("stateOfMind: \(String(describing: stateOfMind))")
+        }
+
+        if let medicationDoseEvent = sample as? HKMedicationDoseEvent {
+            lines.append("medicationDoseEvent: \(String(describing: medicationDoseEvent))")
+        }
+
+        if let heartbeatSeries = sample as? HKHeartbeatSeriesSample {
+            lines.append("heartbeatSeries.count: \(heartbeatSeries.count)")
+        }
+
+        if let workoutRoute = sample as? HKWorkoutRoute {
+            lines.append("workoutRoute: \(String(describing: workoutRoute))")
+        }
+
+        if let metadata = sample.metadata, !metadata.isEmpty {
+            lines.append("metadata: \(metadata)")
+        }
+
+        lines.append("debug: \(String(describing: sample))")
+        return lines.joined(separator: "\n")
     }
 }
 

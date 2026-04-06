@@ -33,6 +33,7 @@ en:
 
   # Navigation
   nav:
+    menu: "Menu"
     app_settings: "App Settings"
     home: "Home"
     overview: "Overview"
