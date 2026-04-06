@@ -46,7 +46,7 @@ module DashboardHelper
 
   def shell_db_tables
     connection = ActiveRecord::Base.connection
-    data_tables = %w[entries people]
+    data_tables = %w[entries healthkit_records healthkit_syncs people]
     log_tables = %w[llm_logs]
     system_tables = %w[ar_internal_metadata schema_migrations user_preferences]
 
