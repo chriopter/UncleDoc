@@ -11,6 +11,11 @@
 	</dict>
 	<key>NSHealthShareUsageDescription</key>
 	<string>UncleDoc reads your Health data so you can review recent records in the app.</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.uncledoc.healthkit.refresh</string>
+		<string>com.uncledoc.healthkit.processing</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>processing</string>

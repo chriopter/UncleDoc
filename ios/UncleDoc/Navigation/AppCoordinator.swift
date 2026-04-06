@@ -558,7 +558,7 @@ private final class UncleDocShellViewController: UIViewController {
     }
 
     func presentHealthRecords() {
-        let viewController = HealthRecordsViewController()
+        let viewController = HealthSyncViewController(syncService: HealthKitSyncService.shared)
         let navigationController = UINavigationController(rootViewController: viewController)
         navigationController.modalPresentationStyle = .pageSheet
 
@@ -996,7 +996,7 @@ private final class AppSettingsViewController: UIViewController {
             stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24)
         ])
 
-        stackView.addArrangedSubview(makeActionButton(title: "Health Records", subtitle: "Request Health access and show recent records.", systemImageName: "heart.text.square") { [weak self] in
+        stackView.addArrangedSubview(makeActionButton(title: "Health Sync", subtitle: "Connect this device to one UncleDoc person and sync HealthKit history.", systemImageName: "heart.text.square") { [weak self] in
             self?.dismiss(animated: true) {
                 self?.onShowHealthRecords()
             }
@@ -1034,6 +1034,164 @@ private final class AppSettingsViewController: UIViewController {
         button.contentHorizontalAlignment = .leading
         button.addAction(UIAction { _ in action() }, for: .touchUpInside)
         return button
+    }
+
+    @objc private func dismissSheet() {
+        dismiss(animated: true)
+    }
+}
+
+@MainActor
+private final class HealthSyncViewController: UIViewController {
+    private let syncService: HealthKitSyncService
+    private var cancellables: Set<AnyCancellable> = []
+
+    private let stackView = UIStackView()
+    private let statusLabel = UILabel()
+    private let detailLabel = UILabel()
+    private let personLabel = UILabel()
+    private let countLabel = UILabel()
+    private let sampleTypeLabel = UILabel()
+    private let choosePersonButton = UIButton(type: .system)
+    private let grantAccessButton = UIButton(type: .system)
+    private let syncNowButton = UIButton(type: .system)
+
+    init(syncService: HealthKitSyncService) {
+        self.syncService = syncService
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        title = "Health Sync"
+        view.backgroundColor = .systemGroupedBackground
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: self, action: #selector(dismissSheet))
+
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.axis = .vertical
+        stackView.spacing = 16
+
+        [statusLabel, detailLabel, personLabel, countLabel, sampleTypeLabel].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            $0.numberOfLines = 0
+        }
+
+        statusLabel.font = .systemFont(ofSize: 28, weight: .black)
+        detailLabel.font = .systemFont(ofSize: 16, weight: .medium)
+        detailLabel.textColor = .secondaryLabel
+        personLabel.font = .systemFont(ofSize: 15, weight: .semibold)
+        countLabel.font = .systemFont(ofSize: 15, weight: .semibold)
+        sampleTypeLabel.font = .monospacedSystemFont(ofSize: 13, weight: .regular)
+        sampleTypeLabel.textColor = .secondaryLabel
+
+        view.addSubview(stackView)
+
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+            stackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 18)
+        ])
+
+        let introCard = makeCard()
+        introCard.addArrangedSubview(statusLabel)
+        introCard.addArrangedSubview(detailLabel)
+        introCard.addArrangedSubview(personLabel)
+        introCard.addArrangedSubview(countLabel)
+        introCard.addArrangedSubview(sampleTypeLabel)
+        stackView.addArrangedSubview(introCard)
+
+        stackView.addArrangedSubview(makeActionButton(button: choosePersonButton, title: "Choose Person", subtitle: "One device maps to one UncleDoc person.", systemImageName: "person.crop.circle.badge.checkmark", action: #selector(didTapChoosePerson)))
+        stackView.addArrangedSubview(makeActionButton(button: grantAccessButton, title: "Grant Health Access", subtitle: "Authorize the stable HealthKit types UncleDoc can sync.", systemImageName: "heart") )
+        grantAccessButton.addTarget(self, action: #selector(didTapGrantAccess), for: .touchUpInside)
+        stackView.addArrangedSubview(makeActionButton(button: syncNowButton, title: "Sync Now", subtitle: "Run or resume the HealthKit sync immediately.", systemImageName: "arrow.triangle.2.circlepath") )
+        syncNowButton.addTarget(self, action: #selector(didTapSyncNow), for: .touchUpInside)
+
+        bind()
+        syncService.bootstrap()
+    }
+
+    private func bind() {
+        syncService.$snapshot
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] snapshot in
+                self?.render(snapshot: snapshot)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func render(snapshot: HealthKitSyncSnapshot) {
+        statusLabel.text = snapshot.statusText
+        detailLabel.text = snapshot.detailText
+        personLabel.text = snapshot.selectedPersonName.map { "Person: \($0)" } ?? "Person: not selected"
+        countLabel.text = snapshot.estimatedRecordCount.map { "Estimated first sync: \($0) records" } ?? "Estimated first sync: -"
+        sampleTypeLabel.text = snapshot.currentSampleTypeIdentifier.map { "Current type: \($0)" } ?? ""
+        syncNowButton.isEnabled = snapshot.selectedPersonUUID != nil
+    }
+
+    private func makeCard() -> UIStackView {
+        let card = UIStackView()
+        card.axis = .vertical
+        card.spacing = 12
+        card.isLayoutMarginsRelativeArrangement = true
+        card.layoutMargins = UIEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
+        card.backgroundColor = .secondarySystemGroupedBackground
+        card.layer.cornerRadius = 24
+        card.layer.cornerCurve = .continuous
+        return card
+    }
+
+    private func makeActionButton(button: UIButton, title: String, subtitle: String, systemImageName: String, action: Selector? = nil) -> UIButton {
+        var configuration = UIButton.Configuration.gray()
+        configuration.title = title
+        configuration.subtitle = subtitle
+        configuration.image = UIImage(systemName: systemImageName)
+        configuration.imagePlacement = .leading
+        configuration.imagePadding = 14
+        configuration.baseForegroundColor = .label
+        configuration.background.backgroundColor = .secondarySystemGroupedBackground
+        configuration.background.cornerRadius = 20
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 18, leading: 18, bottom: 18, trailing: 18)
+        button.configuration = configuration
+        button.contentHorizontalAlignment = .leading
+        if let action {
+            button.addTarget(self, action: action, for: .touchUpInside)
+        }
+        return button
+    }
+
+    @objc private func didTapChoosePerson() {
+        Task {
+            await syncService.loadAvailablePeopleIfNeeded()
+
+            let alertController = UIAlertController(title: "Choose Person", message: nil, preferredStyle: .actionSheet)
+            for person in syncService.availablePeople {
+                alertController.addAction(UIAlertAction(title: person.name, style: .default) { _ in
+                    Task { await self.syncService.selectPerson(person) }
+                })
+            }
+            alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+
+            if let popover = alertController.popoverPresentationController {
+                popover.sourceView = choosePersonButton
+                popover.sourceRect = choosePersonButton.bounds
+            }
+
+            present(alertController, animated: true)
+        }
+    }
+
+    @objc private func didTapGrantAccess() {
+        Task { await syncService.grantAccessAndStartIfPossible() }
+    }
+
+    @objc private func didTapSyncNow() {
+        Task { await syncService.syncNow() }
     }
 
     @objc private func dismissSheet() {
