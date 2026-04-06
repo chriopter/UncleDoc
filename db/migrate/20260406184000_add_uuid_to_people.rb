@@ -1,18 +1,21 @@
 class AddUuidToPeople < ActiveRecord::Migration[8.0]
-  def change
+  def up
     add_column :people, :uuid, :string
-    add_index :people, :uuid, unique: true
 
-    reversible do |dir|
-      dir.up do
-        say_with_time "Backfilling people UUIDs" do
-          Person.reset_column_information
-          Person.find_each do |person|
-            person.update_columns(uuid: SecureRandom.uuid) if person.uuid.blank?
-          end
-        end
+    say_with_time "Backfilling people UUIDs" do
+      Person.reset_column_information
+      Person.find_each do |person|
+        person.update_columns(uuid: SecureRandom.uuid) if person.uuid.blank?
       end
     end
+
+    change_column_null :people, :uuid, false
+    add_index :people, :uuid, unique: true
+  end
+
+  def down
+    remove_index :people, :uuid
+    remove_column :people, :uuid
   end
 
   class Person < ApplicationRecord
