@@ -1155,8 +1155,9 @@ private final class HealthSyncViewController: UIViewController {
         statusLabel.text = snapshot.statusText
         detailLabel.text = snapshot.detailText
         personLabel.text = snapshot.selectedPersonName.map { "Person: \($0)" } ?? "Person: not selected"
-        countLabel.text = snapshot.estimatedRecordCount.map { "Estimated first sync: \($0) records" } ?? "Estimated first sync: -"
-        progressLabel.text = snapshot.progressText.map { "Progress: \($0)" } ?? "Progress: -"
+        countLabel.text = "Current total: \(snapshot.syncedCountText)"
+        progressLabel.text = snapshot.progressText.map { "Initial sync progress: \($0)" } ?? "Initial sync progress: -"
+        progressLabel.isHidden = snapshot.progressText == nil
         sampleTypeLabel.text = snapshot.currentSampleTypeIdentifier.map { "Current type: \($0)" } ?? ""
         syncNowButton.isEnabled = snapshot.selectedPersonUUID != nil
 
