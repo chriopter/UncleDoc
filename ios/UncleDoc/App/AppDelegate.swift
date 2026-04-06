@@ -10,6 +10,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
-        HealthKitSyncService.shared.scheduleBackgroundTasks()
+        Task { @MainActor in
+            HealthKitSyncService.shared.scheduleBackgroundTasks()
+        }
     }
 }
