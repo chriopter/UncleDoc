@@ -116,6 +116,38 @@ private enum HealthKitCoverage {
         HKSeriesType.workoutRoute(),
         HKSeriesType.heartbeat()
     ]
+
+    // This is the stable database sync subset. Keep it intentionally narrow so first sync
+    // is practical, resumable, and useful for analysis instead of importing millions of rows.
+    static let syncQuantityIdentifiers: [HKQuantityTypeIdentifier] = [
+        .bloodGlucose,
+        .bloodPressureDiastolic,
+        .bloodPressureSystolic,
+        .bodyFatPercentage,
+        .bodyMass,
+        .bodyMassIndex,
+        .bodyTemperature,
+        .heartRate,
+        .heartRateVariabilitySDNN,
+        .height,
+        .oxygenSaturation,
+        .respiratoryRate,
+        .restingHeartRate,
+        .walkingHeartRateAverage
+    ]
+
+    static let syncCategoryIdentifiers: [HKCategoryTypeIdentifier] = [
+        .highHeartRateEvent,
+        .irregularHeartRhythmEvent,
+        .lowHeartRateEvent,
+        .mindfulSession,
+        .sleepAnalysis
+    ]
+
+    static let syncSpecialSampleTypeIdentifiers: [String] = [
+        HKObjectType.electrocardiogramType().identifier,
+        HKObjectType.stateOfMindType().identifier
+    ]
 }
 
 struct HealthRecordPreview: Identifiable, Sendable {
@@ -215,7 +247,17 @@ final class HealthKitManager: @unchecked Sendable {
     ]
 
     var syncableSampleTypes: [HKSampleType] {
-        sampleTypes
+        sampleTypes.filter { sampleType in
+            if let quantityType = sampleType as? HKQuantityType {
+                return HealthKitCoverage.syncQuantityIdentifiers.contains(where: { $0.rawValue == quantityType.identifier })
+            }
+
+            if let categoryType = sampleType as? HKCategoryType {
+                return HealthKitCoverage.syncCategoryIdentifiers.contains(where: { $0.rawValue == categoryType.identifier })
+            }
+
+            return HealthKitCoverage.syncSpecialSampleTypeIdentifiers.contains(sampleType.identifier)
+        }
     }
 
     var isAvailable: Bool {
@@ -236,7 +278,7 @@ final class HealthKitManager: @unchecked Sendable {
         }
 
         let counts = await withTaskGroup(of: Int.self) { group in
-            for sampleType in sampleTypes {
+            for sampleType in syncableSampleTypes {
                 group.addTask { [healthStore] in
                     do {
                         if sampleType is HKSeriesType {
@@ -310,7 +352,7 @@ final class HealthKitManager: @unchecked Sendable {
 
         let perTypeLimit = max(maxPerType, 1)
         let collected = await withTaskGroup(of: [HealthRecordPreview].self) { group in
-            for sampleType in sampleTypes {
+            for sampleType in syncableSampleTypes {
                 group.addTask { [healthStore] in
                     do {
                         if sampleType is HKSeriesType {
