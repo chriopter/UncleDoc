@@ -66,7 +66,7 @@ final class HealthKitSyncService: ObservableObject {
 
     private static let refreshTaskIdentifier = "com.uncledoc.healthkit.refresh"
     private static let processingTaskIdentifier = "com.uncledoc.healthkit.processing"
-    private static let syncEstimateSchemaVersion = "3"
+    private static let syncEstimateSchemaVersion = "4"
 
     @Published private(set) var snapshot = HealthKitSyncSnapshot(
         phase: .notConfigured,
@@ -241,8 +241,7 @@ final class HealthKitSyncService: ObservableObject {
         if forceReestimate || config.estimatedRecordCount == nil {
             do {
                 let rawCount = try await healthKitManager.estimateInitialRecordCount()
-                let dailyAggregateCount = try await healthKitManager.estimateDailyAggregateCount()
-                config.estimatedRecordCount = rawCount + dailyAggregateCount
+                config.estimatedRecordCount = rawCount
                 config.estimatedRecordCountVersion = currentEstimateVersion
                 configuration = config
             } catch {
@@ -270,11 +269,6 @@ final class HealthKitSyncService: ObservableObject {
             let characteristicRecords = healthKitManager.characteristicSyncRecords(deviceID: deviceID)
             if !characteristicRecords.isEmpty {
                 try await upload(records: characteristicRecords, status: "syncing", phase: "characteristics", sampleType: "characteristics", completed: false)
-            }
-
-            let aggregateRecords = try await healthKitManager.fetchDailyAggregateRecords(from: .distantPast, to: Date())
-            for chunk in aggregateRecords.chunked(into: 250) {
-                try await upload(records: chunk, status: "syncing", phase: trigger, sampleType: "daily_aggregates", completed: false)
             }
 
             for sampleType in healthKitManager.syncableSampleTypes {
@@ -334,12 +328,6 @@ final class HealthKitSyncService: ObservableObject {
             let characteristicRecords = healthKitManager.characteristicSyncRecords(deviceID: deviceID)
             if !characteristicRecords.isEmpty {
                 try await upload(records: characteristicRecords, status: "syncing", phase: trigger, sampleType: "characteristics", completed: false)
-            }
-
-            let aggregateStartDate = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-            let aggregateRecords = try await healthKitManager.fetchDailyAggregateRecords(from: aggregateStartDate, to: Date())
-            for chunk in aggregateRecords.chunked(into: 250) {
-                try await upload(records: chunk, status: "syncing", phase: trigger, sampleType: "daily_aggregates", completed: false)
             }
 
             for sampleType in healthKitManager.syncableSampleTypes {

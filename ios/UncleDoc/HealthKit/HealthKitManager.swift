@@ -117,46 +117,6 @@ private enum HealthKitCoverage {
         HKSeriesType.heartbeat()
     ]
 
-    // This is the stable database sync subset. Keep it intentionally narrow so first sync
-    // is practical, resumable, and useful for analysis instead of importing millions of rows.
-    static let syncQuantityIdentifiers: [HKQuantityTypeIdentifier] = [
-        .bloodGlucose,
-        .bloodPressureDiastolic,
-        .bloodPressureSystolic,
-        .bodyFatPercentage,
-        .bodyMass,
-        .bodyMassIndex,
-        .bodyTemperature,
-        .height,
-        .restingHeartRate,
-        .walkingHeartRateAverage
-    ]
-
-    static let syncCategoryIdentifiers: [HKCategoryTypeIdentifier] = [
-        .highHeartRateEvent,
-        .irregularHeartRhythmEvent,
-        .lowHeartRateEvent,
-        .mindfulSession
-    ]
-
-    static let syncSpecialSampleTypeIdentifiers: [String] = [
-        HKObjectType.electrocardiogramType().identifier,
-        HKObjectType.stateOfMindType().identifier
-    ]
-
-    static let dailyAggregateQuantityIdentifiers: [HKQuantityTypeIdentifier] = [
-        .stepCount,
-        .activeEnergyBurned,
-        .basalEnergyBurned,
-        .heartRate,
-        .heartRateVariabilitySDNN,
-        .oxygenSaturation,
-        .respiratoryRate
-    ]
-
-    static let dailyAggregateCategoryIdentifiers: [HKCategoryTypeIdentifier] = [
-        .sleepAnalysis
-    ]
 }
 
 struct HealthRecordPreview: Identifiable, Sendable {
@@ -256,25 +216,7 @@ final class HealthKitManager: @unchecked Sendable {
     ]
 
     var syncableSampleTypes: [HKSampleType] {
-        sampleTypes.filter { sampleType in
-            if let quantityType = sampleType as? HKQuantityType {
-                return HealthKitCoverage.syncQuantityIdentifiers.contains(where: { $0.rawValue == quantityType.identifier })
-            }
-
-            if let categoryType = sampleType as? HKCategoryType {
-                return HealthKitCoverage.syncCategoryIdentifiers.contains(where: { $0.rawValue == categoryType.identifier })
-            }
-
-            return HealthKitCoverage.syncSpecialSampleTypeIdentifiers.contains(sampleType.identifier)
-        }
-    }
-
-    var dailyAggregateSampleTypes: [HKQuantityType] {
-        HealthKitCoverage.dailyAggregateQuantityIdentifiers.compactMap(HKObjectType.quantityType(forIdentifier:))
-    }
-
-    var dailyAggregateCategoryTypes: [HKCategoryType] {
-        HealthKitCoverage.dailyAggregateCategoryIdentifiers.compactMap(HKObjectType.categoryType(forIdentifier:))
+        sampleTypes.filter { !($0 is HKSeriesType) }
     }
 
     var isAvailable: Bool {
@@ -319,32 +261,6 @@ final class HealthKitManager: @unchecked Sendable {
         return counts + HealthKitCoverage.characteristicIdentifiers.count
     }
 
-    func estimateDailyAggregateCount() async throws -> Int {
-        let calendar = Calendar.current
-        let now = Date()
-        var total = 0
-
-        for sampleType in dailyAggregateSampleTypes {
-            if let startDate = try await Self.earliestStartDate(for: sampleType, healthStore: healthStore) {
-                let startDay = calendar.startOfDay(for: startDate)
-                let today = calendar.startOfDay(for: now)
-                let days = calendar.dateComponents([.day], from: startDay, to: today).day ?? 0
-                total += max(days + 1, 1)
-            }
-        }
-
-        for sampleType in dailyAggregateCategoryTypes {
-            if let startDate = try await Self.earliestStartDate(for: sampleType, healthStore: healthStore) {
-                let startDay = calendar.startOfDay(for: startDate)
-                let today = calendar.startOfDay(for: now)
-                let days = calendar.dateComponents([.day], from: startDay, to: today).day ?? 0
-                total += max(days + 1, 1)
-            }
-        }
-
-        return total
-    }
-
     func estimateSyncTypeCounts() async throws -> [(String, Int)] {
         guard isAvailable else {
             throw HealthKitManagerError.notAvailable
@@ -374,32 +290,6 @@ final class HealthKitManager: @unchecked Sendable {
         }
 
         results.append(contentsOf: rawCounts)
-
-        let calendar = Calendar.current
-        let now = Date()
-        for sampleType in dailyAggregateSampleTypes {
-            let count: Int
-            if let startDate = try await Self.earliestStartDate(for: sampleType, healthStore: healthStore) {
-                let startDay = calendar.startOfDay(for: startDate)
-                let today = calendar.startOfDay(for: now)
-                count = max((calendar.dateComponents([.day], from: startDay, to: today).day ?? 0) + 1, 1)
-            } else {
-                count = 0
-            }
-            results.append(("daily.\(sampleType.identifier)", count))
-        }
-
-        for sampleType in dailyAggregateCategoryTypes {
-            let count: Int
-            if let startDate = try await Self.earliestStartDate(for: sampleType, healthStore: healthStore) {
-                let startDay = calendar.startOfDay(for: startDate)
-                let today = calendar.startOfDay(for: now)
-                count = max((calendar.dateComponents([.day], from: startDay, to: today).day ?? 0) + 1, 1)
-            } else {
-                count = 0
-            }
-            results.append(("daily.\(sampleType.identifier)", count))
-        }
 
         return results.sorted { lhs, rhs in
             if lhs.1 == rhs.1 { return lhs.0 < rhs.0 }
@@ -448,30 +338,6 @@ final class HealthKitManager: @unchecked Sendable {
 
             healthStore.execute(query)
         }
-    }
-
-    func fetchDailyAggregateRecords(from startDate: Date, to endDate: Date) async throws -> [HealthKitRecordPayload] {
-        let chunks = try await withThrowingTaskGroup(of: [HealthKitRecordPayload].self) { group in
-            for sampleType in dailyAggregateSampleTypes {
-                group.addTask { [healthStore] in
-                    try await Self.fetchDailyAggregates(for: sampleType, healthStore: healthStore, from: startDate, to: endDate)
-                }
-            }
-
-            for sampleType in dailyAggregateCategoryTypes {
-                group.addTask { [healthStore] in
-                    try await Self.fetchDailyCategoryAggregates(for: sampleType, healthStore: healthStore, from: startDate, to: endDate)
-                }
-            }
-
-            var rows: [HealthKitRecordPayload] = []
-            for try await chunk in group {
-                rows.append(contentsOf: chunk)
-            }
-            return rows
-        }
-
-        return chunks.sorted { $0.startAt > $1.startAt }
     }
 
     func loadRecentRecords(limit: Int = 20, maxPerType: Int = 2) async throws -> [HealthRecordPreview] {
@@ -779,172 +645,6 @@ final class HealthKitManager: @unchecked Sendable {
             }
 
             healthStore.execute(query)
-        }
-    }
-
-    private static func earliestStartDate(for sampleType: HKSampleType, healthStore: HKHealthStore) async throws -> Date? {
-        try await withCheckedThrowingContinuation { continuation in
-            let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
-            let query = HKSampleQuery(sampleType: sampleType, predicate: nil, limit: 1, sortDescriptors: [sortDescriptor]) { _, samples, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume(returning: samples?.first?.startDate)
-                }
-            }
-
-            healthStore.execute(query)
-        }
-    }
-
-    private static func fetchDailyAggregates(for sampleType: HKQuantityType, healthStore: HKHealthStore, from startDate: Date, to endDate: Date) async throws -> [HealthKitRecordPayload] {
-        let calendar = Calendar.current
-        let anchorDate = calendar.startOfDay(for: startDate)
-        let interval = DateComponents(day: 1)
-        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
-        let options = statisticsOptions(for: sampleType)
-
-        let unit = preferredUnit(for: sampleType)
-
-        return try await withCheckedThrowingContinuation { continuation in
-            let query = HKStatisticsCollectionQuery(quantityType: sampleType, quantitySamplePredicate: predicate, options: options, anchorDate: anchorDate, intervalComponents: interval)
-            query.initialResultsHandler = { _, collection, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                    return
-                }
-
-                guard let collection else {
-                    continuation.resume(returning: [])
-                    return
-                }
-
-                var rows: [HealthKitRecordPayload] = []
-                collection.enumerateStatistics(from: anchorDate, to: endDate) { statistics, _ in
-                    let dayStart = calendar.startOfDay(for: statistics.startDate)
-                    let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? statistics.endDate
-                    let fields = statisticsPayloadFields(for: statistics, sampleType: sampleType, unit: unit)
-                    guard !fields.isEmpty else { return }
-
-                    rows.append(
-                        HealthKitRecordPayload(
-                            externalID: "daily:\(sampleType.identifier):\(dayStart.ISO8601Format())",
-                            recordType: "daily.\(sampleType.identifier)",
-                            sourceName: "HealthKit Daily Aggregate",
-                            startAt: dayStart.ISO8601Format(),
-                            endAt: dayEnd.ISO8601Format(),
-                            payload: [
-                                "kind": "daily_aggregate",
-                                "sample_type": sampleType.identifier,
-                                "unit": unit.unitString,
-                                "start_date": dayStart.ISO8601Format(),
-                                "end_date": dayEnd.ISO8601Format()
-                            ].merging(fields) { _, new in new }
-                        )
-                    )
-                }
-
-                continuation.resume(returning: rows)
-            }
-
-            healthStore.execute(query)
-        }
-    }
-
-    private static func preferredUnit(for sampleType: HKQuantityType) -> HKUnit {
-        switch sampleType.identifier {
-        case HKQuantityTypeIdentifier.stepCount.rawValue:
-            return .count()
-        case HKQuantityTypeIdentifier.activeEnergyBurned.rawValue,
-             HKQuantityTypeIdentifier.basalEnergyBurned.rawValue:
-            return .kilocalorie()
-        case HKQuantityTypeIdentifier.heartRate.rawValue,
-             HKQuantityTypeIdentifier.respiratoryRate.rawValue:
-            return HKUnit.count().unitDivided(by: .minute())
-        case HKQuantityTypeIdentifier.heartRateVariabilitySDNN.rawValue:
-            return .secondUnit(with: .milli)
-        case HKQuantityTypeIdentifier.oxygenSaturation.rawValue:
-            return .percent()
-        default:
-            return .count()
-        }
-    }
-
-    private static func statisticsOptions(for sampleType: HKQuantityType) -> HKStatisticsOptions {
-        switch sampleType.identifier {
-        case HKQuantityTypeIdentifier.stepCount.rawValue,
-             HKQuantityTypeIdentifier.activeEnergyBurned.rawValue,
-             HKQuantityTypeIdentifier.basalEnergyBurned.rawValue:
-            return .cumulativeSum
-        default:
-            return [ .discreteAverage, .discreteMin, .discreteMax ]
-        }
-    }
-
-    private static func statisticsPayloadFields(for statistics: HKStatistics, sampleType: HKQuantityType, unit: HKUnit) -> [String: String] {
-        if [
-            HKQuantityTypeIdentifier.stepCount.rawValue,
-            HKQuantityTypeIdentifier.activeEnergyBurned.rawValue,
-            HKQuantityTypeIdentifier.basalEnergyBurned.rawValue
-        ].contains(sampleType.identifier), let sum = statistics.sumQuantity() {
-            return [ "sum": String(describing: sum.doubleValue(for: unit)) ]
-        }
-
-        var fields: [String: String] = [:]
-        if let average = statistics.averageQuantity() {
-            fields["average"] = String(describing: average.doubleValue(for: unit))
-        }
-        if let minimum = statistics.minimumQuantity() {
-            fields["min"] = String(describing: minimum.doubleValue(for: unit))
-        }
-        if let maximum = statistics.maximumQuantity() {
-            fields["max"] = String(describing: maximum.doubleValue(for: unit))
-        }
-        return fields
-    }
-
-    private static func fetchDailyCategoryAggregates(for sampleType: HKCategoryType, healthStore: HKHealthStore, from startDate: Date, to endDate: Date) async throws -> [HealthKitRecordPayload] {
-        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
-        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
-
-        let samples: [HKCategorySample] = try await withCheckedThrowingContinuation { continuation in
-            let query = HKSampleQuery(sampleType: sampleType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume(returning: (samples as? [HKCategorySample]) ?? [])
-                }
-            }
-
-            healthStore.execute(query)
-        }
-
-        let calendar = Calendar.current
-        let grouped = Dictionary(grouping: samples, by: { calendar.startOfDay(for: $0.startDate) })
-
-        return grouped.keys.sorted().compactMap { dayStart in
-            guard let daySamples = grouped[dayStart], !daySamples.isEmpty else { return nil }
-
-            let totalDuration = daySamples.reduce(0.0) { partial, sample in
-                partial + sample.endDate.timeIntervalSince(sample.startDate)
-            }
-            let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
-
-            return HealthKitRecordPayload(
-                externalID: "daily:\(sampleType.identifier):\(dayStart.ISO8601Format())",
-                recordType: "daily.\(sampleType.identifier)",
-                sourceName: "HealthKit Daily Aggregate",
-                startAt: dayStart.ISO8601Format(),
-                endAt: dayEnd.ISO8601Format(),
-                payload: [
-                    "kind": "daily_category_aggregate",
-                    "sample_type": sampleType.identifier,
-                    "count": String(daySamples.count),
-                    "duration_seconds": String(Int(totalDuration.rounded())),
-                    "start_date": dayStart.ISO8601Format(),
-                    "end_date": dayEnd.ISO8601Format()
-                ]
-            )
         }
     }
 
