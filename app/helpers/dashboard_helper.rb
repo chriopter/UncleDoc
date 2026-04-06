@@ -20,6 +20,16 @@ module DashboardHelper
     items
   end
 
+  def shell_mobile_nav_groups(current_person, request_path)
+    shell_nav_items(current_person, request_path).each_with_object([]) do |item, groups|
+      if item[:child] && groups.last.present?
+        groups.last[:children] << item
+      else
+        groups << item.merge(children: [])
+      end
+    end
+  end
+
   def shell_settings_items(request_path)
     [
       { label: t("settings.user_group.label"), path: settings_path_for(:profile), active: request_path == settings_path_for(:profile) || request_path == settings_path_for(:users) || request_path == "/settings" },
