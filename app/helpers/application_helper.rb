@@ -1,4 +1,8 @@
 module ApplicationHelper
+  def native_app_request?
+    request.user_agent.to_s.include?("UncleDoc iOS")
+  end
+
   def app_revision_tooltip
     details = app_revision_details
     return unless details
