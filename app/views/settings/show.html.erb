@@ -3,6 +3,8 @@
       <%= render "dashboard/db_table", table: @database_table %>
     <% elsif @section == "db" %>
       <%= render "dashboard/db_overview" %>
+    <% elsif @section == "healthkit" %>
+      <%= render "settings/healthkit", healthkit_syncs: @healthkit_syncs, healthkit_records: @healthkit_records %>
     <% elsif @section == "users" %>
       <%= render "settings/users", people: @people, person: @person %>
     <% elsif @section == "llm_logs" %>

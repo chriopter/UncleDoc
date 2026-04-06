@@ -280,6 +280,26 @@ de:
   settings:
     title: "Arbeitsbereich-Einstellungen"
     subtitle: "Ein einfacher Admin-Bereich für Anzeigeoptionen und den Rohdatenbank-Browser."
+    healthkit:
+      label: "HealthKit"
+      title: "HealthKit-Sync"
+      subtitle: "Prüfen Sie synchronisierte HealthKit-Daten, sehen Sie den letzten Gerätestand und setzen Sie importierte Daten pro Person zurück."
+      nav: "HealthKit"
+      syncs_label: "Sync-Status"
+      last_sync_title: "Letzte Gerätesynchronisationen"
+      records_label: "Einträge"
+      records_title: "Zuletzt synchronisierte Einträge"
+      device_id: "Gerät"
+      last_sync_at: "Letzter Sync"
+      last_successful_sync_at: "Letzter erfolgreicher Sync"
+      synced_record_count: "Synchronisierte Einträge"
+      last_error: "Letzter Fehler"
+      reset_button: "Sync-Daten zurücksetzen"
+      reset_confirm: "Synchronisierte HealthKit-Daten und den Sync-Status für diese Person wirklich löschen?"
+      empty_syncs: "Noch kein HealthKit-Sync auf dem Server angekommen."
+      empty_records: "Noch keine synchronisierten HealthKit-Einträge vorhanden."
+      flash:
+        reset: "HealthKit-Sync-Daten wurden zurückgesetzt."
     profile:
       title: "Profileinstellungen"
       subtitle: "UI"

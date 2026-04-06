@@ -1,8 +1,12 @@
 class Person < ApplicationRecord
   has_many :entries, dependent: :destroy
+  has_many :healthkit_records, dependent: :destroy
+  has_one :healthkit_sync, dependent: :destroy
   has_many :llm_logs, dependent: :destroy
 
   validates :name, presence: true
+
+  before_validation :ensure_uuid, on: :create
 
   scope :recent_first, -> { order(created_at: :desc) }
   scope :baby_mode, -> { where(baby_mode: true) }
@@ -67,5 +71,11 @@ class Person < ApplicationRecord
 
   def recent_diapers(limit = 3)
     entries.by_parseable_data_type("diaper").recent_first.first(limit)
+  end
+
+  private
+
+  def ensure_uuid
+    self.uuid ||= SecureRandom.uuid
   end
 end
