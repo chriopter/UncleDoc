@@ -2,11 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSHealthShareUsageDescription</key>
-	<string>UncleDoc reads sleep data to automatically log your baby's sleep sessions.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>processing</string>
+		<string>fetch</string>
 	</array>
 </dict>
 </plist>
