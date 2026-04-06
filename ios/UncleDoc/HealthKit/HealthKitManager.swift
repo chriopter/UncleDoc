@@ -134,6 +134,38 @@ struct HealthRecordPreview: Identifiable, Sendable {
     }
 }
 
+enum HealthRecordXMLExporter {
+    static func exportXML(records: [HealthRecordPreview], limit: Int = 100) -> String {
+        let formatter = ISO8601DateFormatter()
+        let body = records.prefix(limit).map { record in
+            """
+              <record>
+                <title>\(escape(record.title))</title>
+                <startDate>\(formatter.string(from: record.startDate))</startDate>
+                <endDate>\(record.endDate.map(formatter.string(from:)) ?? "")</endDate>
+                <rawText>\(escape(record.rawText))</rawText>
+              </record>
+            """
+        }.joined(separator: "\n")
+
+        return """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <healthRecords exportedAt="\(formatter.string(from: Date()))" count="\(min(records.count, limit))">
+        \(body)
+        </healthRecords>
+        """
+    }
+
+    private static func escape(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "'", with: "&apos;")
+    }
+}
+
 final class HealthKitManager: @unchecked Sendable {
     static let shared = HealthKitManager()
 
@@ -168,6 +200,13 @@ final class HealthKitManager: @unchecked Sendable {
             .union(characteristicTypes)
             .filter { !$0.requiresPerObjectAuthorization() }
     }()
+
+    private let analysisPriorityTypeIdentifiers: [String] = [
+        HKQuantityTypeIdentifier.bodyMass.rawValue,
+        HKQuantityTypeIdentifier.bloodPressureSystolic.rawValue,
+        HKQuantityTypeIdentifier.bloodPressureDiastolic.rawValue,
+        HKQuantityTypeIdentifier.heartRate.rawValue
+    ]
 
     var isAvailable: Bool {
         HKHealthStore.isHealthDataAvailable()
@@ -220,12 +259,61 @@ final class HealthKitManager: @unchecked Sendable {
             .map { $0 }
     }
 
-    private static func fetchRecords(for sampleType: HKSampleType, healthStore: HKHealthStore, limit: Int) async throws -> [HealthRecordPreview] {
+    func loadExportRecords(totalLimit: Int = 100, since startDate: Date) async throws -> [HealthRecordPreview] {
+        guard isAvailable else {
+            throw HealthKitManagerError.notAvailable
+        }
+
+        let endDate = Date()
+
+        let collected = await withTaskGroup(of: [HealthRecordPreview].self) { group in
+            for sampleType in sampleTypes {
+                group.addTask { [healthStore] in
+                    do {
+                        if sampleType is HKSeriesType {
+                            return []
+                        }
+
+                        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+
+                        return try await Self.fetchRecords(
+                            for: sampleType,
+                            healthStore: healthStore,
+                            predicate: predicate,
+                            limit: totalLimit
+                        )
+                    } catch {
+                        return []
+                    }
+                }
+            }
+
+            group.addTask { [healthStore] in
+                Self.fetchCharacteristicRecords(healthStore: healthStore)
+            }
+
+            var rows: [HealthRecordPreview] = []
+            for await result in group {
+                rows.append(contentsOf: result)
+            }
+
+            return rows
+        }
+
+        return prioritize(records: collected, totalLimit: totalLimit)
+    }
+
+    private static func fetchRecords(
+        for sampleType: HKSampleType,
+        healthStore: HKHealthStore,
+        predicate: NSPredicate? = nil,
+        limit: Int
+    ) async throws -> [HealthRecordPreview] {
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
         let queryLimit = max(limit * 2, limit)
 
         let samples = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[HKSample], Error>) in
-            let query = HKSampleQuery(sampleType: sampleType, predicate: nil, limit: queryLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
+            let query = HKSampleQuery(sampleType: sampleType, predicate: predicate, limit: queryLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
                 if let error {
                     continuation.resume(throwing: error)
                 } else {
@@ -281,6 +369,30 @@ final class HealthKitManager: @unchecked Sendable {
         } catch {}
 
         return records
+    }
+
+    private func prioritize(records: [HealthRecordPreview], totalLimit: Int) -> [HealthRecordPreview] {
+        let sorted = records.sorted { $0.startDate > $1.startDate }
+        let grouped = Dictionary(grouping: sorted, by: \.title)
+
+        var selected: [HealthRecordPreview] = []
+        var seen = Set<UUID>()
+
+        for identifier in analysisPriorityTypeIdentifiers {
+            for record in grouped[identifier, default: []] {
+                if seen.insert(record.id).inserted {
+                    selected.append(record)
+                }
+            }
+        }
+
+        for record in sorted where selected.count < totalLimit {
+            if seen.insert(record.id).inserted {
+                selected.append(record)
+            }
+        }
+
+        return Array(selected.prefix(totalLimit))
     }
 
     private static func makePreview(from sample: HKSample) -> HealthRecordPreview {

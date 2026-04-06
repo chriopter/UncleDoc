@@ -1,8 +1,8 @@
 <% recent_timed_feedings = person.recent_timed_feedings(3) %>
-<%= render "shared/widget", id: "overview_baby_tracking_feeding", label: t("baby.badge"), title: t("baby.feeding.combined_title"), color: "emerald", card_classes: local_assigns[:card_classes] || 'xl:col-span-2 xl:row-span-3 h-full' do %>
-  <section class="flex h-full flex-col rounded-[1.5rem] border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-4">
+<%= render "shared/widget", id: "overview_baby_tracking_feeding", label: t("baby.badge"), title: t("baby.feeding.combined_title"), color: "emerald", card_classes: local_assigns[:card_classes] do %>
+  <section class="flex flex-col rounded-[1.5rem] bg-gradient-to-br from-emerald-50/60 via-white to-amber-50/60 p-4">
     <% if recent_timed_feedings.any? %>
-      <div class="space-y-1.5 rounded-2xl border border-emerald-100 bg-white/80 px-3 py-3 text-xs font-medium text-emerald-900">
+      <div class="space-y-1.5 rounded-2xl bg-white/70 px-3 py-3 text-xs font-medium text-emerald-900">
         <% recent_timed_feedings.each do |entry| %>
           <% duration_minutes = entry.feeding_duration_minutes %>
           <% started_at = duration_minutes.present? ? entry.display_time - duration_minutes.minutes : entry.display_time %>

@@ -1056,6 +1056,8 @@ private final class HealthRecordsViewController: UIViewController, UITableViewDa
         title = "Health Records"
         view.backgroundColor = .systemBackground
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: self, action: #selector(dismissSheet))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Export XML", style: .plain, target: self, action: #selector(didTapExport))
+        navigationItem.leftBarButtonItem?.isEnabled = false
 
         setupViews()
         loadRecords()
@@ -1077,8 +1079,7 @@ private final class HealthRecordsViewController: UIViewController, UITableViewDa
         spinner.hidesWhenStopped = true
 
         actionButton.translatesAutoresizingMaskIntoConstraints = false
-        actionButton.configuration = .filled()
-        actionButton.configuration?.title = "Allow Health Access"
+        applyActionButtonConfiguration(title: "Allow Health Access")
         actionButton.isHidden = true
         actionButton.addTarget(self, action: #selector(didTapActionButton), for: .touchUpInside)
 
@@ -1134,7 +1135,7 @@ private final class HealthRecordsViewController: UIViewController, UITableViewDa
         if records.isEmpty {
             tableView.isHidden = true
             actionButton.isHidden = false
-            actionButton.configuration?.title = "Reload"
+            applyActionButtonConfiguration(title: "Reload")
             statusLabel.text = "No recent Health records were returned."
             return
         }
@@ -1142,6 +1143,7 @@ private final class HealthRecordsViewController: UIViewController, UITableViewDa
         statusLabel.text = nil
         actionButton.isHidden = true
         tableView.isHidden = false
+        navigationItem.leftBarButtonItem?.isEnabled = !records.isEmpty
         tableView.reloadData()
     }
 
@@ -1149,8 +1151,19 @@ private final class HealthRecordsViewController: UIViewController, UITableViewDa
         tableView.isHidden = true
         spinner.stopAnimating()
         actionButton.isHidden = false
-        actionButton.configuration?.title = "Try Again"
+        applyActionButtonConfiguration(title: "Try Again")
         statusLabel.text = message
+        navigationItem.leftBarButtonItem?.isEnabled = false
+    }
+
+    private func applyActionButtonConfiguration(title: String) {
+        var configuration = UIButton.Configuration.filled()
+        configuration.title = title
+        configuration.cornerStyle = .large
+        configuration.baseBackgroundColor = .systemBlue
+        configuration.baseForegroundColor = .white
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 18, bottom: 12, trailing: 18)
+        actionButton.configuration = configuration
     }
 
     @objc private func didTapActionButton() {
@@ -1159,6 +1172,41 @@ private final class HealthRecordsViewController: UIViewController, UITableViewDa
 
     @objc private func dismissSheet() {
         dismiss(animated: true)
+    }
+
+    @objc private func didTapExport() {
+        setLoadingState(message: "Preparing 1-year XML export...")
+        navigationItem.leftBarButtonItem?.isEnabled = false
+
+        Task {
+            do {
+                let startDate = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? .distantPast
+                let exportRecords = try await healthKitManager.loadExportRecords(totalLimit: 100, since: startDate)
+                let xml = HealthRecordXMLExporter.exportXML(records: exportRecords, limit: 100)
+                let formatter = ISO8601DateFormatter()
+                let filename = "uncledoc-health-export-\(formatter.string(from: Date()).replacingOccurrences(of: ":", with: "-")).xml"
+                let temporaryURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+                try xml.write(to: temporaryURL, atomically: true, encoding: .utf8)
+
+                await MainActor.run {
+                    self.records = exportRecords
+                    self.renderLoadedState()
+
+                    let activityViewController = UIActivityViewController(activityItems: [temporaryURL], applicationActivities: nil)
+                    if let popover = activityViewController.popoverPresentationController {
+                        popover.barButtonItem = self.navigationItem.leftBarButtonItem
+                    }
+                    self.present(activityViewController, animated: true)
+                }
+            } catch {
+                await MainActor.run {
+                    self.renderErrorState(message: error.localizedDescription)
+                    let alertController = UIAlertController(title: "Export Failed", message: error.localizedDescription, preferredStyle: .alert)
+                    alertController.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(alertController, animated: true)
+                }
+            }
+        }
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
