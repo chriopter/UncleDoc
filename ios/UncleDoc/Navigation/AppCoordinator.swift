@@ -1169,6 +1169,17 @@ private final class HealthSyncViewController: UIViewController {
         Task {
             await syncService.loadAvailablePeopleIfNeeded()
 
+            guard !syncService.availablePeople.isEmpty else {
+                let alertController = UIAlertController(
+                    title: "No People Available",
+                    message: syncService.lastPeopleLoadError ?? "UncleDoc could not load any people from the server yet. Check the server connection and make sure at least one person exists.",
+                    preferredStyle: .alert
+                )
+                alertController.addAction(UIAlertAction(title: "OK", style: .default))
+                present(alertController, animated: true)
+                return
+            }
+
             let alertController = UIAlertController(title: "Choose Person", message: nil, preferredStyle: .actionSheet)
             for person in syncService.availablePeople {
                 alertController.addAction(UIAlertAction(title: person.name, style: .default) { _ in

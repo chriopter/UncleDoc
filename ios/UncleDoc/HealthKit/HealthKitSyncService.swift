@@ -56,6 +56,7 @@ final class HealthKitSyncService: ObservableObject {
         lastError: nil
     )
     @Published private(set) var availablePeople: [RemotePerson] = []
+    @Published private(set) var lastPeopleLoadError: String?
 
     private let healthKitManager = HealthKitManager.shared
     private let apiClient = APIClient.shared
@@ -102,8 +103,10 @@ final class HealthKitSyncService: ObservableObject {
 
         do {
             availablePeople = try await apiClient.fetchPeople()
+            lastPeopleLoadError = nil
             applySelectedPersonNameIfPossible()
         } catch {
+            lastPeopleLoadError = error.localizedDescription
             refreshSnapshot(statusOverride: error.localizedDescription)
         }
     }
