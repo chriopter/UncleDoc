@@ -25,26 +25,26 @@ class HealthkitController < ApplicationController
   end
 
   def sync
-    records = Array(params[:records]).filter_map { |record| build_record_payload(record) }
+    records = extract_records_payload.filter_map { |record| build_record_payload(record) }
 
     sync = HealthkitSync.find_or_initialize_by(person: @person, device_id: params[:device_id].to_s)
     sync.assign_attributes(
       status: params[:status].presence_in(HealthkitSync::STATUSES) || (params[:completed] ? "synced" : "syncing"),
       last_synced_at: Time.current,
       last_successful_sync_at: params[:completed] ? Time.current : sync.last_successful_sync_at,
-      synced_record_count: @person.healthkit_records.count + records.size,
+      synced_record_count: HealthkitRecord.where(person_id: @person.id).count,
       last_error: params[:last_error].presence,
       details: sync.details.merge(sync_details_payload)
     )
     sync.save!
 
     upsert_healthkit_records(records) if records.any?
-    sync.update!(synced_record_count: @person.healthkit_records.count)
+    sync.update!(synced_record_count: HealthkitRecord.where(person_id: @person.id).count)
 
     render json: {
       ok: true,
       imported_count: records.size,
-      total_count: @person.healthkit_records.count,
+      total_count: HealthkitRecord.where(person_id: @person.id).count,
       sync: {
         status: sync.status,
         last_synced_at: sync.last_synced_at,
@@ -74,9 +74,10 @@ class HealthkitController < ApplicationController
   end
 
   def build_record_payload(record)
-    return unless record.respond_to?(:to_h)
+    hash = normalize_hash(record)
+    return unless hash
 
-    payload = record.to_h.deep_symbolize_keys
+    payload = hash.deep_symbolize_keys
     return if payload[:external_id].blank? || payload[:record_type].blank? || payload[:start_at].blank?
 
     {
@@ -87,12 +88,35 @@ class HealthkitController < ApplicationController
       source_name: payload[:source_name],
       start_at: Time.zone.parse(payload[:start_at].to_s),
       end_at: payload[:end_at].present? ? Time.zone.parse(payload[:end_at].to_s) : nil,
-      payload: payload[:payload].is_a?(Hash) ? payload[:payload] : {},
+      payload: normalize_hash(payload[:payload]) || {},
       created_at: Time.current,
       updated_at: Time.current
     }
-  rescue ArgumentError
+  rescue ArgumentError, TypeError
     nil
+  end
+
+  def extract_records_payload
+    records = params[:records]
+    return records if records.is_a?(Array)
+
+    if request.request_parameters.is_a?(Hash)
+      nested = request.request_parameters["records"] || request.request_parameters[:records]
+      return nested if nested.is_a?(Array)
+    end
+
+    []
+  end
+
+  def normalize_hash(value)
+    case value
+    when ActionController::Parameters
+      value.to_unsafe_h
+    when Hash
+      value
+    else
+      value.to_h if value.respond_to?(:to_h)
+    end
   end
 
   def upsert_healthkit_records(records)

@@ -11,6 +11,7 @@ struct HealthKitSyncConfiguration: Codable, Sendable {
     var estimatedRecordCount: Int?
     var estimatedRecordCountVersion: String?
     var syncedRecordCount = 0
+    var currentSyncUploadedCount = 0
     var currentSampleTypeIdentifier: String?
     var sampleTypeAnchors: [String: Data] = [:]
 }
@@ -35,6 +36,7 @@ struct HealthKitSyncSnapshot: Sendable {
     var selectedPersonName: String?
     var estimatedRecordCount: Int?
     var syncedRecordCount: Int
+    var currentSyncUploadedCount: Int
     var lastSuccessfulSyncAt: Date?
     var currentSampleTypeIdentifier: String?
     var lastError: String?
@@ -53,7 +55,8 @@ struct HealthKitSyncSnapshot: Sendable {
 
     var progressText: String? {
         guard let estimatedRecordCount, estimatedRecordCount > 0 else { return nil }
-        return "\(min(syncedRecordCount, estimatedRecordCount)) / \(estimatedRecordCount) records synced"
+        let visibleCount = max(syncedRecordCount, currentSyncUploadedCount)
+        return "\(min(visibleCount, estimatedRecordCount)) / \(estimatedRecordCount) records synced"
     }
 }
 
@@ -73,6 +76,7 @@ final class HealthKitSyncService: ObservableObject {
         selectedPersonName: nil,
         estimatedRecordCount: nil,
         syncedRecordCount: 0,
+        currentSyncUploadedCount: 0,
         lastSuccessfulSyncAt: nil,
         currentSampleTypeIdentifier: nil,
         lastError: nil
@@ -143,6 +147,7 @@ final class HealthKitSyncService: ObservableObject {
         config.estimatedRecordCount = nil
         config.currentSampleTypeIdentifier = nil
         config.syncedRecordCount = 0
+        config.currentSyncUploadedCount = 0
         config.sampleTypeAnchors = [:]
         configuration = config
         refreshSnapshot(statusOverride: nil)
@@ -214,6 +219,7 @@ final class HealthKitSyncService: ObservableObject {
         config.estimatedRecordCount = nil
         config.estimatedRecordCountVersion = currentEstimateVersion
         config.syncedRecordCount = 0
+        config.currentSyncUploadedCount = 0
         configuration = config
     }
 
@@ -258,6 +264,9 @@ final class HealthKitSyncService: ObservableObject {
 
         do {
             let deviceID = DeviceIdentityStore.shared.deviceID
+            var resetConfig = configuration
+            resetConfig.currentSyncUploadedCount = 0
+            configuration = resetConfig
             let characteristicRecords = healthKitManager.characteristicSyncRecords(deviceID: deviceID)
             if !characteristicRecords.isEmpty {
                 try await upload(records: characteristicRecords, status: "syncing", phase: "characteristics", sampleType: "characteristics", completed: false)
@@ -294,6 +303,7 @@ final class HealthKitSyncService: ObservableObject {
             var config = configuration
             config.initialSyncCompleted = true
             config.lastSuccessfulSyncAt = Date()
+            config.currentSyncUploadedCount = config.syncedRecordCount
             config.currentSampleTypeIdentifier = nil
             configuration = config
 
@@ -318,6 +328,9 @@ final class HealthKitSyncService: ObservableObject {
 
         do {
             let deviceID = DeviceIdentityStore.shared.deviceID
+            var resetConfig = configuration
+            resetConfig.currentSyncUploadedCount = 0
+            configuration = resetConfig
             let characteristicRecords = healthKitManager.characteristicSyncRecords(deviceID: deviceID)
             if !characteristicRecords.isEmpty {
                 try await upload(records: characteristicRecords, status: "syncing", phase: trigger, sampleType: "characteristics", completed: false)
@@ -348,6 +361,7 @@ final class HealthKitSyncService: ObservableObject {
             var config = configuration
             config.currentSampleTypeIdentifier = nil
             config.lastSuccessfulSyncAt = Date()
+            config.currentSyncUploadedCount = 0
             configuration = config
 
             try await upload(records: [], status: "synced", phase: trigger, sampleType: nil, completed: true)
@@ -383,8 +397,11 @@ final class HealthKitSyncService: ObservableObject {
         )
 
         var config = configuration
+        if records.any? {
+            config.currentSyncUploadedCount += records.count
+        }
         config.lastSuccessfulSyncAt = sync.lastSuccessfulSyncAt ?? sync.lastSyncedAt ?? config.lastSuccessfulSyncAt
-        config.syncedRecordCount = sync.syncedRecordCount
+        config.syncedRecordCount = max(sync.syncedRecordCount, config.currentSyncUploadedCount)
         configuration = config
     }
 
@@ -399,6 +416,7 @@ final class HealthKitSyncService: ObservableObject {
             selectedPersonName: config.selectedPersonName,
             estimatedRecordCount: config.estimatedRecordCount,
             syncedRecordCount: config.syncedRecordCount,
+            currentSyncUploadedCount: config.currentSyncUploadedCount,
             lastSuccessfulSyncAt: config.lastSuccessfulSyncAt,
             currentSampleTypeIdentifier: currentSampleTypeIdentifier ?? config.currentSampleTypeIdentifier,
             lastError: currentPhase == .failed ? statusOverride : nil
