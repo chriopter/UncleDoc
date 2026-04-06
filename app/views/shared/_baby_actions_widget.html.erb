@@ -3,9 +3,9 @@
 <% feeding_timer_elapsed = baby_feeding_timer_elapsed_label(feeding_timer_started_at) %>
 <% sleep_timer_started_at = baby_sleep_timer_started_at_for(person) %>
 <% sleep_timer_elapsed = baby_sleep_timer_elapsed_label(sleep_timer_started_at) %>
-<%= render "shared/widget", id: "overview_baby_actions", label: t("baby.badge"), title: t("baby.quick_actions.title"), color: "pink", card_classes: local_assigns[:card_classes] || 'xl:col-span-2 xl:row-span-2 h-full' do %>
-  <section class="flex h-full flex-col gap-3 rounded-[1.5rem] bg-gradient-to-br from-pink-50/70 via-white to-amber-50/70 p-1.5" data-controller="feeding-mode" data-feeding-mode-default-value="breast">
-    <div class="rounded-[1.35rem] bg-white/80 p-4 shadow-sm ring-1 ring-emerald-100/80">
+<%= render "shared/widget", id: "overview_baby_actions", label: t("baby.badge"), title: t("baby.quick_actions.title"), color: "pink", card_classes: local_assigns[:card_classes] do %>
+  <section class="flex flex-col gap-3 rounded-[1.5rem] bg-gradient-to-br from-pink-50/70 via-white to-amber-50/70 p-1.5" data-controller="feeding-mode" data-feeding-mode-default-value="breast">
+    <div class="rounded-[1.35rem] bg-white/60 p-4">
       <div class="mb-3 flex items-start justify-between gap-3">
         <div>
           <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -66,7 +66,7 @@
     </div>
 
     <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
-      <div class="rounded-[1.35rem] bg-white/80 p-4 shadow-sm ring-1 ring-indigo-100/80">
+      <div class="rounded-[1.35rem] bg-white/60 p-4">
         <div class="mb-3 flex items-start justify-between gap-3">
           <div>
             <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -91,7 +91,7 @@
         <% end %>
       </div>
 
-      <div class="rounded-[1.35rem] bg-white/80 p-4 shadow-sm ring-1 ring-blue-100/80">
+      <div class="rounded-[1.35rem] bg-white/60 p-4">
         <div class="mb-3">
           <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <p class="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700"><%= t("baby.diaper.title") %></p>

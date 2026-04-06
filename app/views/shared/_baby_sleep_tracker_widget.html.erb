@@ -1,13 +1,13 @@
 <% recent_sleep_sessions = person.recent_sleep_sessions(3) %>
-<%= render "shared/widget", id: "overview_baby_tracking_sleep", label: t("baby.badge"), title: t("baby.sleep.title"), color: "indigo", card_classes: local_assigns[:card_classes] || 'xl:col-span-2 xl:row-span-3 h-full' do %>
-  <section class="flex h-full flex-col rounded-[1.5rem] border border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-violet-50 p-4">
+<%= render "shared/widget", id: "overview_baby_tracking_sleep", label: t("baby.badge"), title: t("baby.sleep.title"), color: "indigo", card_classes: local_assigns[:card_classes] do %>
+  <section class="flex flex-col rounded-[1.5rem] bg-gradient-to-br from-indigo-50/60 via-white to-violet-50/60 p-4">
     <% if person.time_since_last_sleep %>
       <div class="mb-4 flex justify-end">
-        <span class="rounded-full border border-indigo-200 bg-white px-3 py-1 text-[11px] font-semibold text-indigo-800"><%= compact_time_ago_label(person.time_since_last_sleep) %></span>
+        <span class="rounded-full bg-indigo-100/80 px-3 py-1 text-[11px] font-semibold text-indigo-800"><%= compact_time_ago_label(person.time_since_last_sleep) %></span>
       </div>
     <% end %>
     <% if recent_sleep_sessions.any? %>
-      <div class="space-y-1.5 rounded-2xl border border-indigo-100 bg-white/80 px-3 py-3 text-xs font-medium text-indigo-900">
+      <div class="space-y-1.5 rounded-2xl bg-white/70 px-3 py-3 text-xs font-medium text-indigo-900">
         <% recent_sleep_sessions.each do |entry| %>
           <% duration_minutes = entry.sleep_duration_minutes %>
           <% started_at = duration_minutes.present? ? entry.display_time - duration_minutes.minutes : entry.display_time %>
