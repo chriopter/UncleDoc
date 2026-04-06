@@ -24,7 +24,7 @@ final class LaunchAwareWebView: WKWebView {
     }
 
     private func observeLoadingState() {
-        loadingObservation = observe(\.isLoading, options: [.initial, .new]) { _, change in
+        loadingObservation = observe(\.isLoading, options: [.new]) { _, change in
             guard let isLoading = change.newValue else {
                 return
             }
@@ -132,7 +132,10 @@ final class AppCoordinator: NSObject, ObservableObject {
             NativeMenuScriptBridge.shared.attach(to: configuration.userContentController)
             let webView = LaunchAwareWebView(frame: .zero, configuration: configuration)
             webView.allowsBackForwardNavigationGestures = true
-            webView.scrollView.contentInsetAdjustmentBehavior = .automatic
+            webView.isOpaque = false
+            webView.backgroundColor = UIColor(red: 0.98, green: 0.97, blue: 0.94, alpha: 1)
+            webView.scrollView.backgroundColor = UIColor(red: 0.98, green: 0.97, blue: 0.94, alpha: 1)
+            webView.scrollView.contentInsetAdjustmentBehavior = .never
             return webView
         }
         Hotwire.loadPathConfiguration(from: [.data(Self.pathConfigurationData)])
@@ -475,6 +478,7 @@ private final class UncleDocShellViewController: UIViewController {
     private var currentURL: URL?
     private var launchState: LaunchState = .connecting
     private var webViewLoadObservers: [NSObjectProtocol] = []
+    private var hasStartedInitialPageLoad = false
 
     init(baseURL: URL, coordinator: AppCoordinator) {
         self.baseURL = baseURL
@@ -741,16 +745,17 @@ private final class UncleDocShellViewController: UIViewController {
         webViewLoadObservers = [
             center.addObserver(forName: .uncleDocWebViewDidStartLoading, object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor [weak self] in
-                    guard let self, self.currentURL == nil || self.launchOverlayView.isHidden == false else {
+                    guard let self else {
                         return
                     }
 
+                    self.hasStartedInitialPageLoad = true
                     self.updateLaunchOverlay(for: .connecting)
                 }
             },
             center.addObserver(forName: .uncleDocWebViewDidFinishLoading, object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor [weak self] in
-                    guard let self, self.currentURL != nil else {
+                    guard let self, self.hasStartedInitialPageLoad else {
                         return
                     }
 
