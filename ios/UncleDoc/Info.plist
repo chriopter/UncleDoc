@@ -9,6 +9,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSHealthShareUsageDescription</key>
+	<string>UncleDoc reads your Health data so you can review recent records in the app.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>processing</string>

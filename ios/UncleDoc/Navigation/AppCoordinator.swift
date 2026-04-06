@@ -105,6 +105,8 @@ final class AppCoordinator: NSObject, ObservableObject {
 
     func handleNativeMenuAction(named action: String) {
         switch action {
+        case "health_records":
+            shellViewController?.presentHealthRecords()
         case "reload":
             reloadCurrentPage()
         case "open_in_safari":
@@ -280,11 +282,13 @@ final class NativeMenuScriptBridge: NSObject, WKScriptMessageHandler {
       const handlerName = "uncleDocNativeMenu";
       const config = {
         mobile: [
+          { action: "health_records", label: "Health Records", icon: "M7.5 4.5h9A2.25 2.25 0 0 1 18.75 6.75v10.5A2.25 2.25 0 0 1 16.5 19.5h-9a2.25 2.25 0 0 1-2.25-2.25V6.75A2.25 2.25 0 0 1 7.5 4.5Z M12 8.25v6 M9 11.25h6" },
           { action: "reload", label: "Reload", icon: "M4.5 4.5v5h5" },
           { action: "open_in_safari", label: "Open in Safari", icon: "M16.5 7.5h3m0 0v3m0-3-7.5 7.5" },
           { action: "change_server", label: "Change Server", icon: "M4.5 7.5h15m-15 4.5h15m-15 4.5h15" }
         ],
         desktop: [
+          { action: "health_records", label: "Health Records", icon: "M7.5 4.5h9A2.25 2.25 0 0 1 18.75 6.75v10.5A2.25 2.25 0 0 1 16.5 19.5h-9a2.25 2.25 0 0 1-2.25-2.25V6.75A2.25 2.25 0 0 1 7.5 4.5Z M12 8.25v6 M9 11.25h6" },
           { action: "reload", label: "Reload", icon: "M4.5 4.5v5h5" },
           { action: "open_in_safari", label: "Open in Safari", icon: "M16.5 7.5h3m0 0v3m0-3-7.5 7.5" },
           { action: "change_server", label: "Change Server", icon: "M4.5 7.5h15m-15 4.5h15m-15 4.5h15" }
@@ -555,6 +559,19 @@ private final class UncleDocShellViewController: UIViewController {
     func openCurrentPageInSafari() {
         let url = currentURL ?? baseURL
         UIApplication.shared.open(url)
+    }
+
+    func presentHealthRecords() {
+        let viewController = HealthRecordsViewController()
+        let navigationController = UINavigationController(rootViewController: viewController)
+        navigationController.modalPresentationStyle = .pageSheet
+
+        if let sheetPresentationController = navigationController.sheetPresentationController {
+            sheetPresentationController.detents = [.medium(), .large()]
+            sheetPresentationController.prefersGrabberVisible = true
+        }
+
+        present(navigationController, animated: true)
     }
 
     func syncSelection(with url: URL) {
@@ -889,6 +906,146 @@ private final class UncleDocShellViewController: UIViewController {
         if gestureRecognizer.state == .recognized {
             setSidebarVisible(true, animated: true)
         }
+    }
+}
+
+@MainActor
+private final class HealthRecordsViewController: UIViewController, UITableViewDataSource {
+    private let healthKitManager = HealthKitManager.shared
+    private let tableView = UITableView(frame: .zero, style: .insetGrouped)
+    private let statusLabel = UILabel()
+    private let spinner = UIActivityIndicatorView(style: .large)
+    private let actionButton = UIButton(type: .system)
+    private var records: [HealthRecordPreview] = []
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        title = "Health Records"
+        view.backgroundColor = .systemBackground
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: self, action: #selector(dismissSheet))
+
+        setupViews()
+        loadRecords()
+    }
+
+    private func setupViews() {
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.dataSource = self
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "HealthRecordCell")
+        tableView.isHidden = true
+
+        statusLabel.translatesAutoresizingMaskIntoConstraints = false
+        statusLabel.numberOfLines = 0
+        statusLabel.textAlignment = .center
+        statusLabel.font = .systemFont(ofSize: 17, weight: .semibold)
+        statusLabel.textColor = .secondaryLabel
+
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        spinner.hidesWhenStopped = true
+
+        actionButton.translatesAutoresizingMaskIntoConstraints = false
+        actionButton.configuration = .filled()
+        actionButton.configuration?.title = "Allow Health Access"
+        actionButton.isHidden = true
+        actionButton.addTarget(self, action: #selector(didTapActionButton), for: .touchUpInside)
+
+        view.addSubview(tableView)
+        view.addSubview(statusLabel)
+        view.addSubview(spinner)
+        view.addSubview(actionButton)
+
+        NSLayoutConstraint.activate([
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            spinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -40),
+            statusLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            statusLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            statusLabel.topAnchor.constraint(equalTo: spinner.bottomAnchor, constant: 18),
+            actionButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            actionButton.topAnchor.constraint(equalTo: statusLabel.bottomAnchor, constant: 20)
+        ])
+    }
+
+    private func loadRecords() {
+        setLoadingState(message: "Requesting Health access and loading recent records...")
+
+        Task {
+            do {
+                try await healthKitManager.requestAuthorization()
+                let records = try await healthKitManager.loadRecentRecords(limit: 20, maxPerType: 3)
+                await MainActor.run {
+                    self.records = records
+                    self.renderLoadedState()
+                }
+            } catch {
+                await MainActor.run {
+                    self.renderErrorState(message: error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    private func setLoadingState(message: String) {
+        tableView.isHidden = true
+        actionButton.isHidden = true
+        spinner.startAnimating()
+        statusLabel.text = message
+    }
+
+    private func renderLoadedState() {
+        spinner.stopAnimating()
+
+        if records.isEmpty {
+            tableView.isHidden = true
+            actionButton.isHidden = false
+            actionButton.configuration?.title = "Reload"
+            statusLabel.text = "No recent Health records were returned."
+            return
+        }
+
+        statusLabel.text = nil
+        actionButton.isHidden = true
+        tableView.isHidden = false
+        tableView.reloadData()
+    }
+
+    private func renderErrorState(message: String) {
+        tableView.isHidden = true
+        spinner.stopAnimating()
+        actionButton.isHidden = false
+        actionButton.configuration?.title = "Try Again"
+        statusLabel.text = message
+    }
+
+    @objc private func didTapActionButton() {
+        loadRecords()
+    }
+
+    @objc private func dismissSheet() {
+        dismiss(animated: true)
+    }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        records.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "HealthRecordCell", for: indexPath)
+        let record = records[indexPath.row]
+        var content = cell.defaultContentConfiguration()
+        content.text = record.typeTitle
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        let when = formatter.localizedString(for: record.startDate, relativeTo: Date())
+        content.secondaryText = "\(record.summary) • \(when) • \(record.sourceName)"
+        content.secondaryTextProperties.numberOfLines = 2
+        cell.contentConfiguration = content
+        cell.selectionStyle = .none
+        return cell
     }
 }
 
