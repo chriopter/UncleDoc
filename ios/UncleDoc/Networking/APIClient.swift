@@ -3,7 +3,9 @@ import Foundation
 final class APIClient: @unchecked Sendable {
     static let shared = APIClient()
 
-    private let baseURL = AppCoordinator.serverURL
+    private var baseURL: URL? {
+        ServerURLStore.load()
+    }
     private var apiToken: String? {
         // TODO: Read from Keychain
         nil

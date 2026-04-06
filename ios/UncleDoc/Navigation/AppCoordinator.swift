@@ -1,11 +1,815 @@
+import Combine
 import Foundation
+@preconcurrency import HotwireNative
+import SafariServices
+import UIKit
+import WebKit
 
-// TODO: Replace ContentView with Turbo Native navigator
-// - Add turbo-ios SPM dependency
-// - Configure Navigator with server URL
-// - Set up tab bar (Home, Baby, Log, Settings)
-// - Load path configuration from /api/v1/turbo/ios/path_configuration.json
+@MainActor
+final class AppCoordinator: NSObject, ObservableObject {
+    static let shared = AppCoordinator()
 
-enum AppCoordinator {
-    static let serverURL = URL(string: "https://uncledoc.example.com")!
+    @Published private(set) var serverURL: URL?
+    @Published private(set) var validationMessage: String?
+
+    private var shellViewController: UncleDocShellViewController?
+    private static var didConfigureHotwire = false
+
+    override init() {
+        serverURL = ServerURLStore.load()
+        super.init()
+        configureHotwireIfNeeded()
+    }
+
+    func saveServerURL(from rawValue: String) {
+        guard let url = Self.normalizeServerURL(rawValue) else {
+            validationMessage = "Enter a valid UncleDoc server URL."
+            return
+        }
+
+        validationMessage = nil
+        ServerURLStore.save(url)
+        serverURL = url
+        shellViewController = nil
+    }
+
+    func resetServerURL() {
+        validationMessage = nil
+        ServerURLStore.clear()
+        serverURL = nil
+        shellViewController = nil
+    }
+
+    func makeShellViewController() -> UIViewController {
+        guard let serverURL else {
+            return UIViewController()
+        }
+
+        if let shellViewController, shellViewController.baseURL == serverURL {
+            return shellViewController
+        }
+
+        let shellViewController = UncleDocShellViewController(baseURL: serverURL, coordinator: self)
+        self.shellViewController = shellViewController
+        return shellViewController
+    }
+
+    func refreshShellViewController(_ viewController: UIViewController) {
+        guard let shellViewController = viewController as? UncleDocShellViewController else {
+            return
+        }
+
+        shellViewController.refreshChrome()
+    }
+
+    func route(to destination: AppDestination) {
+        shellViewController?.route(to: destination)
+    }
+
+    func openCurrentPageInSafari() {
+        shellViewController?.openCurrentPageInSafari()
+    }
+
+    func reloadCurrentPage() {
+        shellViewController?.reloadCurrentPage()
+    }
+
+    func handleFinishedRequest(at url: URL) {
+        shellViewController?.syncSelection(with: url)
+    }
+
+    private func configureHotwireIfNeeded() {
+        guard !Self.didConfigureHotwire else {
+            return
+        }
+
+        Hotwire.config.applicationUserAgentPrefix = "UncleDoc iOS"
+        Hotwire.config.showDoneButtonOnModals = true
+        Hotwire.config.backButtonDisplayMode = .minimal
+        Hotwire.config.makeCustomWebView = { configuration in
+            let webView = WKWebView(frame: .zero, configuration: configuration)
+            webView.allowsBackForwardNavigationGestures = true
+            webView.scrollView.contentInsetAdjustmentBehavior = .never
+            return webView
+        }
+        Hotwire.loadPathConfiguration(from: [.data(Self.pathConfigurationData)])
+
+        Self.didConfigureHotwire = true
+    }
+
+    private static var pathConfigurationData: Data {
+        let json = """
+        {
+          "settings": {},
+          "rules": [
+            {
+              "patterns": [".*"],
+              "properties": {
+                "context": "default"
+              }
+            }
+          ]
+        }
+        """
+
+        return Data(json.utf8)
+    }
+
+    private static func normalizeServerURL(_ rawValue: String) -> URL? {
+        var value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else {
+            return nil
+        }
+
+        if !value.contains("://") {
+            value = defaultScheme(for: value) + value
+        }
+
+        guard var components = URLComponents(string: value) else {
+            return nil
+        }
+
+        guard let scheme = components.scheme?.lowercased(), ["http", "https"].contains(scheme) else {
+            return nil
+        }
+
+        components.scheme = scheme
+        components.fragment = nil
+
+        guard components.host != nil else {
+            return nil
+        }
+
+        let trimmedPath = components.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        components.path = trimmedPath.isEmpty ? "/" : "/\(trimmedPath)/"
+
+        guard let url = components.url else {
+            return nil
+        }
+
+        return url
+    }
+
+    private static func defaultScheme(for value: String) -> String {
+        if value.contains("localhost") || value.contains(":") || value.hasSuffix(".local") || value.range(of: #"^\d{1,3}(\.\d{1,3}){3}(?::\d+)?$"#, options: .regularExpression) != nil {
+            return "http://"
+        }
+
+        return "https://"
+    }
+}
+
+enum ServerURLStore {
+    private static let key = "uncledoc.server_url"
+
+    static func load() -> URL? {
+        guard let value = UserDefaults.standard.string(forKey: key) else {
+            return nil
+        }
+
+        return URL(string: value)
+    }
+
+    static func save(_ url: URL) {
+        UserDefaults.standard.set(url.absoluteString, forKey: key)
+    }
+
+    static func clear() {
+        UserDefaults.standard.removeObject(forKey: key)
+    }
+}
+
+enum TrustedCertificateStore {
+    private static let key = "uncledoc.trusted_certificate_hosts"
+
+    static func contains(_ protectionSpace: URLProtectionSpace) -> Bool {
+        trustedHosts.contains(hostKey(for: protectionSpace))
+    }
+
+    static func trust(_ protectionSpace: URLProtectionSpace) {
+        var hosts = trustedHosts
+        hosts.insert(hostKey(for: protectionSpace))
+        UserDefaults.standard.set(Array(hosts), forKey: key)
+    }
+
+    private static var trustedHosts: Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: key) ?? [])
+    }
+
+    private static func hostKey(for protectionSpace: URLProtectionSpace) -> String {
+        let portSuffix = protectionSpace.port > 0 ? ":\(protectionSpace.port)" : ""
+        return "\(protectionSpace.host.lowercased())\(portSuffix)"
+    }
+}
+
+final class AuthenticationChallengeResponder: @unchecked Sendable {
+    private let completionHandler: (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+
+    init(_ completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        self.completionHandler = completionHandler
+    }
+
+    func complete(_ disposition: URLSession.AuthChallengeDisposition, credential: URLCredential?) {
+        completionHandler(disposition, credential)
+    }
+}
+
+enum AppDestination: CaseIterable {
+    case home
+    case users
+    case llm
+    case database
+    case settings
+
+    var title: String {
+        switch self {
+        case .home: return "Home"
+        case .users: return "People"
+        case .llm: return "AI"
+        case .database: return "Database"
+        case .settings: return "Settings"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .home: return "Dashboard and current family context"
+        case .users: return "Manage people and family records"
+        case .llm: return "Model, provider, and prompt settings"
+        case .database: return "Raw data browser"
+        case .settings: return "Language, date format, and preferences"
+        }
+    }
+
+    var systemImageName: String {
+        switch self {
+        case .home: return "house"
+        case .users: return "person.2"
+        case .llm: return "sparkles"
+        case .database: return "shippingbox"
+        case .settings: return "gearshape"
+        }
+    }
+
+    var relativePath: String {
+        switch self {
+        case .home: return ""
+        case .users: return "settings/users"
+        case .llm: return "settings/llm"
+        case .database: return "settings/db"
+        case .settings: return "settings"
+        }
+    }
+
+    func matches(_ url: URL, baseURL: URL) -> Bool {
+        let absoluteString = url.absoluteString
+        let routeURL = resolvedURL(relativeTo: baseURL).absoluteString
+
+        switch self {
+        case .home:
+            return absoluteString == routeURL || absoluteString == baseURL.absoluteString
+        case .users, .llm, .database:
+            return absoluteString.hasPrefix(routeURL)
+        case .settings:
+            return absoluteString.hasPrefix(routeURL)
+        }
+    }
+
+    func resolvedURL(relativeTo baseURL: URL) -> URL {
+        if relativePath.isEmpty {
+            return baseURL
+        }
+
+        return URL(string: relativePath, relativeTo: baseURL)?.absoluteURL ?? baseURL
+    }
+
+    static func bestMatch(for url: URL, baseURL: URL) -> AppDestination {
+        let ordered: [AppDestination] = [.users, .llm, .database, .settings, .home]
+        return ordered.first(where: { $0.matches(url, baseURL: baseURL) }) ?? .home
+    }
+}
+
+@MainActor
+private final class UncleDocShellViewController: UIViewController {
+    let baseURL: URL
+
+    private unowned let coordinator: AppCoordinator
+    private lazy var navigator = Navigator(
+        configuration: .init(name: "UncleDoc", startLocation: baseURL),
+        delegate: self
+    )
+    private let sidebarViewController = SidebarViewController()
+    private let contentContainerView = UIView()
+    private let dimmingButton = UIButton(type: .system)
+    private let compactSidebarWidth: CGFloat = 304
+    private let regularSidebarWidth: CGFloat = 286
+    private var sidebarLeadingConstraint: NSLayoutConstraint?
+    private var contentLeadingToViewConstraint: NSLayoutConstraint?
+    private var contentLeadingToSidebarConstraint: NSLayoutConstraint?
+    private var sidebarWidthConstraint: NSLayoutConstraint?
+    private var didStartNavigator = false
+    private var isSidebarPresented = false
+    private var currentURL: URL?
+
+    init(baseURL: URL, coordinator: AppCoordinator) {
+        self.baseURL = baseURL
+        self.coordinator = coordinator
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        view.backgroundColor = UIColor(red: 0.96, green: 0.94, blue: 0.90, alpha: 1)
+        registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (self: Self, _) in
+            self.refreshChrome()
+        }
+        setupSidebar()
+        setupContentContainer()
+        setupGestures()
+        refreshChrome()
+
+        sidebarViewController.configure(
+            serverURL: baseURL,
+            currentURL: currentURL,
+            onDestinationSelected: { [weak self] destination in
+                self?.route(to: destination)
+            },
+            onOpenInSafari: { [weak self] in
+                self?.openCurrentPageInSafari()
+            },
+            onReload: { [weak self] in
+                self?.reloadCurrentPage()
+            },
+            onChangeServer: { [weak self] in
+                self?.presentServerActions()
+            }
+        )
+
+        if !didStartNavigator {
+            didStartNavigator = true
+            navigator.start()
+        }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        refreshChrome()
+    }
+
+    func route(to destination: AppDestination) {
+        navigator.route(destination.resolvedURL(relativeTo: baseURL))
+        if isCompactLayout {
+            setSidebarVisible(false, animated: true)
+        }
+    }
+
+    func reloadCurrentPage() {
+        navigator.reload()
+    }
+
+    func openCurrentPageInSafari() {
+        let url = currentURL ?? baseURL
+        UIApplication.shared.open(url)
+    }
+
+    func syncSelection(with url: URL) {
+        currentURL = url
+        sidebarViewController.updateSelection(for: AppDestination.bestMatch(for: url, baseURL: baseURL), currentURL: url)
+        updateNavigationButtons()
+    }
+
+    func refreshChrome() {
+        let sidebarWidth = isCompactLayout ? compactSidebarWidth : regularSidebarWidth
+        sidebarWidthConstraint?.constant = sidebarWidth
+
+        if isCompactLayout {
+            contentLeadingToSidebarConstraint?.isActive = false
+            contentLeadingToViewConstraint?.isActive = true
+            sidebarLeadingConstraint?.constant = isSidebarPresented ? 0 : -(sidebarWidth + 24)
+            dimmingButton.isHidden = !isSidebarPresented
+            dimmingButton.alpha = isSidebarPresented ? 1 : 0
+            contentContainerView.layer.cornerRadius = 0
+            contentContainerView.layer.shadowOpacity = 0
+        } else {
+            isSidebarPresented = false
+            contentLeadingToViewConstraint?.isActive = false
+            contentLeadingToSidebarConstraint?.isActive = true
+            sidebarLeadingConstraint?.constant = 0
+            dimmingButton.isHidden = true
+            dimmingButton.alpha = 0
+            contentContainerView.layer.cornerRadius = 28
+            contentContainerView.layer.cornerCurve = .continuous
+            contentContainerView.layer.shadowColor = UIColor.black.cgColor
+            contentContainerView.layer.shadowOpacity = 0.08
+            contentContainerView.layer.shadowRadius = 28
+            contentContainerView.layer.shadowOffset = CGSize(width: 0, height: 10)
+        }
+
+        updateNavigationButtons()
+        view.layoutIfNeeded()
+    }
+
+    private var isCompactLayout: Bool {
+        traitCollection.horizontalSizeClass == .compact
+    }
+
+    private func setupSidebar() {
+        addChild(sidebarViewController)
+        let sidebarView = sidebarViewController.view!
+        sidebarView.translatesAutoresizingMaskIntoConstraints = false
+        sidebarView.layer.cornerRadius = 30
+        sidebarView.layer.cornerCurve = .continuous
+        sidebarView.layer.masksToBounds = true
+
+        dimmingButton.translatesAutoresizingMaskIntoConstraints = false
+        dimmingButton.backgroundColor = UIColor.black.withAlphaComponent(0.14)
+        dimmingButton.alpha = 0
+        dimmingButton.isHidden = true
+        dimmingButton.addTarget(self, action: #selector(didTapDimmingView), for: .touchUpInside)
+
+        view.addSubview(dimmingButton)
+        view.addSubview(sidebarView)
+
+        sidebarLeadingConstraint = sidebarView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 0)
+        sidebarWidthConstraint = sidebarView.widthAnchor.constraint(equalToConstant: regularSidebarWidth)
+
+        NSLayoutConstraint.activate([
+            dimmingButton.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            dimmingButton.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            dimmingButton.topAnchor.constraint(equalTo: view.topAnchor),
+            dimmingButton.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            sidebarLeadingConstraint!,
+            sidebarWidthConstraint!,
+            sidebarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
+            sidebarView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12)
+        ])
+
+        sidebarViewController.didMove(toParent: self)
+    }
+
+    private func setupContentContainer() {
+        contentContainerView.translatesAutoresizingMaskIntoConstraints = false
+        contentContainerView.backgroundColor = .systemBackground
+        contentContainerView.clipsToBounds = true
+
+        view.addSubview(contentContainerView)
+
+        contentLeadingToViewConstraint = contentContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor)
+        contentLeadingToSidebarConstraint = contentContainerView.leadingAnchor.constraint(equalTo: sidebarViewController.view.trailingAnchor, constant: 12)
+
+        NSLayoutConstraint.activate([
+            contentLeadingToViewConstraint!,
+            contentContainerView.topAnchor.constraint(equalTo: view.topAnchor),
+            contentContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            contentContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        addChild(navigator.rootViewController)
+        let navigatorView = navigator.rootViewController.view!
+        navigatorView.translatesAutoresizingMaskIntoConstraints = false
+        contentContainerView.addSubview(navigatorView)
+        NSLayoutConstraint.activate([
+            navigatorView.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor),
+            navigatorView.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor),
+            navigatorView.topAnchor.constraint(equalTo: contentContainerView.topAnchor),
+            navigatorView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor)
+        ])
+        navigator.rootViewController.didMove(toParent: self)
+    }
+
+    private func setupGestures() {
+        let edgePan = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleEdgePan(_:)))
+        edgePan.edges = .left
+        view.addGestureRecognizer(edgePan)
+    }
+
+    private func updateNavigationButtons() {
+        guard let topViewController = navigator.rootViewController.topViewController else {
+            return
+        }
+
+        if isCompactLayout {
+            topViewController.navigationItem.leftItemsSupplementBackButton = true
+            topViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(
+                image: UIImage(systemName: "sidebar.leading"),
+                style: .plain,
+                target: self,
+                action: #selector(didTapSidebarButton)
+            )
+        } else {
+            topViewController.navigationItem.leftBarButtonItem = nil
+        }
+
+        topViewController.navigationItem.rightBarButtonItem = UIBarButtonItem(
+            image: UIImage(systemName: "ellipsis.circle"),
+            style: .plain,
+            target: self,
+            action: #selector(didTapActions)
+        )
+    }
+
+    private func setSidebarVisible(_ visible: Bool, animated: Bool) {
+        isSidebarPresented = visible
+        refreshChrome()
+
+        guard animated else {
+            return
+        }
+
+        UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseInOut]) {
+            self.view.layoutIfNeeded()
+            self.dimmingButton.alpha = visible ? 1 : 0
+        }
+    }
+
+    private func presentServerActions() {
+        let alertController = UIAlertController(title: "UncleDoc Server", message: baseURL.absoluteString, preferredStyle: .actionSheet)
+        alertController.addAction(UIAlertAction(title: "Change Server", style: .destructive) { [weak self] _ in
+            self?.coordinator.resetServerURL()
+        })
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+
+        if let popover = alertController.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.maxY - 40, width: 1, height: 1)
+        }
+
+        present(alertController, animated: true)
+    }
+
+    @objc private func didTapSidebarButton() {
+        setSidebarVisible(!isSidebarPresented, animated: true)
+    }
+
+    @objc private func didTapDimmingView() {
+        setSidebarVisible(false, animated: true)
+    }
+
+    @objc private func didTapActions() {
+        let alertController = UIAlertController(title: "UncleDoc", message: nil, preferredStyle: .actionSheet)
+        alertController.addAction(UIAlertAction(title: "Reload", style: .default) { [weak self] _ in
+            self?.reloadCurrentPage()
+        })
+        alertController.addAction(UIAlertAction(title: "Open in Safari", style: .default) { [weak self] _ in
+            self?.openCurrentPageInSafari()
+        })
+        alertController.addAction(UIAlertAction(title: "Change Server", style: .destructive) { [weak self] _ in
+            self?.coordinator.resetServerURL()
+        })
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+
+        if let barButtonItem = navigator.rootViewController.topViewController?.navigationItem.rightBarButtonItem,
+           let popover = alertController.popoverPresentationController {
+            popover.barButtonItem = barButtonItem
+        }
+
+        present(alertController, animated: true)
+    }
+
+    @objc private func handleEdgePan(_ gestureRecognizer: UIScreenEdgePanGestureRecognizer) {
+        guard isCompactLayout else {
+            return
+        }
+
+        if gestureRecognizer.state == .recognized {
+            setSidebarVisible(true, animated: true)
+        }
+    }
+}
+
+extension UncleDocShellViewController: NavigatorDelegate {
+    nonisolated func didReceiveAuthenticationChallenge(_ challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let serverTrust = challenge.protectionSpace.serverTrust else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+
+        let responder = AuthenticationChallengeResponder(completionHandler)
+
+        if TrustedCertificateStore.contains(challenge.protectionSpace) {
+            responder.complete(.useCredential, credential: URLCredential(trust: serverTrust))
+            return
+        }
+
+        Task { @MainActor [weak self] in
+            guard let self else {
+                responder.complete(.cancelAuthenticationChallenge, credential: nil)
+                return
+            }
+
+            let host = challenge.protectionSpace.host
+            let message = "This UncleDoc server is using a certificate that iOS does not currently trust. If this is your own LAN or self-hosted server, you can trust it and continue."
+            let alertController = UIAlertController(
+                title: "Trust This Certificate?",
+                message: "\(host)\n\n\(message)",
+                preferredStyle: .alert
+            )
+
+            alertController.addAction(UIAlertAction(title: "Trust and Continue", style: .default) { _ in
+                TrustedCertificateStore.trust(challenge.protectionSpace)
+                responder.complete(.useCredential, credential: URLCredential(trust: serverTrust))
+            })
+            alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in
+                responder.complete(.cancelAuthenticationChallenge, credential: nil)
+            })
+
+            self.present(alertController, animated: true)
+        }
+    }
+
+    nonisolated func requestDidFinish(at url: URL) {
+        Task { @MainActor [weak self] in
+            self?.coordinator.handleFinishedRequest(at: url)
+        }
+    }
+
+    nonisolated func visitableDidFailRequest(_ visitable: Visitable, error: any Error, retryHandler: RetryBlock?) {
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+
+            let alertController = UIAlertController(
+                title: "Connection Problem",
+                message: error.localizedDescription,
+                preferredStyle: .alert
+            )
+
+            alertController.addAction(UIAlertAction(title: "Reload", style: .default) { [weak self] _ in
+                self?.reloadCurrentPage()
+            })
+
+            alertController.addAction(UIAlertAction(title: "Change Server", style: .destructive) { [weak self] _ in
+                self?.coordinator.resetServerURL()
+            })
+            alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+            self.present(alertController, animated: true)
+        }
+    }
+}
+
+@MainActor
+private final class SidebarViewController: UIViewController {
+    private let stackView = UIStackView()
+    private let footerStackView = UIStackView()
+    private let titleLabel = UILabel()
+    private let subtitleLabel = UILabel()
+    private var routeButtons: [AppDestination: UIButton] = [:]
+    private var onDestinationSelected: ((AppDestination) -> Void)?
+    private var onOpenInSafari: (() -> Void)?
+    private var onReload: (() -> Void)?
+    private var onChangeServer: (() -> Void)?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        view.backgroundColor = UIColor(red: 0.10, green: 0.11, blue: 0.13, alpha: 1)
+
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.showsVerticalScrollIndicator = false
+
+        let contentView = UIView()
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+
+        stackView.axis = .vertical
+        stackView.spacing = 10
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        footerStackView.axis = .vertical
+        footerStackView.spacing = 10
+        footerStackView.translatesAutoresizingMaskIntoConstraints = false
+
+        titleLabel.font = .systemFont(ofSize: 30, weight: .black)
+        titleLabel.textColor = .white
+        titleLabel.numberOfLines = 2
+
+        subtitleLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        subtitleLabel.textColor = UIColor.white.withAlphaComponent(0.72)
+        subtitleLabel.numberOfLines = 0
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+        contentView.addSubview(titleLabel)
+        contentView.addSubview(subtitleLabel)
+        contentView.addSubview(stackView)
+        contentView.addSubview(footerStackView)
+
+        NSLayoutConstraint.activate([
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 24),
+            subtitleLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            subtitleLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+            subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 10),
+            stackView.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+            stackView.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 24),
+            footerStackView.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            footerStackView.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+            footerStackView.topAnchor.constraint(equalTo: stackView.bottomAnchor, constant: 24),
+            footerStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24)
+        ])
+
+        AppDestination.allCases.forEach { destination in
+            let button = makeRouteButton(for: destination)
+            routeButtons[destination] = button
+            stackView.addArrangedSubview(button)
+        }
+
+        footerStackView.addArrangedSubview(makeSecondaryButton(title: "Reload", systemImageName: "arrow.clockwise") { [weak self] in
+            self?.onReload?()
+        })
+        footerStackView.addArrangedSubview(makeSecondaryButton(title: "Open in Safari", systemImageName: "safari") { [weak self] in
+            self?.onOpenInSafari?()
+        })
+        footerStackView.addArrangedSubview(makeSecondaryButton(title: "Change Server", systemImageName: "server.rack") { [weak self] in
+            self?.onChangeServer?()
+        })
+    }
+
+    func configure(
+        serverURL: URL,
+        currentURL: URL?,
+        onDestinationSelected: @escaping (AppDestination) -> Void,
+        onOpenInSafari: @escaping () -> Void,
+        onReload: @escaping () -> Void,
+        onChangeServer: @escaping () -> Void
+    ) {
+        self.onDestinationSelected = onDestinationSelected
+        self.onOpenInSafari = onOpenInSafari
+        self.onReload = onReload
+        self.onChangeServer = onChangeServer
+
+        titleLabel.text = "UncleDoc"
+        subtitleLabel.text = serverURL.host.map { "Connected to \($0)" } ?? serverURL.absoluteString
+
+        updateSelection(for: currentURL.map { AppDestination.bestMatch(for: $0, baseURL: serverURL) } ?? .home, currentURL: currentURL)
+    }
+
+    func updateSelection(for destination: AppDestination, currentURL: URL?) {
+        routeButtons.forEach { route, button in
+            button.configuration = routeButtonConfiguration(for: route, selected: route == destination)
+        }
+
+        if let currentURL {
+            subtitleLabel.text = currentURL.absoluteString
+        }
+    }
+
+    private func makeRouteButton(for destination: AppDestination) -> UIButton {
+        let button = UIButton(type: .system)
+        button.configuration = routeButtonConfiguration(for: destination, selected: destination == .home)
+        button.contentHorizontalAlignment = .leading
+        button.addAction(UIAction { [weak self] _ in
+            self?.onDestinationSelected?(destination)
+        }, for: .touchUpInside)
+        return button
+    }
+
+    private func routeButtonConfiguration(for destination: AppDestination, selected: Bool) -> UIButton.Configuration {
+        var configuration = UIButton.Configuration.plain()
+        configuration.title = destination.title
+        configuration.subtitle = destination.subtitle
+        configuration.image = UIImage(systemName: destination.systemImageName)
+        configuration.imagePlacement = .leading
+        configuration.imagePadding = 12
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 14, leading: 14, bottom: 14, trailing: 14)
+        configuration.baseForegroundColor = selected ? .white : UIColor.white.withAlphaComponent(0.86)
+        configuration.background.backgroundColor = selected ? UIColor.white.withAlphaComponent(0.14) : UIColor.white.withAlphaComponent(0.04)
+        configuration.background.cornerRadius = 20
+        return configuration
+    }
+
+    private func makeSecondaryButton(title: String, systemImageName: String, action: @escaping () -> Void) -> UIButton {
+        let button = UIButton(type: .system)
+        var configuration = UIButton.Configuration.gray()
+        configuration.title = title
+        configuration.image = UIImage(systemName: systemImageName)
+        configuration.imagePlacement = .leading
+        configuration.imagePadding = 10
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14)
+        configuration.baseForegroundColor = .white
+        configuration.background.backgroundColor = UIColor.white.withAlphaComponent(0.08)
+        configuration.background.cornerRadius = 18
+        button.configuration = configuration
+        button.addAction(UIAction { _ in action() }, for: .touchUpInside)
+        return button
+    }
 }

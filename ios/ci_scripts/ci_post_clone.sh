@@ -1,6 +1,21 @@
 #!/bin/sh
-# Xcode Cloud post-clone script
-# Runs after the repo is cloned, before the build starts
-# Add any setup steps here (e.g., install tools, generate files)
 
-echo "UncleDoc iOS - post clone complete"
+set -eu
+
+PROJECT_PATH="UncleDoc.xcodeproj"
+SCHEME_NAME="UncleDoc"
+
+echo "Running Xcode Cloud post-clone setup for ${SCHEME_NAME}"
+xcodebuild -version
+
+if [ ! -f "${PROJECT_PATH}/xcshareddata/xcschemes/${SCHEME_NAME}.xcscheme" ]; then
+    echo "error: Shared scheme ${SCHEME_NAME} is missing."
+    exit 1
+fi
+
+xcodebuild \
+    -resolvePackageDependencies \
+    -project "${PROJECT_PATH}" \
+    -scheme "${SCHEME_NAME}"
+
+echo "Post-clone setup finished"
