@@ -5,6 +5,35 @@ import SafariServices
 import UIKit
 import WebKit
 
+extension Notification.Name {
+    static let uncleDocWebViewDidStartLoading = Notification.Name("uncledoc.webview.didStartLoading")
+    static let uncleDocWebViewDidFinishLoading = Notification.Name("uncledoc.webview.didFinishLoading")
+}
+
+final class LaunchAwareWebView: WKWebView {
+    private var loadingObservation: NSKeyValueObservation?
+
+    override init(frame: CGRect, configuration: WKWebViewConfiguration) {
+        super.init(frame: frame, configuration: configuration)
+        observeLoadingState()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func observeLoadingState() {
+        loadingObservation = observe(\.isLoading, options: [.initial, .new]) { _, change in
+            guard let isLoading = change.newValue else {
+                return
+            }
+
+            NotificationCenter.default.post(name: isLoading ? .uncleDocWebViewDidStartLoading : .uncleDocWebViewDidFinishLoading, object: nil)
+        }
+    }
+}
+
 @MainActor
 final class AppCoordinator: NSObject, ObservableObject {
     static let shared = AppCoordinator()
@@ -101,9 +130,9 @@ final class AppCoordinator: NSObject, ObservableObject {
         Hotwire.config.backButtonDisplayMode = .minimal
         Hotwire.config.makeCustomWebView = { configuration in
             NativeMenuScriptBridge.shared.attach(to: configuration.userContentController)
-            let webView = WKWebView(frame: .zero, configuration: configuration)
+            let webView = LaunchAwareWebView(frame: .zero, configuration: configuration)
             webView.allowsBackForwardNavigationGestures = true
-            webView.scrollView.contentInsetAdjustmentBehavior = .never
+            webView.scrollView.contentInsetAdjustmentBehavior = .automatic
             return webView
         }
         Hotwire.loadPathConfiguration(from: [.data(Self.pathConfigurationData)])
@@ -445,6 +474,7 @@ private final class UncleDocShellViewController: UIViewController {
     private var isSidebarPresented = false
     private var currentURL: URL?
     private var launchState: LaunchState = .connecting
+    private var webViewLoadObservers: [NSObjectProtocol] = []
 
     init(baseURL: URL, coordinator: AppCoordinator) {
         self.baseURL = baseURL
@@ -467,6 +497,7 @@ private final class UncleDocShellViewController: UIViewController {
         setupSidebar()
         setupContentContainer()
         setupLaunchOverlay()
+        observeWebViewLoading()
         setupGestures()
         refreshChrome()
 
@@ -524,7 +555,6 @@ private final class UncleDocShellViewController: UIViewController {
 
     func syncSelection(with url: URL) {
         currentURL = url
-        updateLaunchOverlay(for: .connected)
         sidebarViewController.updateSelection(for: AppDestination.bestMatch(for: url, baseURL: baseURL), currentURL: url)
         updateNavigationButtons()
     }
@@ -704,6 +734,30 @@ private final class UncleDocShellViewController: UIViewController {
         let edgePan = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleEdgePan(_:)))
         edgePan.edges = .left
         view.addGestureRecognizer(edgePan)
+    }
+
+    private func observeWebViewLoading() {
+        let center = NotificationCenter.default
+        webViewLoadObservers = [
+            center.addObserver(forName: .uncleDocWebViewDidStartLoading, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self, self.currentURL == nil || self.launchOverlayView.isHidden == false else {
+                        return
+                    }
+
+                    self.updateLaunchOverlay(for: .connecting)
+                }
+            },
+            center.addObserver(forName: .uncleDocWebViewDidFinishLoading, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self, self.currentURL != nil else {
+                        return
+                    }
+
+                    self.updateLaunchOverlay(for: .connected)
+                }
+            }
+        ]
     }
 
     private func updateNavigationButtons() {
