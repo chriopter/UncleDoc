@@ -18,6 +18,20 @@
 		A1000008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000008 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXBuildRule section */
+		9DC725A52F83B8EA003151F8 /* PBXBuildRule */ = {
+			isa = PBXBuildRule;
+			compilerSpec = com.apple.compilers.proxy.script;
+			fileType = pattern.proxy;
+			inputFiles = (
+			);
+			isEditable = 1;
+			outputFiles = (
+			);
+			script = "# Type a script or drag a script file from your workspace to insert its path.\n";
+		};
+/* End PBXBuildRule section */
+
 /* Begin PBXFileReference section */
 		A2000001 /* UncleDocApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UncleDocApp.swift; sourceTree = "<group>"; };
 		A2000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -121,6 +135,7 @@
 				A6000002 /* Resources */,
 			);
 			buildRules = (
+				9DC725A52F83B8EA003151F8 /* PBXBuildRule */,
 			);
 			dependencies = (
 			);
@@ -151,6 +166,7 @@
 			knownRegions = (
 				en,
 				Base,
+				de,
 			);
 			mainGroup = A4000001;
 			packageReferences = (
@@ -274,6 +290,10 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.uncledoc.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -307,6 +327,10 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.uncledoc.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
