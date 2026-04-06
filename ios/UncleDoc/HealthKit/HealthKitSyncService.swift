@@ -53,6 +53,10 @@ struct HealthKitSyncSnapshot: Sendable {
         phase == .synced || lastSuccessfulSyncAt != nil
     }
 
+    var syncedCountText: String {
+        "\(syncedRecordCount) records synced"
+    }
+
     var progressText: String? {
         guard let estimatedRecordCount, estimatedRecordCount > 0 else { return nil }
         let visibleCount = max(syncedRecordCount, currentSyncUploadedCount)
@@ -89,6 +93,7 @@ final class HealthKitSyncService: ObservableObject {
     private let apiClient = APIClient.shared
     private let store = HealthKitSyncStore.shared
     private var isSyncing = false
+    private var backgroundSyncTask: Task<Bool, Never>?
 
     var configuration: HealthKitSyncConfiguration {
         get { store.load() }
@@ -128,6 +133,10 @@ final class HealthKitSyncService: ObservableObject {
         processing.requiresNetworkConnectivity = true
         processing.requiresExternalPower = false
         try? BGTaskScheduler.shared.submit(processing)
+    }
+
+    func cancelBackgroundSync() {
+        backgroundSyncTask?.cancel()
     }
 
     func loadAvailablePeopleIfNeeded() async {
@@ -171,7 +180,7 @@ final class HealthKitSyncService: ObservableObject {
 
     func syncNow() async {
         if configuration.initialSyncCompleted {
-            await performIncrementalSync(trigger: "manual")
+            _ = await performIncrementalSync(trigger: "manual")
         } else {
             await prepareInitialSyncConfirmationAndStart(forceReestimate: true)
         }
@@ -196,7 +205,7 @@ final class HealthKitSyncService: ObservableObject {
         guard configuration.selectedPersonUUID != nil, !isSyncing else { return }
 
         if !configuration.initialSyncCompleted {
-            await performInitialSync(trigger: "foreground")
+            _ = await performInitialSync(trigger: "foreground")
             return
         }
 
@@ -205,7 +214,7 @@ final class HealthKitSyncService: ObservableObject {
             return
         }
 
-        await performIncrementalSync(trigger: "foreground")
+        _ = await performIncrementalSync(trigger: "foreground")
     }
 
     func loadDebugTypeCounts() async throws -> [(String, Int)] {
@@ -271,23 +280,25 @@ final class HealthKitSyncService: ObservableObject {
         }
 
         refreshSnapshot(statusOverride: "\(config.estimatedRecordCount ?? 0) records will now be synced.", phase: .confirming)
-        await performInitialSync(trigger: "setup")
+        _ = await performInitialSync(trigger: "setup")
     }
 
-    private func performInitialSync(trigger: String) async {
-        guard !isSyncing, let personUUID = configuration.selectedPersonUUID else { return }
+    private func performInitialSync(trigger: String) async -> Bool {
+        guard !isSyncing, let personUUID = configuration.selectedPersonUUID else { return false }
         isSyncing = true
         defer { isSyncing = false }
 
         refreshSnapshot(statusOverride: "Starting initial HealthKit sync...", phase: .initialSyncing)
 
         do {
+            try Task.checkCancellation()
             let deviceID = DeviceIdentityStore.shared.deviceID
             var resetConfig = configuration
             resetConfig.currentSyncUploadedCount = 0
             configuration = resetConfig
             let characteristicRecords = healthKitManager.characteristicSyncRecords(deviceID: deviceID)
             if !characteristicRecords.isEmpty {
+                try Task.checkCancellation()
                 try await upload(records: characteristicRecords, status: "syncing", phase: "characteristics", sampleType: "characteristics", completed: false)
             }
 
@@ -295,11 +306,13 @@ final class HealthKitSyncService: ObservableObject {
                 var localAnchor = configuration.sampleTypeAnchors[sampleType.identifier]
 
                 while true {
+                    try Task.checkCancellation()
                     refreshSnapshot(statusOverride: "Syncing \(sampleType.identifier)...", phase: .initialSyncing, currentSampleTypeIdentifier: sampleType.identifier)
                     let batch = try await healthKitManager.fetchAnchoredBatch(for: sampleType, anchorData: localAnchor, limit: Self.syncBatchSize)
                     localAnchor = batch.anchorData
 
                     if !batch.records.isEmpty {
+                        try Task.checkCancellation()
                         try await upload(records: batch.records, status: "syncing", phase: trigger, sampleType: sampleType.identifier, completed: false)
                     }
 
@@ -321,49 +334,66 @@ final class HealthKitSyncService: ObservableObject {
             config.currentSampleTypeIdentifier = nil
             configuration = config
 
+            try Task.checkCancellation()
             try await upload(records: [], status: "synced", phase: trigger, sampleType: nil, completed: true)
             refreshSnapshot(statusOverride: "HealthKit sync finished.", phase: .synced)
             scheduleBackgroundTasks()
             _ = personUUID
+            return true
+        } catch is CancellationError {
+            handleInterruptedSync(status: "HealthKit sync paused. It will resume automatically.")
+            return false
         } catch {
             var config = configuration
             config.currentSampleTypeIdentifier = nil
             configuration = config
             refreshSnapshot(statusOverride: error.localizedDescription, phase: .failed)
+            return false
         }
     }
 
-    private func performIncrementalSync(trigger: String) async {
-        guard !isSyncing else { return }
+    private func performIncrementalSync(trigger: String) async -> Bool {
+        guard !isSyncing else { return false }
         isSyncing = true
         defer { isSyncing = false }
 
         refreshSnapshot(statusOverride: "Checking for HealthKit changes...", phase: .incrementalSyncing)
 
         do {
+            try Task.checkCancellation()
             let deviceID = DeviceIdentityStore.shared.deviceID
             var resetConfig = configuration
             resetConfig.currentSyncUploadedCount = 0
             configuration = resetConfig
             let characteristicRecords = healthKitManager.characteristicSyncRecords(deviceID: deviceID)
             if !characteristicRecords.isEmpty {
+                try Task.checkCancellation()
                 try await upload(records: characteristicRecords, status: "syncing", phase: trigger, sampleType: "characteristics", completed: false)
             }
 
             for sampleType in healthKitManager.syncableSampleTypes {
-                refreshSnapshot(statusOverride: "Checking \(sampleType.identifier)...", phase: .incrementalSyncing, currentSampleTypeIdentifier: sampleType.identifier)
-                let anchorData = configuration.sampleTypeAnchors[sampleType.identifier]
-                let batch = try await healthKitManager.fetchAnchoredBatch(for: sampleType, anchorData: anchorData, limit: Self.syncBatchSize)
+                var localAnchor = configuration.sampleTypeAnchors[sampleType.identifier]
 
-                if !batch.records.isEmpty {
-                    try await upload(records: batch.records, status: "syncing", phase: trigger, sampleType: sampleType.identifier, completed: false)
+                while true {
+                    try Task.checkCancellation()
+                    refreshSnapshot(statusOverride: "Checking \(sampleType.identifier)...", phase: .incrementalSyncing, currentSampleTypeIdentifier: sampleType.identifier)
+                    let batch = try await healthKitManager.fetchAnchoredBatch(for: sampleType, anchorData: localAnchor, limit: Self.syncBatchSize)
+                    localAnchor = batch.anchorData
+
+                    if !batch.records.isEmpty {
+                        try Task.checkCancellation()
+                        try await upload(records: batch.records, status: "syncing", phase: trigger, sampleType: sampleType.identifier, completed: false)
+                    }
+
+                    var config = configuration
+                    config.sampleTypeAnchors[sampleType.identifier] = localAnchor
+                    config.currentSampleTypeIdentifier = sampleType.identifier
+                    configuration = config
+
+                    if !batch.hasMore {
+                        break
+                    }
                 }
-
-                var config = configuration
-                config.sampleTypeAnchors[sampleType.identifier] = batch.anchorData
-                config.currentSampleTypeIdentifier = sampleType.identifier
-                config.lastSuccessfulSyncAt = Date()
-                configuration = config
             }
 
             var config = configuration
@@ -372,15 +402,28 @@ final class HealthKitSyncService: ObservableObject {
             config.currentSyncUploadedCount = 0
             configuration = config
 
+            try Task.checkCancellation()
             try await upload(records: [], status: "synced", phase: trigger, sampleType: nil, completed: true)
             refreshSnapshot(statusOverride: "HealthKit is up to date.", phase: .synced)
             scheduleBackgroundTasks()
+            return true
+        } catch is CancellationError {
+            handleInterruptedSync(status: "HealthKit sync paused. It will resume automatically.")
+            return false
         } catch {
             var config = configuration
             config.currentSampleTypeIdentifier = nil
             configuration = config
             refreshSnapshot(statusOverride: error.localizedDescription, phase: .failed)
+            return false
         }
+    }
+
+    private func handleInterruptedSync(status: String) {
+        var config = configuration
+        config.currentSampleTypeIdentifier = nil
+        configuration = config
+        refreshSnapshot(statusOverride: status, phase: defaultPhase(for: config))
     }
 
     private func upload(records: [HealthKitRecordPayload], status: String, phase: String, sampleType: String?, completed: Bool) async throws {
@@ -478,23 +521,48 @@ final class HealthKitSyncService: ObservableObject {
 
     private func handleAppRefresh(task: BGAppRefreshTask) {
         scheduleBackgroundTasks()
-        task.expirationHandler = {}
-        Task {
+        task.expirationHandler = { [weak self] in
+            Task { @MainActor in
+                self?.cancelBackgroundSync()
+            }
+        }
+        backgroundSyncTask = Task {
+            guard !Task.isCancelled else { return false }
             await syncIfNeededOnForeground()
-            task.setTaskCompleted(success: true)
+            return !Task.isCancelled
+        }
+        Task {
+            let syncTask = await MainActor.run { self.backgroundSyncTask }
+            let success = await syncTask?.value ?? false
+            task.setTaskCompleted(success: success)
+            await MainActor.run {
+                self.backgroundSyncTask = nil
+            }
         }
     }
 
     private func handleProcessing(task: BGProcessingTask) {
         scheduleBackgroundTasks()
-        task.expirationHandler = {}
-        Task {
-            if configuration.initialSyncCompleted {
-                await performIncrementalSync(trigger: "background")
-            } else {
-                await performInitialSync(trigger: "background")
+        task.expirationHandler = { [weak self] in
+            Task { @MainActor in
+                self?.cancelBackgroundSync()
             }
-            task.setTaskCompleted(success: true)
+        }
+        backgroundSyncTask = Task { [weak self] in
+            guard let self else { return false }
+            if configuration.initialSyncCompleted {
+                return await performIncrementalSync(trigger: "background")
+            } else {
+                return await performInitialSync(trigger: "background")
+            }
+        }
+        Task {
+            let syncTask = await MainActor.run { self.backgroundSyncTask }
+            let success = await syncTask?.value ?? false
+            task.setTaskCompleted(success: success)
+            await MainActor.run {
+                self.backgroundSyncTask = nil
+            }
         }
     }
 }
