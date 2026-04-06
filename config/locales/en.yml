@@ -280,6 +280,26 @@ en:
   settings:
     title: "Workspace settings"
     subtitle: "A simple admin area for display options and the raw database browser."
+    healthkit:
+      label: "HealthKit"
+      title: "HealthKit Sync"
+      subtitle: "Review synced HealthKit records, see the latest device sync, and reset imported data for a person."
+      nav: "HealthKit"
+      syncs_label: "Sync State"
+      last_sync_title: "Latest device syncs"
+      records_label: "Records"
+      records_title: "Recent synced records"
+      device_id: "Device"
+      last_sync_at: "Last sync"
+      last_successful_sync_at: "Last successful sync"
+      synced_record_count: "Synced records"
+      last_error: "Last error"
+      reset_button: "Reset synced data"
+      reset_confirm: "Delete synced HealthKit records and reset sync state for this person?"
+      empty_syncs: "No HealthKit sync has reached the server yet."
+      empty_records: "No HealthKit records have been synced yet."
+      flash:
+        reset: "HealthKit sync data was reset."
     profile:
       title: "Profile settings"
       subtitle: "UI"

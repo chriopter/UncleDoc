@@ -8,6 +8,10 @@ Rails.application.routes.draw do
   get "settings(/:section)", to: "settings#show", as: :settings
   patch "settings(/:section)", to: "settings#update"
   post "settings/llm_models", to: "settings#llm_models", as: :settings_llm_models
+  get "ios/healthkit/people", to: "healthkit#people"
+  get "ios/healthkit/status", to: "healthkit#status"
+  post "ios/healthkit/sync", to: "healthkit#sync"
+  match "ios/healthkit/reset", to: "healthkit#reset", via: [ :delete, :post ]
   resources :people, only: [ :create, :update, :destroy ] do
     resources :entries, only: [ :create, :show, :edit, :update, :destroy ] do
       patch :reparse, on: :member
