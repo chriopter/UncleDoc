@@ -1,19 +1,10 @@
 # UncleDoc
 
-UncleDoc is a self-hosted family health manager in Rails.
-
-You can log health data or upload health documents. An LLM will parse them and save them in a compact manner.
-Based on that data, a health record is built you can chat with.
-
-UncleDoc is just the app, you can bring any LLM you like.
-
-![Demo Nora overview](docs/screenshots/overview-demo-nora.png)
+UncleDoc is a self-hosted family health manager built in Rails.
 
 ## 1. What It Does
 
-
-<details open>
-<summary>Overview</summary>
+UncleDoc helps a household keep health information in one place.
 
 - Track multiple people in one household.
 - Add timeline entries with free text, structured facts, timestamps, and optional file uploads.
@@ -21,15 +12,16 @@ UncleDoc is just the app, you can bring any LLM you like.
 - Use a separate settings/admin area for users, preferences, raw DB browsing, LLM setup, prompt preview, and logs.
 - Support both English and German via Rails I18n.
 
-</details>
+It can turn notes and uploaded documents into structured health records, and if an LLM is configured, that data can also power summaries and chat.
 
-<details>
-<summary>Core data model</summary>
+<img src="docs/screenshots/overview-demo-nora.png" alt="Demo Nora overview" width="40%" />
 
-- `Person`: name, birth date, optional baby mode, stable UUID for iOS sync.
-- `Entry`: original input, occurred time, parsed JSON data, generated facts, parse status, source, optional documents.
-- `UserPreference`: locale, date format, LLM provider, model, encrypted API key.
-- `HealthkitRecord` / `HealthkitSync`: raw HealthKit import state and records from the iOS app.
+<details open>
+<summary>Overview</summary>
+
+- UncleDoc is designed for quick daily logging first, with structure added when useful.
+- The overview page acts as the main dashboard for recent activity, planning, and trends.
+- The admin/settings area keeps technical controls available without getting in the way of normal use.
 
 </details>
 
@@ -57,11 +49,16 @@ http://127.0.0.1:3000/Demo%20Nora/overview
 <details open>
 <summary>What is in the repo</summary>
 
-The repo includes a native iOS app in `ios/UncleDoc.xcodeproj`.
+UncleDoc also includes an iOS app that gives you a more native way to use the same household health record on iPhone. It can sync HealthKit data into UncleDoc, so measurements collected on the device can appear alongside manual notes and uploaded documents. The iOS app stays intentionally thin, with the main product experience still living in the Rails app.
 
-- It is primarily a Hotwire Native shell around the Rails app.
-- Product UI should stay in Rails unless the feature is truly device-specific.
-- iOS-specific behavior is mainly for native onboarding and HealthKit sync.
+</details>
+
+## 3. Features
+
+<details open>
+<summary>Baby mode</summary>
+
+UncleDoc includes a dedicated baby mode for households that want faster tracking during the newborn and infant phase. It adds baby-specific views and quick actions for feeding, diapers, sleep, and growth-related logging. That keeps the same health record structure, while making the everyday workflow much lighter for parents.
 
 </details>
 
@@ -76,62 +73,6 @@ Rails exposes HealthKit endpoints under `/ios/healthkit/*`.
 - `DELETE|POST /ios/healthkit/reset`
 
 Imported HealthKit data is stored separately from manual entries and can generate summary entries for a person.
-
-</details>
-
-## 3. LLM Integration
-
-<details open>
-<summary>What it is used for</summary>
-
-If configured, UncleDoc can:
-
-- parse free-text notes into structured `parseable_data`
-- generate log summaries
-- answer chat questions against a person's log
-- store request/response metadata in `llm_logs`
-
-LLM use is optional. The app still works without it.
-
-</details>
-
-<details>
-<summary>Supported providers</summary>
-
-Current settings support OpenAI-compatible providers including:
-
-- OpenAI
-- Fireworks
-- OpenRouter
-- Ollama
-- xAI
-- Mistral
-- Perplexity
-- DeepSeek
-
-Provider, model, and API key are managed from the settings UI.
-
-</details>
-
-<details>
-<summary>Structured entry model</summary>
-
-Structured entry items live in `parseable_data`, a JSON array of objects.
-
-Common item types include:
-
-- `temperature`
-- `pulse`
-- `blood_pressure`
-- `weight`
-- `height`
-- `medication`
-- `appointment`
-- `todo`
-- `breast_feeding`
-- `bottle_feeding`
-- `diaper`
-- `sleep`
 
 </details>
 
@@ -192,6 +133,104 @@ bin/rails test
 - Active Storage
 - Solid Queue / Solid Cache / Solid Cable
 - `ruby_llm`
+
+</details>
+
+<details>
+<summary>Core data model</summary>
+
+- `Person`: name, birth date, optional baby mode, stable UUID for iOS sync.
+- `Entry`: original input, occurred time, parsed JSON data, generated facts, parse status, source, optional documents.
+- `UserPreference`: locale, date format, LLM provider, model, encrypted API key.
+- `HealthkitRecord` / `HealthkitSync`: raw HealthKit import state and records from the iOS app.
+
+Normal logging starts with a person and an entry. An entry can stay as a plain note, or it can become a structured record after parsing or HealthKit import.
+
+| Model | Purpose | Main fields |
+| --- | --- | --- |
+| `Person` | Household member being tracked | `name`, `birth_date`, `baby_mode`, `uuid` |
+| `Entry` | Main timeline item for manual logs and generated summaries | `input`, `occurred_at`, `facts`, `parseable_data`, `parse_status`, `source` |
+| `UserPreference` | Saved app and LLM preferences | locale, date format, provider, model |
+| `HealthkitRecord` / `HealthkitSync` | Raw imported iOS health data and sync state | source payloads, sync metadata |
+
+</details>
+
+<details>
+<summary>Normal data, parsing, and summaries</summary>
+
+The normal flow is intentionally simple: write a note, attach a document if needed, and let UncleDoc keep it as-is or enrich it with structured data.
+
+| Layer | What it stores | Example |
+| --- | --- | --- |
+| Original input | The raw note or uploaded-document context | "Fever 38.2C after lunch" |
+| Facts | Short human-readable takeaways | "Temperature 38.2 C" |
+| `parseable_data` | Structured machine-readable JSON items | `{ "type": "temperature", "value": 38.2, "unit": "C" }` |
+
+This allows UncleDoc to stay useful even when parsing is unavailable, while still supporting trend widgets, follow-up planning, summaries, and chat when structured data exists.
+
+</details>
+
+<details>
+<summary>LLM integration</summary>
+
+If configured, UncleDoc can:
+
+- parse free-text notes into structured `parseable_data`
+- generate log summaries
+- answer chat questions against a person's log
+- store request/response metadata in `llm_logs`
+
+LLM use is optional. The app still works without it.
+
+Supported providers currently include:
+
+- OpenAI
+- Fireworks
+- OpenRouter
+- Ollama
+- xAI
+- Mistral
+- Perplexity
+- DeepSeek
+
+Provider, model, and API key are managed from the settings UI.
+
+</details>
+
+<details>
+<summary>Structured entry model</summary>
+
+Structured entry items live in `parseable_data`, a JSON array of objects.
+
+Common item types include:
+
+- `temperature`
+- `pulse`
+- `blood_pressure`
+- `weight`
+- `height`
+- `medication`
+- `appointment`
+- `todo`
+- `breast_feeding`
+- `bottle_feeding`
+- `diaper`
+- `sleep`
+
+</details>
+
+<details>
+<summary>HealthKit data and compaction</summary>
+
+HealthKit imports are stored separately first, then UncleDoc can compact that raw device data into timeline-friendly summaries for a person.
+
+| Layer | Purpose | Result in UncleDoc |
+| --- | --- | --- |
+| `HealthkitRecord` | Keep raw imported measurements | Preserves device-origin data |
+| Sync / grouping | Organize records by person and import window | Makes updates repeatable |
+| Generated summary `Entry` | Turn many device readings into a readable timeline item | Daily or grouped health summary on the person's timeline |
+
+This keeps the raw HealthKit history available while preventing the main log from becoming noisy with too many low-level measurements.
 
 </details>
 
