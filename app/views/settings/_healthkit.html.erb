@@ -16,7 +16,7 @@
             <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-700">
               <div class="flex items-center justify-between gap-3">
                 <p class="font-semibold text-slate-950"><%= sync.person.name %></p>
-                <span class="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-white"><%= sync.status %></span>
+                <span class="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-white"><%= sync.effective_status %></span>
               </div>
               <dl class="mt-3 grid gap-2 text-xs text-slate-500">
                 <div><span class="font-semibold text-slate-700"><%= t("settings.healthkit.device_id") %>:</span> <%= sync.device_id %></div>

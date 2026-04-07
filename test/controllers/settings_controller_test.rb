@@ -36,6 +36,55 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "entries"
   end
 
+  test "db table paginates newest rows first" do
+    person = people(:one)
+    Entry.delete_all
+
+    55.times do |index|
+      Entry.create!(
+        person: person,
+        input: "db pagination #{index}",
+        occurred_at: Time.current + index.minutes,
+        facts: [],
+        parseable_data: [],
+        parse_status: "parsed"
+      )
+    end
+
+    get settings_url(section: "db_table", table: "entries")
+
+    assert_response :success
+    assert_includes @response.body, "db pagination 54"
+    assert_not_includes @response.body, "db pagination 0"
+    assert_includes @response.body, "Page 1 of 2"
+
+    get settings_url(section: "db_table", table: "entries", page: 2)
+
+    assert_response :success
+    assert_includes @response.body, "db pagination 0"
+    assert_includes @response.body, "Page 2 of 2"
+  end
+
+  test "db table can delete an entry row" do
+    person = people(:one)
+    entry = Entry.create!(
+      person: person,
+      input: "delete me",
+      occurred_at: Time.current,
+      facts: [],
+      parseable_data: [],
+      parse_status: "parsed"
+    )
+
+    assert_difference("Entry.count", -1) do
+      delete settings_db_row_url(table: "entries", row_id: entry.id, page: 1)
+    end
+
+    assert_redirected_to settings_path(section: "db_table", table: "entries", page: 1)
+    follow_redirect!
+    assert_includes @response.body, "Deleted row #{entry.id} from entries."
+  end
+
   test "shows parser prompt in llm settings" do
     LlmLog.create!(request_kind: "entry_parse", provider: "ollama", model: "llama3", endpoint: "http://localhost:11434/v1/chat/completions", request_payload: "{}", response_body: "[]", status_code: 200)
 

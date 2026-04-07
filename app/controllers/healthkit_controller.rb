@@ -14,7 +14,7 @@ class HealthkitController < ApplicationController
     render json: {
       person: { uuid: @person.uuid, name: @person.name },
       sync: {
-        status: sync&.status || "pending",
+        status: sync&.effective_status || "pending",
         last_synced_at: sync&.last_synced_at,
         last_successful_sync_at: sync&.last_successful_sync_at,
         synced_record_count: sync&.synced_record_count.to_i,
@@ -51,7 +51,7 @@ class HealthkitController < ApplicationController
       imported_count: records.size,
       total_count: sync.synced_record_count,
       sync: {
-        status: sync.status,
+        status: sync.effective_status,
         last_synced_at: sync.last_synced_at,
         last_successful_sync_at: sync.last_successful_sync_at,
         synced_record_count: sync.synced_record_count,

@@ -7,6 +7,7 @@ Rails.application.routes.draw do
   root "dashboard#show"
   get "settings(/:section)", to: "settings#show", as: :settings
   patch "settings(/:section)", to: "settings#update"
+  delete "settings/db_row", to: "settings#destroy_db_row", as: :settings_db_row
   post "settings/llm_models", to: "settings#llm_models", as: :settings_llm_models
   get "ios/healthkit/people", to: "healthkit#people"
   get "ios/healthkit/status", to: "healthkit#status"
