@@ -1,0 +1,17 @@
+<% table[:rows].each do |row| %>
+  <tr>
+    <% table[:columns].each do |column| %>
+      <td class="max-w-xs px-4 py-3 align-top text-xs leading-5 text-slate-700"><%= row[column].presence || "-" %></td>
+    <% end %>
+    <% if table[:deletable] %>
+      <td class="px-4 py-3 align-top text-xs">
+        <% row_id = row[table[:primary_key]] %>
+        <% if row_id.present? %>
+          <%= button_to t("db.table.delete"), settings_db_row_path(table: table[:name], row_id: row_id, page: table[:page]), method: :delete, form_class: "inline", class: "rounded-full border border-rose-200 bg-rose-50 px-3 py-1 font-semibold text-rose-700 transition hover:bg-rose-100", data: { turbo_confirm: t("db.table.delete_confirm", table: table[:name], id: row_id) } %>
+        <% else %>
+          <span class="text-slate-400"><%= t("db.table.delete_unavailable_short") %></span>
+        <% end %>
+      </td>
+    <% end %>
+  </tr>
+<% end %>

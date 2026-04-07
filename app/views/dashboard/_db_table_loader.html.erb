@@ -1,0 +1,11 @@
+<% if table[:next_page].present? %>
+  <%= turbo_frame_tag "db_table_pagination",
+      src: settings_path(section: "db_table", table: table[:name], page: table[:next_page], format: :turbo_stream),
+      loading: :lazy do %>
+    <div class="flex items-center justify-center border-t border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-500">
+      <%= t("db.table.loading_more") %>
+    </div>
+  <% end %>
+<% else %>
+  <%= turbo_frame_tag "db_table_pagination" %>
+<% end %>

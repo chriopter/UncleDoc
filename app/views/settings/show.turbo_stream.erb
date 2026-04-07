@@ -1,0 +1,4 @@
+<% if @section == "db_table" && @database_table.present? %>
+  <%= turbo_stream.append "db_table_rows", partial: "dashboard/db_table_rows", locals: { table: @database_table } %>
+  <%= turbo_stream.replace "db_table_pagination", partial: "dashboard/db_table_loader", locals: { table: @database_table } %>
+<% end %>
