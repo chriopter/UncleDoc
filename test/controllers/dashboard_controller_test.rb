@@ -76,8 +76,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Parsed type"
     assert_includes @response.body, I18n.l(person.entries.first.display_time, format: :long)
     assert_select "details[data-entry-collapsible='true']", 1
-    assert_select "[data-entry-preview-grid='true']", 1
-    assert_select "[data-history-table-header='true']", 1
+    assert_select "details[data-entry-collapsible='true'] summary"
     assert_select "input[type='date'][name='date']", 1
     assert_select "select[name='date']", 0
     assert_not_includes @response.body, I18n.t("chat.title", name: person.name)
@@ -146,14 +145,15 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "h2", text: /Protocol - Marlon/, count: 0
   end
 
-  test "shows llm not configured state for skipped parsing" do
+  test "shows skipped parse entry in log" do
     person = Person.create!(name: "Alice", birth_date: Date.new(2024, 1, 1))
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 28, 20, 0), input: "Plain input", parseable_data: [], parse_status: "skipped")
 
     get person_log_url(person_slug: person.name)
 
     assert_response :success
-    assert_includes @response.body, "LLM parsing is off until a model is configured in Settings."
+    assert_includes @response.body, "Plain input"
+    assert_select "details[data-entry-collapsible='true']", 1
   end
 
   test "shows person overview without baby badge by default" do

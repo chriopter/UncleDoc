@@ -200,10 +200,17 @@ de:
     sort:
       occurred: "Ereignet"
       entered: "Erfasst"
+    source:
+      manual: "Manuell"
+      healthkit: "Healthkit"
+      healthkit_day: "HK Tages"
+      healthkit_month: "HK Monats"
     filters:
       date: "Datum"
+      source: "Quelle"
       parseable_type: "Geparster Typ"
       all_dates: "Alle Daten"
+      all_sources: "Alle Quellen"
       all_types: "Alle geparsten Typen"
       apply: "Anwenden"
       reset: "Zurücksetzen"
@@ -290,6 +297,7 @@ de:
       failed: "LLM-Parsing fehlgeschlagen. Die Notiz bleibt erhalten und kann später erneut verarbeitet werden."
     day_groups:
       today: "Heute"
+      yesterday: "Gestern"
     parsed_data:
       title: "Geparst"
       empty: "Noch keine geparsten Daten"
@@ -464,6 +472,8 @@ de:
       response: "Antwort"
       raw_data:
         toggle: "Rohe Logdaten anzeigen"
+      view_compact: "Kompakt"
+      view_raw: "Roh"
       empty: "Es wurden noch keine LLM-Anfragen protokolliert."
     llm_prompt:
       nav: "Prompt"

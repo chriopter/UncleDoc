@@ -147,6 +147,17 @@ class DashboardController < ApplicationController
       scope = scope.by_parseable_data_type(params[:parseable_type])
     end
 
+    case params[:source]
+    when "manual"
+      scope = scope.where(source: Entry::SOURCES[:manual])
+    when "healthkit"
+      scope = scope.where(source: Entry::SOURCES[:healthkit])
+    when "healthkit_day"
+      scope = scope.where(source: Entry::SOURCES[:healthkit]).where("source_ref LIKE ?", "healthkit:day:%")
+    when "healthkit_month"
+      scope = scope.where(source: Entry::SOURCES[:healthkit]).where("source_ref LIKE ?", "healthkit:month:%")
+    end
+
     scope
   end
 
@@ -156,6 +167,12 @@ class DashboardController < ApplicationController
 
     filter_options = types.map { |type| [ "#{type} · #{I18n.t("entries.data_labels.#{type}", default: type.humanize)}", type ] }
 
-    { dates: dates, parseable_type_options: filter_options }
+    source_options = []
+    source_options << [ I18n.t("entries.source.manual"), "manual" ] if person.entries.where(source: Entry::SOURCES[:manual]).exists?
+    source_options << [ I18n.t("entries.source.healthkit"), "healthkit" ] if person.entries.where(source: Entry::SOURCES[:healthkit]).exists?
+    source_options << [ I18n.t("entries.source.healthkit_day"), "healthkit_day" ] if person.entries.where("source_ref LIKE ?", "healthkit:day:%").exists?
+    source_options << [ I18n.t("entries.source.healthkit_month"), "healthkit_month" ] if person.entries.where("source_ref LIKE ?", "healthkit:month:%").exists?
+
+    { dates: dates, parseable_type_options: filter_options, source_options: source_options }
   end
 end
