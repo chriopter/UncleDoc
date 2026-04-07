@@ -2,7 +2,9 @@
 
 set -eu
 
-PROJECT_PATH="UncleDoc.xcodeproj"
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+IOS_ROOT="$(CDPATH= cd -- "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_PATH="${IOS_ROOT}/UncleDoc.xcodeproj"
 SCHEME_NAME="UncleDoc"
 
 echo "Running Xcode Cloud post-clone setup for ${SCHEME_NAME}"
