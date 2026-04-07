@@ -10,6 +10,7 @@
       <span class="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-semibold text-pink-700"><%= t("baby.badge") %></span>
     <% end %>
   </div>
+  <%= render "shared/overview_person_meta", person: person, entries: person.entries.recent_first %>
   <div class="flex flex-1 flex-col">
     <%= render "entries/form", entry: composer_entry, person: person %>
   </div>

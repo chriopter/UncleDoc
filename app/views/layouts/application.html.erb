@@ -27,8 +27,9 @@
   </head>
 
   <% nav_items = shell_nav_items(current_person, request.path) %>
-  <% on_settings = request.path.start_with?("/settings") %>
-  <% on_db = request.path.include?("/settings/db") %>
+  <% on_settings = controller_name == "settings" %>
+  <% current_settings_section = params[:section].presence || "profile" %>
+  <% on_db = on_settings && current_settings_section.in?(["db", "db_table"]) %>
 
   <body class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.20),_transparent_22%),radial-gradient(circle_at_bottom_right,_rgba(244,114,182,0.12),_transparent_24%),linear-gradient(180deg,_#fffaf1_0%,_#f4efe4_100%)] text-slate-900 antialiased <%= 'overflow-x-hidden' if native_app_request? %>">
     <%# Skip to content link for accessibility %>
@@ -102,7 +103,7 @@
                         <% end %>
                       <% end %>
                     <% else %>
-                      <%= link_to settings_path_for, class: "flex items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-white/80" do %>
+                      <%= link_to settings_path_for, class: "flex items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-white/80", aria: { label: t("nav.settings") } do %>
                         <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-amber-700 shadow-sm ring-1 ring-black/5">
                           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path stroke-linecap="round" stroke-linejoin="round" d="<%= shell_nav_icon(t('nav.settings')) %>" />
@@ -110,6 +111,27 @@
                         </span>
                         <span><%= t("nav.settings") %></span>
                       <% end %>
+                    <% end %>
+
+                    <% if on_db %>
+                      <div class="mt-3 border-t border-amber-100/80 pt-3 space-y-3">
+                        <% shell_db_tables.each do |group| %>
+                          <% next if group[:tables].blank? %>
+
+                          <div>
+                            <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400"><%= group[:label] %></p>
+                            <div class="space-y-0.5">
+                              <% group[:tables].each do |table| %>
+                                <% active = params[:table] == table[:name] %>
+                                <%= link_to settings_path(section: "db_table", table: table[:name]), class: "flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium #{active ? 'bg-amber-50 text-amber-800' : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'}" do %>
+                                  <span><%= table[:name] %></span>
+                                  <span class="text-[10px] tabular-nums text-slate-400"><%= table[:count] %></span>
+                                <% end %>
+                              <% end %>
+                            </div>
+                          </div>
+                        <% end %>
+                      </div>
                     <% end %>
                   </div>
 
@@ -219,7 +241,7 @@
 
               <%# Settings link — navigates to settings %>
               <div class="mt-auto border-t border-amber-100/80 pt-3">
-                <%= link_to settings_path_for, class: shell_menu_item_class(false) do %>
+                <%= link_to settings_path_for, class: shell_menu_item_class(false), aria: { label: t("nav.settings") } do %>
                   <span class="flex items-center gap-3">
                     <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
                       <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">

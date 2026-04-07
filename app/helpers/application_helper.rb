@@ -217,7 +217,7 @@ module ApplicationHelper
       params_or_hash
     end
 
-    %w[1w 1m 1j].include?(source.to_s) ? source.to_s : "1w"
+    %w[1w 1m 1j].include?(source.to_s) ? source.to_s : "1m"
   end
 
   def overview_period_options
@@ -231,7 +231,7 @@ module ApplicationHelper
     when "1j"
       1.year.ago.beginning_of_day..Time.zone.now.end_of_day
     else
-      6.days.ago.beginning_of_day..Time.zone.now.end_of_day
+      7.days.ago.beginning_of_day..Time.zone.now.end_of_day
     end
   end
 

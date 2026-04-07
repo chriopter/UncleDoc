@@ -12,7 +12,9 @@ class DashboardController < ApplicationController
 
   def log
     @person = Person.find_by!(name: params[:person_slug])
-    @entries = @person.entries
+    @entry_sort = entry_sort_mode(params)
+    @available_log_filters = available_log_filters(@person)
+    @entries = filtered_entries(@person, @entry_sort)
   end
 
   def calendar

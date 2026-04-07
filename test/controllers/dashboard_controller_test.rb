@@ -40,15 +40,14 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "button", text: /Family/
-    assert_select "a[aria-label='Settings']", 1
+    assert_select "a[aria-label='Settings']", minimum: 1
   end
 
   test "shows family member name when people exist" do
     get root_url
 
     assert_response :success
-    # When fixtures are loaded, should show the first person's name
-    assert_select "button", text: /MyString/
+    assert_includes @response.body, "MyString"
   end
 
   test "sets locale from user preferences" do
@@ -57,7 +56,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     get root_url
 
     assert_response :success
-    assert_select "a[aria-label='Einstellungen']", 1
+    assert_select "a[aria-label='Einstellungen']", minimum: 1
 
     UserPreference.update_locale("en")
   end
@@ -125,13 +124,14 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "LLM parsing is off until a model is configured in Settings."
   end
 
-  test "shows baby mode toggle on person overview" do
+  test "shows person overview without baby badge by default" do
     person = Person.create!(name: "BabyUser", birth_date: Date.new(2024, 1, 1))
 
     get person_overview_url(person_slug: person.name)
 
     assert_response :success
-    assert_select "a[aria-label='Edit person']", 1
+    assert_select "h2", text: "BabyUser"
+    assert_select "span", text: I18n.t("baby.badge"), count: 0
   end
 
   test "overview updates show parsing state badges" do

@@ -1,4 +1,9 @@
-<% visible_entries = overview_recent_entries(person, sort_mode: "entered", period: "1w", limit: local_assigns[:entry_limit] || 5) %>
+<% visible_entries = overview_recent_entries(
+  person,
+  sort_mode: local_assigns[:sort].presence || "entered",
+  period: overview_period_mode(params, :recent),
+  limit: local_assigns[:entry_limit] || 5
+) %>
 
 <%= render "shared/widget", id: "overview_recent_activity", color: "amber", card_classes: local_assigns[:card_classes] do %>
   <div class="mb-2 flex items-center justify-between">
