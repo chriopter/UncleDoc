@@ -1,130 +1,158 @@
 # UncleDoc
 
-A small self-hosted family health tracker built with Rails, Hotwire, and Tailwind CSS.
+UncleDoc is a small self-hosted family health tracker built with Rails, Hotwire, and Tailwind CSS.
 
-## Features
+It is designed for fast everyday logging on a phone or laptop, with English and German support, simple person-based navigation, optional LLM-assisted parsing, and a thin iOS shell for native HealthKit sync.
 
-- **Family Management**: Track health data for multiple family members
-- **Baby Mode**: Specialized tracking for infants (feeding, diaper changes, sleep)
-- **Flexible Health Data**: Extensible system for any health metric (temperature, pulse, weight, etc.)
-- **Bilingual**: Full English and German support
-- **Self-Hosted**: Your data stays on your server
+## What The App Does
 
-## Data Model
+- Track multiple people in one household.
+- Create timeline entries with free text, structured data, timestamps, and optional document uploads.
+- Support baby-mode workflows such as feeding, diaper, and sleep tracking.
+- Show person-specific overview, log, trends, calendar, files, and HealthKit pages.
+- Offer admin-style settings pages for users, raw database browsing, LLM configuration, prompt preview, and LLM logs.
+- Support English (`en`) and German (`de`) locales.
 
-Every health log entry has only two core payloads:
+## Main Concepts
 
-- `note`: the original free text from the user; this stays the source of truth
-- `data`: a JSON array with structured facts parsed from the note or written directly by quick actions
+### People
 
-Each row also stores `occurred_at`, so the timeline can sort, summarize, and chart events correctly.
+Each `Person` is a tracked family member with:
 
-Example entry payload:
+- `name`
+- `birth_date`
+- optional `baby_mode`
+- a stable `uuid` used by the iOS HealthKit integration
 
-```json
-[
-  { "type": "temperature", "value": 39.2, "unit": "C", "flag": "high" },
-  { "type": "medication", "value": "ibuprofen", "dose": "400mg" }
-]
-```
+### Entries
 
-### Two Ways Entries Are Created
+Each `Entry` belongs to a person and stores:
 
-1. Free text: save `note` first, then parse into `data` asynchronously via the configured LLM
-2. Quick actions: write `data` directly and auto-generate a matching `note`
+- `input`: the original note text
+- `occurred_at`: when the event happened
+- `parseable_data`: structured JSON facts
+- `facts`: short human-readable summaries derived from structured data
+- `documents`: optional uploaded files via Active Storage
+- `parse_status`: `pending`, `parsed`, `failed`, or `skipped`
+- `source`: `manual` or `healthkit`
 
-Both paths end in the same `entries` table and the same UI.
+The app uses one entry stream for manual logs, quick baby actions, document-backed notes, and HealthKit-generated summaries.
 
-### Querying Structured Data
+### Structured Data
 
-`data` is always a JSON array of objects. Common queries use the free-form `type` field, for example `temperature`, `pulse`, `diaper`, `breast_feeding`, or `bottle_feeding`.
+`parseable_data` is a JSON array of objects. Common item types include:
 
-## LLM-First Data Plan
+- `temperature`
+- `pulse`
+- `medication`
+- `appointment`
+- `todo`
+- `breast_feeding`
+- `bottle_feeding`
+- `diaper`
+- `sleep`
 
-UncleDoc is an end-user app, so the main input model is natural language. Users log freely, the LLM interprets the note, and the app maps that input into a small stable internal vocabulary.
+This keeps the write path flexible while still making filtering, widgets, charts, summaries, and follow-up actions possible.
 
-### Core Rule
+### LLM Support
 
-- Do not force external healthcare standards into the product flow
-- Do not try to normalize everything upfront
-- Do keep a fixed internal set of event types, metric keys, units, and common values
-- Let the LLM map messy user input into those internal values
+If LLM settings are configured, UncleDoc can:
 
-### What Gets Stored
+- parse free-text entries into structured `parseable_data`
+- generate log summaries
+- answer chat questions against a person's log
+- record request/response metadata in `llm_logs`
 
-- `note` for the original human note
-- `data` for parsed structured values like temperature, pulse, diaper state, bottle amount, medication, or lab values
-- optional LLM-generated summaries for later features
+Supported provider settings currently include OpenAI-compatible providers such as OpenAI, Fireworks, OpenRouter, Ollama, xAI, Mistral, Perplexity, and DeepSeek.
 
-### Parser Examples
+LLM use is optional. Entries still work without it.
 
-The prompt includes compact examples for both baby tracking and elderly/sick care so the output stays predictable:
+### HealthKit Integration
 
-```text
-Peter breastfed left side for 18 minutes
-[{"type":"breast_feeding","value":18,"unit":"min","side":"left"}]
+The repo includes a native iOS app in `ios/`.
 
-Peter diaper wet and solid
-[{"type":"diaper","wet":true,"solid":true}]
+- The iOS app is primarily a Hotwire Native shell around the Rails app.
+- It can sync HealthKit records to Rails endpoints under `/ios/healthkit/*`.
+- Synced HealthKit records are stored separately and can generate summary entries attached to a person.
 
-Peter got ibuprofen 400mg
-[{"type":"medication","value":"ibuprofen","dose":"400mg"}]
+## Main Screens
 
-Elderly patient WBC 11.2 G/L and CRP 3.1
-[{"type":"WBC","value":11.2,"unit":"G/L","ref":"4.0-10.0","flag":"high"},{"type":"CRP","value":3.1}]
-```
+For a selected person, the Rails app currently exposes:
 
-After the model responds, UncleDoc sanitizes the JSON before saving it so units, type names, and numeric values stay consistent.
+- `/overview`
+- `/log`
+- `/trends`
+- `/calendar`
+- `/files`
+- `/baby`
+- `/healthkit`
 
-### Why This Approach
+Global settings pages include:
 
-- simpler than full medical standards
-- stable enough for charts, reminders, and summaries
-- flexible enough for messy family logging
-- well suited for an LLM-driven product
+- profile preferences
+- users
+- HealthKit admin
+- LLM settings
+- LLM prompt preview
+- LLM logs
+- raw database browsing
 
-### Future Option
+## Stack
 
-If UncleDoc later needs export or interoperability, standards can be added as a separate mapping layer. They are not required for the core app model.
+- Ruby `4.0.2`
+- Rails `8.1`
+- SQLite for the current local setup
+- Hotwire (`turbo-rails`, `stimulus-rails`)
+- Tailwind CSS
+- Active Storage for uploaded documents
+- Solid Queue / Solid Cache / Solid Cable
+- `ruby_llm` for LLM requests
 
-## Development
+## Development Setup
 
 ### Prerequisites
 
-- Ruby 3.4+
-- SQLite3 (or PostgreSQL for production)
-- Node.js (for Tailwind CSS)
+- Ruby `4.0.2`
+- Bundler
+- SQLite3
+- Node.js is not required separately when using `tailwindcss-rails`, but a normal Rails dev environment is assumed
 
-### Setup
+### Install
 
 ```bash
-# Clone and install dependencies
-git clone <repo>
-cd uncledoc
 bundle install
-
-# Setup database
 bin/rails db:prepare
+```
 
-# Start server
+### Run The App
+
+```bash
 bin/dev
 ```
 
+`Procfile.dev` starts:
 
-### LAN Dev Server
+- Rails on `0.0.0.0:3000`
+- the Tailwind watcher
 
-This repository is currently set up to run on a LAN-only server with Rails in `development` mode for fast iteration.
+### Tests
 
-- App directory: `/root/uncledoc`
-- Service name: `uncledoc-dev.service`
-- Bind address: `0.0.0.0:3000`
-- Persistent database: `storage/development.sqlite3`
+```bash
+bin/rails test
+```
 
-`Procfile.dev` starts both Rails and the Tailwind watcher. The Rails process is intentionally kept in `development` so code changes reload immediately.
+## Local LAN Service Setup
 
-### systemd Service
+This repo is also used in a LAN-only environment that behaves like a small self-hosted deployment.
 
-The server can be managed with:
+- app directory: `/root/uncledoc`
+- service name: `uncledoc-dev.service`
+- command: `bin/dev`
+- Rails environment: `development`
+- bind address: `0.0.0.0:3000`
+- persistent database: `storage/development.sqlite3`
+
+Useful commands:
 
 ```bash
 systemctl status uncledoc-dev.service
@@ -133,56 +161,25 @@ systemctl stop uncledoc-dev.service
 journalctl -u uncledoc-dev.service -f
 ```
 
-On boot, `systemd` starts `bin/dev`, which in turn:
-
-- prepares the database with `bin/rails db:prepare`
-- starts the Rails server on port `3000`
-- starts the Tailwind watcher for live CSS rebuilds
-
-This setup is intended for trusted LAN use only. It should not be exposed directly to the public internet.
-
-### Running Tests
-
-```bash
-bin/rails test
-```
+This setup is intended for trusted LAN use. Do not expose it directly to the public internet.
 
 ## Deployment
 
-See [Kamal deployment docs](https://kamal-deploy.org) for production deployment with Docker.
+The repo includes Kamal for container-based deployment.
 
-### Kamal on a LAN
+For the current LAN-oriented workflow:
 
-This app can be deployed with Kamal on a trusted LAN without requesting a public TLS certificate.
+- keep generic Kamal config in git
+- keep machine-specific LAN host values out of git
+- store deploy secrets securely
+- prefer the documented local helper scripts when present
 
-- Keep `config/deploy.yml` generic and committed.
-- Keep the LAN host out of git by reading it from `KAMAL_LAN_HOST` in `config/deploy.lan.yml`.
-- Store the LAN host and Kamal deploy secrets in 1Password.
-- Keep Kamal proxy SSL disabled for LAN-only HTTP deployment.
-- First-time setup should use `bin/setup_op`.
-- Regular deploys should use `bin/deploy_op`.
+## Repo Notes
 
-Tracked LAN destination file:
-
-```yaml
-servers:
-  web:
-    - <%= ENV.fetch("KAMAL_LAN_HOST") %>
-```
-
-Example 1Password-backed LAN secrets template:
-
-```sh
-SECRETS=$(kamal secrets fetch --adapter 1password --account my.1password.eu --from "Private/UncleDoc Production Secrets" RAILS_MASTER_KEY)
-RAILS_MASTER_KEY=$(kamal secrets extract RAILS_MASTER_KEY $SECRETS)
-```
-
-Example 1Password field for the server target:
-
-```text
-op://Private/UncleDoc Production Secrets/KAMAL_LAN_HOST
-```
+- Web UI changes should preserve the Hotwire Native iOS shell behavior.
+- All user-facing UI text should use Rails I18n and include both English and German translations.
+- Local app data in `storage/development.sqlite3` should be treated as valuable.
 
 ## License
 
-MIT License - See LICENSE file for details.
+MIT. See `LICENSE`.
