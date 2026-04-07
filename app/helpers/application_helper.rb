@@ -236,8 +236,19 @@ module ApplicationHelper
   end
 
   def overview_recent_entries(person, sort_mode:, period:, limit: 3)
-    scope = person.entries.merge(Entry.sorted_by(sort_mode)).where(occurred_at: overview_period_window(period))
-    scope.limit(limit)
+    scope = person.entries
+      .merge(Entry.sorted_by(sort_mode))
+      .where(occurred_at: overview_period_window(period))
+      .where(occurred_at: ..Time.zone.now)
+
+    candidates = scope.limit([ limit * 10, 24 ].max).to_a
+    helpful_entries = candidates.select { |entry| overview_recent_entry_helpful?(entry) }
+    selected_entries = helpful_entries.first(limit)
+
+    return selected_entries if selected_entries.size == limit
+
+    fallback_entries = candidates.reject { |entry| selected_entries.include?(entry) }
+    (selected_entries + fallback_entries).first(limit)
   end
 
   def weight_activity_available?(person)
@@ -526,6 +537,17 @@ module ApplicationHelper
     return 2 if entry.source_ref.to_s.start_with?("healthkit:month:")
 
     3
+  end
+
+  def overview_recent_entry_helpful?(entry)
+    return false if entry.todo? || entry.appointment?
+    return false if entry.failed_parse?
+
+    if (entry.pending_parse? || entry.skipped_parse?) && entry.parseable_data.blank? && entry.fact_items.blank? && !entry.documents_attached?
+      return false
+    end
+
+    entry.parseable_data.present? || entry.fact_items.present? || entry.documents_attached? || entry.input.present?
   end
 
   private
