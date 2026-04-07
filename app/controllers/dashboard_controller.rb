@@ -32,6 +32,20 @@ class DashboardController < ApplicationController
     @document_count = @document_entries.sum(&:document_count)
   end
 
+  def healthkit
+    @person = Person.find_by!(name: params[:person_slug])
+    @healthkit_view = params[:view].in?(%w[summaries raw]) ? params[:view] : "summaries"
+    @healthkit_syncs = @person.healthkit_syncs.order(updated_at: :desc)
+    @healthkit_records = @person.healthkit_records.recent_first.limit(200)
+    @healthkit_record_count = @person.healthkit_records.count
+    @healthkit_record_type_count = @person.healthkit_records.distinct.count(:record_type)
+    @healthkit_previews = HealthkitSummaryPreviewer.call(person: @person).sort_by(&:starts_on).reverse
+    @healthkit_daily_summary_count = @healthkit_previews.count { |preview| preview.period_type == :day }
+    @healthkit_monthly_summary_count = @healthkit_previews.count { |preview| preview.period_type == :month }
+    @healthkit_latest_sync = @healthkit_syncs.max_by { |sync| sync.last_synced_at || sync.updated_at || Time.zone.at(0) }
+    @healthkit_last_successful_sync_at = @healthkit_syncs.filter_map(&:last_successful_sync_at).max
+  end
+
   def chat
     @person = Person.find_by!(name: params[:person_slug])
     entries = @person.entries.order(occurred_at: :asc)
