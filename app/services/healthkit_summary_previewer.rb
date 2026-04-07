@@ -318,7 +318,7 @@ class HealthkitSummaryPreviewer
     latest_pair = [
       [ left[:latest_at], left[:latest_quantity_value], left[:latest_quantity_unit] ],
       [ right[:latest_at], right[:latest_quantity_value], right[:latest_quantity_unit] ]
-    ].compact.max_by(&:first)
+    ].select { |pair| pair.first.present? }.max_by(&:first)
 
     {
       count: left[:count] + right[:count],
