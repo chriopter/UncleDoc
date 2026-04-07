@@ -26,9 +26,9 @@ RUN apt-get update -qq && \
 # Set production environment variables and enable jemalloc for reduced memory usage and latency.
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
+    BUNDLE_JOBS="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development" \
-    LD_PRELOAD="/usr/local/lib/libjemalloc.so" \
     APP_REVISION="$GIT_SHA" \
     APP_COMMIT_SUBJECT="$GIT_COMMIT_SUBJECT"
 
@@ -64,6 +64,8 @@ RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 # Final stage for app image
 FROM base
+
+ENV LD_PRELOAD="/usr/local/lib/libjemalloc.so"
 
 # Run and own only the runtime files as a non-root user for security
 RUN groupadd --system --gid 1000 rails && \
