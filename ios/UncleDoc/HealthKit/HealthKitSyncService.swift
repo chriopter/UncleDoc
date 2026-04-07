@@ -357,15 +357,9 @@ final class HealthKitSyncService: ObservableObject {
 
         do {
             try Task.checkCancellation()
-            let deviceID = DeviceIdentityStore.shared.deviceID
             var resetConfig = configuration
             resetConfig.currentSyncUploadedCount = 0
             configuration = resetConfig
-            let characteristicRecords = healthKitManager.characteristicSyncRecords(deviceID: deviceID)
-            if !characteristicRecords.isEmpty {
-                try Task.checkCancellation()
-                try await upload(records: characteristicRecords, status: "syncing", phase: trigger, sampleType: "characteristics", completed: false)
-            }
 
             for sampleType in healthKitManager.syncableSampleTypes {
                 var localAnchor = configuration.sampleTypeAnchors[sampleType.identifier]
