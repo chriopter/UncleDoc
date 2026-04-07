@@ -5,19 +5,21 @@ It lets you enter health data or upload documents, then chat with the resulting 
 
 <img src="docs/screenshots/overview-demo-nora.png" alt="Demo Nora overview" width="60%" />
 
-> Bring your own LLM. UncleDoc does not provide medical advice and should support your record-keeping, not replace professional care.
+> Bring your own LLM. UncleDoc is a self-hosted record-keeping tool, not a medical device, and does not provide medical advice, diagnosis, or treatment. It should support your documentation, not replace professional care.
 
 ## 1. Features
 
 - Multi-person health records
 - Fast timeline logging with file uploads
-- LLM parsing to extract health info, appointments, to-dos and file content
+- Optional LLM parsing for notes, appointments, to-dos, and document content
 - Baby mode for feeding, diapers, sleep, and growth
 - HealthKit sync through the iOS app
 
 ## 2. iOS App
 
-UncleDoc also includes an iOS app so the same household health record feels at home on iPhone. Coming soon.
+UncleDoc also includes an iOS app so the same household health record feels at home on iPhone.
+It can sync HealthKit data into UncleDoc, so measurements collected on your device can live alongside manual notes and uploaded documents.
+The app stays intentionally thin, with the main product experience and your data remaining on your own UncleDoc server.
 
 ## 3. Installation
 
@@ -164,7 +166,7 @@ journalctl -u uncledoc-dev.service -f
 
 ## Privacy
 
-UncleDoc does not collect user data for its own service. The app is self-hosted, so your health data stays on infrastructure you control.
+UncleDoc does not collect user data for its own service. The app is self-hosted, so your health data stays on infrastructure you control, and there is no central UncleDoc cloud.
 
 If you enable AI features, you choose the LLM provider yourself. Any data sent to an LLM depends on the provider and configuration you decide to use.
 
