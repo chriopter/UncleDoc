@@ -44,6 +44,10 @@ After starting the app, open:
 http://127.0.0.1:3000/Demo%20Nora/overview
 ```
 
+Overview screenshot:
+
+![Demo Nora overview](docs/screenshots/overview-demo-nora.png)
+
 </details>
 
 ## 2. iOS App
@@ -219,19 +223,6 @@ journalctl -u uncledoc-dev.service -f
 - New UI text must include both English and German translations.
 - Web UI changes should preserve Hotwire Native iOS behavior.
 - Local app data in `storage/development.sqlite3` should be treated as valuable.
-
-</details>
-
-<details>
-<summary>Screenshot status</summary>
-
-The demo data and overview URL are ready, but I could not generate and commit a screenshot from this session because screenshot capture requires a display-capable environment and this run is headless.
-
-Target page for the screenshot:
-
-```text
-/Demo%20Nora/overview
-```
 
 </details>
 
