@@ -2,7 +2,7 @@
 <html>
   <head>
     <title><%= content_for(:title) || "UncleDoc" %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="viewport" content="<%= viewport_meta_content %>">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="UncleDoc">
     <meta name="mobile-web-app-capable" content="yes">
@@ -30,7 +30,7 @@
   <% on_settings = request.path.start_with?("/settings") %>
   <% on_db = request.path.include?("/settings/db") %>
 
-  <body class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.20),_transparent_22%),radial-gradient(circle_at_bottom_right,_rgba(244,114,182,0.12),_transparent_24%),linear-gradient(180deg,_#fffaf1_0%,_#f4efe4_100%)] text-slate-900 antialiased">
+  <body class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.20),_transparent_22%),radial-gradient(circle_at_bottom_right,_rgba(244,114,182,0.12),_transparent_24%),linear-gradient(180deg,_#fffaf1_0%,_#f4efe4_100%)] text-slate-900 antialiased <%= 'overflow-x-hidden' if native_app_request? %>">
     <%# Skip to content link for accessibility %>
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:rounded-xl focus:bg-amber-500 focus:px-4 focus:py-3 focus:text-white focus:text-sm focus:font-semibold focus:shadow-lg">
       <%= t("accessibility.skip_to_content") %>

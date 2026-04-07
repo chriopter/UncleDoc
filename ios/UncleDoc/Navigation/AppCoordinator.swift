@@ -142,6 +142,9 @@ final class AppCoordinator: NSObject, ObservableObject {
             webView.backgroundColor = UIColor(red: 0.98, green: 0.97, blue: 0.94, alpha: 1)
             webView.scrollView.backgroundColor = UIColor(red: 0.98, green: 0.97, blue: 0.94, alpha: 1)
             webView.scrollView.contentInsetAdjustmentBehavior = .never
+            webView.scrollView.alwaysBounceHorizontal = false
+            webView.scrollView.showsHorizontalScrollIndicator = false
+            webView.scrollView.pinchGestureRecognizer?.isEnabled = false
             return webView
         }
         Hotwire.loadPathConfiguration(from: [.data(Self.pathConfigurationData)])
