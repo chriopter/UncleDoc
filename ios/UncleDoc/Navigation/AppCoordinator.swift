@@ -618,6 +618,7 @@ private final class UncleDocShellViewController: UIViewController {
         sidebarWidthConstraint?.constant = sidebarWidth
 
         if isCompactLayout {
+            sidebarViewController.view.isHidden = false
             contentLeadingToSidebarConstraint?.isActive = false
             contentLeadingToViewConstraint?.isActive = true
             sidebarLeadingConstraint?.constant = isSidebarPresented ? 0 : -(sidebarWidth + 24)
@@ -627,9 +628,11 @@ private final class UncleDocShellViewController: UIViewController {
             contentContainerView.layer.shadowOpacity = 0
         } else {
             isSidebarPresented = false
+            sidebarViewController.view.isHidden = true
             contentLeadingToViewConstraint?.isActive = false
-            contentLeadingToSidebarConstraint?.isActive = true
-            sidebarLeadingConstraint?.constant = 0
+            contentLeadingToSidebarConstraint?.isActive = false
+            contentLeadingToViewConstraint?.isActive = true
+            sidebarLeadingConstraint?.constant = -(sidebarWidth + 24)
             dimmingButton.isHidden = true
             dimmingButton.alpha = 0
             contentContainerView.layer.cornerRadius = 28
