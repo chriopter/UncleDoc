@@ -5,7 +5,7 @@ It lets you enter health data or upload documents, then chat with the resulting 
 
 <img src="docs/screenshots/overview-demo-nora.png" alt="Demo Nora overview" width="60%" />
 
-> Bring your own LLM. UncleDoc is a self-hosted record-keeping tool, not a medical device. It does not provide medical advice, diagnosis, or treatment, and should support your documentation rather than replace professional care.
+> Bring your own LLM. UncleDoc is a self-hosted record-keeping tool, not a medical device. It does not provide medical advice, diagnosis, or treatment, and should support your documentation rather than replace professional care. Also, this app is heavily vibe-coded and iteration speed is currently prioritized above all else, including security. Be careful to only run this locally / in your secured LAN.
 
 ## 1. Features
 
