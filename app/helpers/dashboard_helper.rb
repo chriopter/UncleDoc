@@ -15,7 +15,9 @@ module DashboardHelper
     items << { label: t("nav.calendar"), path: person_calendar_path(person_slug: current_person.name), active: request_path.include?("/calendar"), child: true }
 
     items << { label: t("nav.research"), path: person_log_path(person_slug: current_person.name), active: request_path.include?("/log") }
-    items << { label: t("nav.data"), path: person_files_path(person_slug: current_person.name), active: request_path.include?("/files") }
+    items << { label: t("nav.data"), path: person_files_path(person_slug: current_person.name), active: request_path.include?("/files") || request_path.include?("/healthkit") }
+    items << { label: t("nav.files"), path: person_files_path(person_slug: current_person.name), active: request_path.include?("/files"), child: true }
+    items << { label: t("nav.healthkit"), path: person_healthkit_path(person_slug: current_person.name), active: request_path.include?("/healthkit"), child: true }
 
     items
   end
@@ -138,6 +140,24 @@ module DashboardHelper
       "#{base} bg-slate-950 text-white shadow-sm"
     else
       "#{base} bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-950"
+    end
+  end
+
+  def healthkit_view_tab_class(active = false)
+    base = "rounded-full px-3 py-1.5 text-sm font-semibold transition"
+    active ? "#{base} bg-slate-950 text-white shadow-sm" : "#{base} text-slate-600 hover:bg-white hover:text-slate-950"
+  end
+
+  def healthkit_sync_badge_class(status)
+    case status.to_s
+    when "synced"
+      "border-emerald-200 bg-emerald-50 text-emerald-800"
+    when "syncing", "pending"
+      "border-amber-200 bg-amber-50 text-amber-800"
+    when "failed"
+      "border-rose-200 bg-rose-50 text-rose-800"
+    else
+      "border-slate-200 bg-slate-50 text-slate-700"
     end
   end
 end

@@ -301,6 +301,56 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Doctor invoice uploaded"
   end
 
+  test "healthkit page shows summary previews and sync state" do
+    person = Person.create!(name: "Healthkitty", birth_date: Date.new(2024, 1, 1))
+    person.healthkit_syncs.create!(
+      device_id: "iphone-main",
+      status: "synced",
+      last_synced_at: Time.zone.local(2026, 4, 6, 7, 30),
+      last_successful_sync_at: Time.zone.local(2026, 4, 6, 7, 30),
+      synced_record_count: 42
+    )
+    person.healthkit_records.create!(
+      device_id: "iphone-main",
+      external_id: "step-1",
+      record_type: "HKQuantityTypeIdentifierStepCount",
+      source_name: "Health",
+      start_at: Time.zone.local(2026, 4, 5, 8, 0),
+      payload: { "quantity" => "4123 count" }
+    )
+
+    get person_healthkit_url(person_slug: person.name)
+
+    assert_response :success
+    assert_includes @response.body, "HealthKit for Healthkitty"
+    assert_includes @response.body, "Summary previews"
+    assert_includes @response.body, "Raw data"
+    assert_includes @response.body, "iphone-main"
+    assert_includes @response.body, "healthkit:day:2026-04-05"
+    assert_includes @response.body, "Step count 4123 count"
+  end
+
+  test "healthkit page can switch to raw data view" do
+    person = Person.create!(name: "RawKit", birth_date: Date.new(2024, 1, 1))
+    person.healthkit_records.create!(
+      device_id: "watch-1",
+      external_id: "sleep-1",
+      record_type: "HKCategoryTypeIdentifierSleepAnalysis",
+      source_name: "Health",
+      start_at: Time.zone.local(2026, 4, 5, 0, 0),
+      end_at: Time.zone.local(2026, 4, 5, 7, 30),
+      payload: { "value" => "0" }
+    )
+
+    get person_healthkit_url(person_slug: person.name, view: "raw")
+
+    assert_response :success
+    assert_includes @response.body, "Raw HealthKit data"
+    assert_includes @response.body, "HKCategoryTypeIdentifierSleepAnalysis"
+    assert_includes @response.body, "watch-1"
+    assert_includes @response.body, "&quot;value&quot;"
+  end
+
   test "log can filter by date and parsed type" do
     person = Person.create!(name: "Filtery", birth_date: Date.new(2024, 1, 1))
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 8, 0), input: "Bottle 120ml", facts: [ "Bottle feeding 120 ml" ], parseable_data: [ { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" } ])

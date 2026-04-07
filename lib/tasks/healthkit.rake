@@ -10,7 +10,10 @@ namespace :healthkit do
     person = if ENV["PERSON_UUID"].present?
       Person.find_by!(uuid: ENV["PERSON_UUID"])
     elsif ENV["PERSON_NAME"].present?
-      Person.find_by!(name: ENV["PERSON_NAME"])
+      matches = Person.where(name: ENV["PERSON_NAME"])
+      raise "PERSON_NAME matches multiple people; use PERSON_UUID" if matches.count > 1
+
+      matches.first || raise(ActiveRecord::RecordNotFound)
     else
       people = Person.joins(:healthkit_records).distinct.order(:name)
       raise "Set PERSON_UUID or PERSON_NAME" unless people.one?
