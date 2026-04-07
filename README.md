@@ -237,4 +237,4 @@ Target page for the screenshot:
 
 ## License
 
-MIT. See `LICENSE`.
+UncleDoc is released under the `O'Saasy` license. In practice, that means the code can be used, modified, and self-hosted, but not used to launch a competing hosted/SaaS version of UncleDoc itself. See `LICENSE`.
