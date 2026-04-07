@@ -26,26 +26,30 @@ class HealthkitController < ApplicationController
 
   def sync
     records = extract_records_payload.filter_map { |record| build_record_payload(record) }
+    completed = ActiveModel::Type::Boolean.new.cast(params[:completed])
+    final_status = params[:status].presence_in(HealthkitSync::STATUSES) || (completed ? "synced" : "syncing")
 
     sync = HealthkitSync.find_or_initialize_by(person: @person, device_id: params[:device_id].to_s)
     sync.assign_attributes(
-      status: params[:status].presence_in(HealthkitSync::STATUSES) || (params[:completed] ? "synced" : "syncing"),
+      status: final_status,
       last_synced_at: Time.current,
-      last_successful_sync_at: params[:completed] ? Time.current : sync.last_successful_sync_at,
-      synced_record_count: HealthkitRecord.where(person_id: @person.id).count,
+      last_successful_sync_at: completed ? Time.current : sync.last_successful_sync_at,
       last_error: params[:last_error].presence,
       details: sync.details.merge(sync_details_payload)
     )
     sync.save!
 
     upsert_healthkit_records(records) if records.any?
-    sync.update!(synced_record_count: HealthkitRecord.where(person_id: @person.id).count)
-    HealthkitSummarySyncJob.perform_later(@person.id) if sync.status == "synced" || ActiveModel::Type::Boolean.new.cast(params[:completed])
+
+    if completed || sync.status == "synced"
+      sync.update!(synced_record_count: HealthkitRecord.where(person_id: @person.id).count)
+      HealthkitSummarySyncJob.perform_later(@person.id)
+    end
 
     render json: {
       ok: true,
       imported_count: records.size,
-      total_count: HealthkitRecord.where(person_id: @person.id).count,
+      total_count: sync.synced_record_count,
       sync: {
         status: sync.status,
         last_synced_at: sync.last_synced_at,
