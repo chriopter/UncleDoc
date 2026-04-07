@@ -2,48 +2,123 @@
 
 UncleDoc is a small self-hosted family health tracker built with Rails, Hotwire, and Tailwind CSS.
 
-It is designed for fast everyday logging on a phone or laptop, with English and German support, simple person-based navigation, optional LLM-assisted parsing, and a thin iOS shell for native HealthKit sync.
+The app is optimized for fast household logging, bilingual UI (`en` / `de`), simple person-based navigation, optional LLM support, and a thin iOS wrapper for HealthKit sync.
 
-## What The App Does
+## 1. What It Does
+
+<details open>
+<summary>Overview</summary>
 
 - Track multiple people in one household.
-- Create timeline entries with free text, structured data, timestamps, and optional document uploads.
-- Support baby-mode workflows such as feeding, diaper, and sleep tracking.
-- Show person-specific overview, log, trends, calendar, files, and HealthKit pages.
-- Offer admin-style settings pages for users, raw database browsing, LLM configuration, prompt preview, and LLM logs.
-- Support English (`en`) and German (`de`) locales.
+- Add timeline entries with free text, structured facts, timestamps, and optional file uploads.
+- Browse a person-specific `Overview`, `Log`, `Trends`, `Calendar`, `Files`, `Baby`, and `HealthKit` area.
+- Use a separate settings/admin area for users, preferences, raw DB browsing, LLM setup, prompt preview, and logs.
+- Support both English and German via Rails I18n.
 
-## Main Concepts
+</details>
 
-### People
+<details>
+<summary>Core data model</summary>
 
-Each `Person` is a tracked family member with:
+- `Person`: name, birth date, optional baby mode, stable UUID for iOS sync.
+- `Entry`: original input, occurred time, parsed JSON data, generated facts, parse status, source, optional documents.
+- `UserPreference`: locale, date format, LLM provider, model, encrypted API key.
+- `HealthkitRecord` / `HealthkitSync`: raw HealthKit import state and records from the iOS app.
 
-- `name`
-- `birth_date`
-- optional `baby_mode`
-- a stable `uuid` used by the iOS HealthKit integration
+</details>
 
-### Entries
+<details>
+<summary>Demo data</summary>
 
-Each `Entry` belongs to a person and stores:
+The seed data builds three demo profiles:
 
-- `input`: the original note text
-- `occurred_at`: when the event happened
-- `parseable_data`: structured JSON facts
-- `facts`: short human-readable summaries derived from structured data
-- `documents`: optional uploaded files via Active Storage
-- `parse_status`: `pending`, `parsed`, `failed`, or `skipped`
-- `source`: `manual` or `healthkit`
+- `Demo Nora`
+- `Demo Theo`
+- `Demo Mila`
 
-The app uses one entry stream for manual logs, quick baby actions, document-backed notes, and HealthKit-generated summaries.
+`Demo Nora` is the best overview/demo profile and includes curated recent activity, planning items, and chartable measurements.
 
-### Structured Data
+After starting the app, open:
 
-`parseable_data` is a JSON array of objects. Common item types include:
+```text
+http://127.0.0.1:3000/Demo%20Nora/overview
+```
+
+</details>
+
+## 2. iOS App
+
+<details open>
+<summary>What is in the repo</summary>
+
+The repo includes a native iOS app in `ios/UncleDoc.xcodeproj`.
+
+- It is primarily a Hotwire Native shell around the Rails app.
+- Product UI should stay in Rails unless the feature is truly device-specific.
+- iOS-specific behavior is mainly for native onboarding and HealthKit sync.
+
+</details>
+
+<details>
+<summary>HealthKit integration</summary>
+
+Rails exposes HealthKit endpoints under `/ios/healthkit/*`.
+
+- `GET /ios/healthkit/people`
+- `GET /ios/healthkit/status`
+- `POST /ios/healthkit/sync`
+- `DELETE|POST /ios/healthkit/reset`
+
+Imported HealthKit data is stored separately from manual entries and can generate summary entries for a person.
+
+</details>
+
+## 3. LLM Integration
+
+<details open>
+<summary>What it is used for</summary>
+
+If configured, UncleDoc can:
+
+- parse free-text notes into structured `parseable_data`
+- generate log summaries
+- answer chat questions against a person's log
+- store request/response metadata in `llm_logs`
+
+LLM use is optional. The app still works without it.
+
+</details>
+
+<details>
+<summary>Supported providers</summary>
+
+Current settings support OpenAI-compatible providers including:
+
+- OpenAI
+- Fireworks
+- OpenRouter
+- Ollama
+- xAI
+- Mistral
+- Perplexity
+- DeepSeek
+
+Provider, model, and API key are managed from the settings UI.
+
+</details>
+
+<details>
+<summary>Structured entry model</summary>
+
+Structured entry items live in `parseable_data`, a JSON array of objects.
+
+Common item types include:
 
 - `temperature`
 - `pulse`
+- `blood_pressure`
+- `weight`
+- `height`
 - `medication`
 - `appointment`
 - `todo`
@@ -52,105 +127,79 @@ The app uses one entry stream for manual logs, quick baby actions, document-back
 - `diaper`
 - `sleep`
 
-This keeps the write path flexible while still making filtering, widgets, charts, summaries, and follow-up actions possible.
+</details>
 
-### LLM Support
+## 4. Installation
 
-If LLM settings are configured, UncleDoc can:
-
-- parse free-text entries into structured `parseable_data`
-- generate log summaries
-- answer chat questions against a person's log
-- record request/response metadata in `llm_logs`
-
-Supported provider settings currently include OpenAI-compatible providers such as OpenAI, Fireworks, OpenRouter, Ollama, xAI, Mistral, Perplexity, and DeepSeek.
-
-LLM use is optional. Entries still work without it.
-
-### HealthKit Integration
-
-The repo includes a native iOS app in `ios/`.
-
-- The iOS app is primarily a Hotwire Native shell around the Rails app.
-- It can sync HealthKit records to Rails endpoints under `/ios/healthkit/*`.
-- Synced HealthKit records are stored separately and can generate summary entries attached to a person.
-
-## Main Screens
-
-For a selected person, the Rails app currently exposes:
-
-- `/overview`
-- `/log`
-- `/trends`
-- `/calendar`
-- `/files`
-- `/baby`
-- `/healthkit`
-
-Global settings pages include:
-
-- profile preferences
-- users
-- HealthKit admin
-- LLM settings
-- LLM prompt preview
-- LLM logs
-- raw database browsing
-
-## Stack
-
-- Ruby `4.0.2`
-- Rails `8.1`
-- SQLite for the current local setup
-- Hotwire (`turbo-rails`, `stimulus-rails`)
-- Tailwind CSS
-- Active Storage for uploaded documents
-- Solid Queue / Solid Cache / Solid Cable
-- `ruby_llm` for LLM requests
-
-## Development Setup
-
-### Prerequisites
+<details open>
+<summary>Requirements</summary>
 
 - Ruby `4.0.2`
 - Bundler
 - SQLite3
-- Node.js is not required separately when using `tailwindcss-rails`, but a normal Rails dev environment is assumed
 
-### Install
+</details>
+
+<details open>
+<summary>Local setup</summary>
 
 ```bash
 bundle install
 bin/rails db:prepare
-```
-
-### Run The App
-
-```bash
+bundle exec bin/rails db:seed
 bin/dev
 ```
 
-`Procfile.dev` starts:
+`db:seed` prepares the demo profiles, including `Demo Nora` for the overview demo.
 
-- Rails on `0.0.0.0:3000`
-- the Tailwind watcher
+</details>
 
-### Tests
+<details>
+<summary>Run tests</summary>
 
 ```bash
 bin/rails test
 ```
 
-## Local LAN Service Setup
+</details>
 
-This repo is also used in a LAN-only environment that behaves like a small self-hosted deployment.
+<details>
+<summary>What <code>bin/dev</code> starts</summary>
+
+`Procfile.dev` runs:
+
+- Rails on `0.0.0.0:3000`
+- the Tailwind watcher
+
+</details>
+
+## 5. Details
+
+<details open>
+<summary>Stack</summary>
+
+- Ruby `4.0.2`
+- Rails `8.1`
+- SQLite
+- Hotwire (`turbo-rails`, `stimulus-rails`)
+- Tailwind CSS
+- Active Storage
+- Solid Queue / Solid Cache / Solid Cable
+- `ruby_llm`
+
+</details>
+
+<details>
+<summary>Local LAN service setup</summary>
+
+This repo is also used in a LAN-only self-hosted setup:
 
 - app directory: `/root/uncledoc`
-- service name: `uncledoc-dev.service`
+- service: `uncledoc-dev.service`
 - command: `bin/dev`
-- Rails environment: `development`
-- bind address: `0.0.0.0:3000`
-- persistent database: `storage/development.sqlite3`
+- environment: `development`
+- bind: `0.0.0.0:3000`
+- persistent DB: `storage/development.sqlite3`
 
 Useful commands:
 
@@ -161,24 +210,30 @@ systemctl stop uncledoc-dev.service
 journalctl -u uncledoc-dev.service -f
 ```
 
-This setup is intended for trusted LAN use. Do not expose it directly to the public internet.
+</details>
 
-## Deployment
+<details>
+<summary>Repo rules worth knowing</summary>
 
-The repo includes Kamal for container-based deployment.
-
-For the current LAN-oriented workflow:
-
-- keep generic Kamal config in git
-- keep machine-specific LAN host values out of git
-- store deploy secrets securely
-- prefer the documented local helper scripts when present
-
-## Repo Notes
-
-- Web UI changes should preserve the Hotwire Native iOS shell behavior.
-- All user-facing UI text should use Rails I18n and include both English and German translations.
+- All user-facing UI text should go through Rails I18n.
+- New UI text must include both English and German translations.
+- Web UI changes should preserve Hotwire Native iOS behavior.
 - Local app data in `storage/development.sqlite3` should be treated as valuable.
+
+</details>
+
+<details>
+<summary>Screenshot status</summary>
+
+The demo data and overview URL are ready, but I could not generate and commit a screenshot from this session because screenshot capture requires a display-capable environment and this run is headless.
+
+Target page for the screenshot:
+
+```text
+/Demo%20Nora/overview
+```
+
+</details>
 
 ## License
 

@@ -65,7 +65,7 @@ def create_general_timeline(person, now:)
       input: "Long free-form note about appetite, energy, mood, medication response, school pickup, hydration, and bedtime routine on #{day.to_date}.",
       facts: [ "Mood steady", "Ate well", "Hydration okay" ],
       parseable_data: [],
-      parse_status: day_offset % 11 == 0 ? "failed" : "skipped"
+      parse_status: "skipped"
     )
   end
 
@@ -93,6 +93,43 @@ def create_general_timeline(person, now:)
       parse_status: "parsed",
       todo_done: done,
       todo_done_at: (done ? now.beginning_of_day - index.days + 19.hours : nil)
+    )
+  end
+
+  [
+    {
+      occurred_at: now.change(hour: 7, min: 40),
+      input: "Morning check before school: temperature 36.8C, pulse 76 bpm",
+      facts: [ "Temperature 36.8 C", "Pulse 76 bpm", "Feeling energetic" ],
+      parseable_data: [
+        { "type" => "temperature", "value" => 36.8, "unit" => "C" },
+        { "type" => "pulse", "value" => 76, "unit" => "bpm" }
+      ]
+    },
+    {
+      occurred_at: now.change(hour: 13, min: 5),
+      input: "After lunch medication: ibuprofen 200mg for headache",
+      facts: [ "Ibuprofen 200 mg", "Headache improved after lunch" ],
+      parseable_data: [
+        { "type" => "medication", "value" => "ibuprofen", "dose" => "200mg" }
+      ]
+    },
+    {
+      occurred_at: now.change(hour: 19, min: 10),
+      input: "Evening blood pressure 118/76 after a long walk",
+      facts: [ "Blood pressure 118/76 mmHg", "Walked in the park for 40 minutes" ],
+      parseable_data: [
+        { "type" => "blood_pressure", "systolic" => 118, "diastolic" => 76, "unit" => "mmHg" }
+      ]
+    }
+  ].each do |entry_attrs|
+    upsert_entry(
+      person: person,
+      occurred_at: entry_attrs[:occurred_at],
+      input: entry_attrs[:input],
+      facts: entry_attrs[:facts],
+      parseable_data: entry_attrs[:parseable_data],
+      parse_status: "parsed"
     )
   end
 end
@@ -217,6 +254,18 @@ def create_baby_timeline(person, now:)
   end
 end
 
+legacy_demo_names = {
+  "Demo Nora" => "Demo Nora"
+}
+
+legacy_demo_names.each do |old_name, new_name|
+  person = Person.find_by(name: old_name)
+  next unless person
+  next if Person.exists?(name: new_name)
+
+  person.update!(name: new_name)
+end
+
 people = [
   { name: "Demo Nora", birth_date: 6.years.ago, baby_mode: false, timeline: :general },
   { name: "Demo Theo", birth_date: 34.years.ago, baby_mode: false, timeline: :general },
@@ -228,6 +277,7 @@ people.each do |attrs|
   person.birth_date = attrs[:birth_date]
   person.baby_mode = attrs[:baby_mode]
   person.save!
+  person.entries.destroy_all
 
   case attrs[:timeline]
   when :baby
