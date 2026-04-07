@@ -1,12 +1,16 @@
 # UncleDoc
 
-UncleDoc is a small self-hosted family health tracker built with Rails, Hotwire, and Tailwind CSS.
+UncleDoc is a self-hosted family health manager in Rails.
 
-The app is optimized for fast household logging, bilingual UI (`en` / `de`), simple person-based navigation, optional LLM support, and a thin iOS wrapper for HealthKit sync.
+You can log health data or upload health documents. An LLM will parse them and save them in a compact manner.
+Based on that data, a health record is built you can chat with.
+
+UncleDoc is just the app, you can bring any LLM you like.
+
+![Demo Nora overview](docs/screenshots/overview-demo-nora.png)
 
 ## 1. What It Does
 
-![Demo Nora overview](docs/screenshots/overview-demo-nora.png)
 
 <details open>
 <summary>Overview</summary>
