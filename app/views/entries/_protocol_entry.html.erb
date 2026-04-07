@@ -20,6 +20,15 @@
             <%= render "entries/entry_actions", entry: entry %>
           </div>
 
+          <% if entry.healthkit_generated? %>
+            <div class="mb-3 flex flex-wrap items-center gap-2">
+              <span class="inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100"><%= t("entries.data_labels.healthkit_summary") %></span>
+              <% if entry.source_ref.present? %>
+                <span class="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold text-slate-300"><%= entry.source_ref %></span>
+              <% end %>
+            </div>
+          <% end %>
+
           <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("entries.raw_input.title") %></p>
           <p class="text-sm leading-relaxed text-slate-300 whitespace-pre-wrap break-words"><%= raw_text %></p>
           <div class="mt-4">

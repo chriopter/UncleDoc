@@ -4,12 +4,14 @@ class Entry < ApplicationRecord
   has_many_attached :documents
 
   PARSE_STATUSES = %w[pending parsed failed skipped].freeze
+  SOURCES = { manual: "manual", healthkit: "healthkit" }.freeze
   DOCUMENT_CONTENT_TYPES = %w[application/pdf image/png image/jpeg text/plain].freeze
   MAX_DOCUMENT_COUNT = 5
   MAX_DOCUMENT_SIZE = 10.megabytes
 
   validates :occurred_at, presence: true
   validates :parse_status, inclusion: { in: PARSE_STATUSES }, if: -> { has_attribute?(:parse_status) }
+  validates :source, inclusion: { in: SOURCES.values }, if: -> { has_attribute?(:source) }
   validate :parseable_data_must_be_array
   validate :facts_must_be_array
   validate :llm_response_must_be_hash
@@ -24,6 +26,7 @@ class Entry < ApplicationRecord
   scope :by_parseable_data_type, ->(type) {
     where("EXISTS (SELECT 1 FROM json_each(entries.parseable_data) WHERE json_extract(value, '$.type') = ?)", type)
   }
+  scope :healthkit_generated, -> { where(source: SOURCES[:healthkit]) }
 
   def parseable_data_of_type(type)
     parseable_data_items.select { |item| item["type"] == type }
@@ -149,6 +152,10 @@ class Entry < ApplicationRecord
 
   def todo_open?
     todo? && !todo_done?
+  end
+
+  def healthkit_generated?
+    source == SOURCES[:healthkit]
   end
 
   def todo_title

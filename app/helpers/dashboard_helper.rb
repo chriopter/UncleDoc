@@ -160,4 +160,25 @@ module DashboardHelper
       "border-slate-200 bg-slate-50 text-slate-700"
     end
   end
+
+  def healthkit_parse_badge_class(entry)
+    case entry.parse_status.to_s
+    when "parsed"
+      "border-emerald-200 bg-emerald-50 text-emerald-800"
+    when "pending"
+      "border-amber-200 bg-amber-50 text-amber-800"
+    when "failed"
+      "border-rose-200 bg-rose-50 text-rose-800"
+    else
+      "border-slate-200 bg-slate-50 text-slate-700"
+    end
+  end
+
+  def healthkit_summary_lines(entry)
+    entry.input.to_s.split("\n").map { |line| line.strip.sub(/\A-\s*/, "") }.reject(&:blank?)
+  end
+
+  def healthkit_pagination_path(person, view:, page:)
+    person_healthkit_path(person_slug: person.name, view:, page:)
+  end
 end

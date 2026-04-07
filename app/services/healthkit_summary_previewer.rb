@@ -16,6 +16,50 @@ class HealthkitSummaryPreviewer
     keyword_init: true
   )
 
+  RECORD_TYPE_LABELS = {
+    "HKQuantityTypeIdentifierActiveEnergyBurned" => "Active energy burned",
+    "HKQuantityTypeIdentifierBasalEnergyBurned" => "Basal energy burned",
+    "HKQuantityTypeIdentifierDistanceWalkingRunning" => "Walking and running distance",
+    "HKQuantityTypeIdentifierDistanceCycling" => "Cycling distance",
+    "HKQuantityTypeIdentifierStepCount" => "Step count",
+    "HKQuantityTypeIdentifierWalkingStepLength" => "Walking step length",
+    "HKQuantityTypeIdentifierWalkingSpeed" => "Walking speed",
+    "HKQuantityTypeIdentifierHeartRate" => "Pulse",
+    "HKQuantityTypeIdentifierRestingHeartRate" => "Resting pulse",
+    "HKQuantityTypeIdentifierWalkingHeartRateAverage" => "Walking pulse",
+    "HKQuantityTypeIdentifierHeartRateVariabilitySDNN" => "Heart rate variability",
+    "HKQuantityTypeIdentifierRespiratoryRate" => "Respiratory rate",
+    "HKQuantityTypeIdentifierOxygenSaturation" => "Oxygen saturation",
+    "HKQuantityTypeIdentifierVO2Max" => "VO2 max",
+    "HKQuantityTypeIdentifierFlightsClimbed" => "Flights climbed",
+    "HKQuantityTypeIdentifierDietaryEnergyConsumed" => "Dietary energy consumed",
+    "HKQuantityTypeIdentifierDietaryCarbohydrates" => "Dietary carbohydrates",
+    "HKQuantityTypeIdentifierDietaryProtein" => "Dietary protein",
+    "HKQuantityTypeIdentifierDietaryFatTotal" => "Dietary fat",
+    "HKQuantityTypeIdentifierDietarySugar" => "Dietary sugar",
+    "HKQuantityTypeIdentifierDietaryWater" => "Dietary water",
+    "HKQuantityTypeIdentifierBloodPressureSystolic" => "Blood pressure systolic",
+    "HKQuantityTypeIdentifierBloodPressureDiastolic" => "Blood pressure diastolic",
+    "HKQuantityTypeIdentifierBodyMass" => "Weight",
+    "HKQuantityTypeIdentifierBodyMassIndex" => "Body mass index",
+    "HKQuantityTypeIdentifierBodyFatPercentage" => "Body fat percentage",
+    "HKQuantityTypeIdentifierHeight" => "Height",
+    "HKQuantityTypeIdentifierBodyTemperature" => "Body temperature",
+    "HKCategoryTypeIdentifierAppleStandHour" => "Apple stand hour",
+    "HKCategoryTypeIdentifierSleepAnalysis" => "Sleep",
+    "HKCategoryTypeIdentifierAudioExposureEvent" => "Audio exposure event",
+    "HKWorkoutTypeIdentifier" => "Workout",
+    "HKDataTypeIdentifierElectrocardiogram" => "Electrocardiogram",
+    "HKDataTypeIdentifierAudiogram" => "Audiogram",
+    "HKDataTypeStateOfMind" => "State of mind",
+    "characteristic.activityMoveMode" => "Activity move mode",
+    "characteristic.biologicalSex" => "Biological sex",
+    "characteristic.bloodType" => "Blood type",
+    "characteristic.dateOfBirth" => "Date of birth",
+    "characteristic.fitzpatrickSkinType" => "Fitzpatrick skin type",
+    "characteristic.wheelchairUse" => "Wheelchair use"
+  }.freeze
+
   ASSESSMENT_TYPES = %w[
     HKDataTypeIdentifierElectrocardiogram
     HKDataTypeIdentifierAudiogram
@@ -53,12 +97,13 @@ class HealthkitSummaryPreviewer
 
     daily_previews = daily_aggregates.filter_map do |date, aggregate|
       next if date < previous_month_start
+      next unless aggregate_has_data?(aggregate)
 
       build_preview(period_type: :day, starts_on: date, ends_on: date, aggregate:)
     end
 
     monthly_previews = daily_aggregates
-      .select { |date, _aggregate| date < previous_month_start }
+      .select { |date, aggregate| date < previous_month_start && aggregate_has_data?(aggregate) }
       .group_by { |date, _aggregate| date.beginning_of_month }
       .map do |month_start, aggregates|
         month_end = month_start.end_of_month
@@ -145,24 +190,28 @@ class HealthkitSummaryPreviewer
   end
 
   def build_preview(period_type:, starts_on:, ends_on:, aggregate:)
-    return empty_preview(period_type:, starts_on:, ends_on:) unless aggregate_has_data?(aggregate)
-
-    sections = []
-    mentioned = Set.new
     present_types = aggregate[:types].keys.sort
+    mentioned = Set.new
+    lines = [
+      "- Source: Apple Health.",
+      "- Summary type: #{period_type == :month ? 'monthly' : 'daily'}.",
+      "- Period: #{period_label(period_type, starts_on, ends_on)}."
+    ]
 
-    add_section(sections, mentioned, movement_section(aggregate))
-    add_section(sections, mentioned, cardio_section(aggregate))
-    add_section(sections, mentioned, sleep_section(aggregate))
-    add_section(sections, mentioned, nutrition_section(aggregate))
-    add_section(sections, mentioned, body_section(aggregate, period_type))
-    add_section(sections, mentioned, activities_section(aggregate))
-    add_section(sections, mentioned, assessments_section(aggregate))
-    add_section(sections, mentioned, characteristics_section(aggregate))
+    lines << "- Coverage: #{aggregate[:days_with_data]} days with data, #{aggregate[:record_count]} raw records." if period_type == :month
+
+    add_lines(lines, mentioned, movement_lines(aggregate))
+    add_lines(lines, mentioned, cardio_lines(aggregate))
+    add_lines(lines, mentioned, sleep_lines(aggregate))
+    add_lines(lines, mentioned, nutrition_lines(aggregate))
+    add_lines(lines, mentioned, body_lines(aggregate, period_type))
+    add_lines(lines, mentioned, activity_lines(aggregate))
+    add_lines(lines, mentioned, assessment_lines(aggregate))
+    add_lines(lines, mentioned, characteristic_lines(aggregate))
 
     missing_types = present_types - mentioned.to_a
     if missing_types.any?
-      sections << section_text(:other, other_items(aggregate, missing_types))
+      lines << bullet("Other Apple Health data: #{missing_types.map { |record_type| "#{label_for(record_type)} (#{record_type}) #{display_count(aggregate[:types][record_type])} records" }.join('; ')}")
       mentioned.merge(missing_types)
     end
 
@@ -172,26 +221,11 @@ class HealthkitSummaryPreviewer
       starts_on: starts_on,
       ends_on: ends_on,
       occurred_at: occurred_at_for(period_type, starts_on, ends_on),
-      input: [ header_for(period_type, starts_on), coverage_sentence(period_type, aggregate), *sections ].compact.join("\n\n"),
+      input: ([ header_for(period_type, starts_on) ] + lines).join("\n"),
       present_record_types: present_types,
       mentioned_record_types: mentioned.to_a.sort,
       missing_record_types: present_types - mentioned.to_a,
       record_count: aggregate[:record_count]
-    )
-  end
-
-  def empty_preview(period_type:, starts_on:, ends_on:)
-    Preview.new(
-      source_ref: source_ref_for(period_type, starts_on),
-      period_type: period_type,
-      starts_on: starts_on,
-      ends_on: ends_on,
-      occurred_at: occurred_at_for(period_type, starts_on, ends_on),
-      input: empty_input_for(period_type, starts_on),
-      present_record_types: [],
-      mentioned_record_types: [],
-      missing_record_types: [],
-      record_count: 0
     )
   end
 
@@ -299,249 +333,184 @@ class HealthkitSummaryPreviewer
     }
   end
 
-  def movement_section(aggregate)
-    items = []
+  def movement_lines(aggregate)
+    lines = []
     covered = []
 
-    append_total_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierStepCount", unit: "count")
-    append_total_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierDistanceWalkingRunning", transform: 0.001, unit: "km")
-    append_total_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierDistanceCycling", transform: 0.001, unit: "km")
-    append_total_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierActiveEnergyBurned", unit: "kcal")
-    append_total_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierBasalEnergyBurned", unit: "kcal")
-    append_total_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierFlightsClimbed", unit: "count")
-    append_average_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierWalkingSpeed")
-    append_average_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierWalkingStepLength")
+    append_total_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierStepCount", unit: "count")
+    append_total_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierDistanceWalkingRunning", transform: 0.001, unit: "km")
+    append_total_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierDistanceCycling", transform: 0.001, unit: "km")
+    append_total_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierActiveEnergyBurned", unit: "kcal")
+    append_total_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierBasalEnergyBurned", unit: "kcal")
+    append_total_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierFlightsClimbed", unit: "count")
+    append_average_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierWalkingSpeed")
+    append_average_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierWalkingStepLength")
 
     stand = aggregate[:types]["HKCategoryTypeIdentifierAppleStandHour"]
     if stand
-      items << I18n.t(
-        "healthkit.preview.items.completed_hours",
-        label: label_for("HKCategoryTypeIdentifierAppleStandHour"),
-        completed: stand[:values]["1"],
-        count: display_count(stand)
-      )
+      lines << bullet("#{label_for('HKCategoryTypeIdentifierAppleStandHour')} #{stand[:values]['1']} completed hours across #{display_count(stand)} records")
       covered << "HKCategoryTypeIdentifierAppleStandHour"
     end
 
-    return if items.empty?
-
-    [ section_text(:movement, items), covered ]
+    [ lines, covered ]
   end
 
-  def cardio_section(aggregate)
-    items = []
+  def cardio_lines(aggregate)
+    lines = []
     covered = []
 
-    append_avg_min_max(items, covered, aggregate, "HKQuantityTypeIdentifierHeartRate")
-    append_avg_min_max(items, covered, aggregate, "HKQuantityTypeIdentifierRestingHeartRate")
-    append_avg_min_max(items, covered, aggregate, "HKQuantityTypeIdentifierWalkingHeartRateAverage")
-    append_avg_min_max(items, covered, aggregate, "HKQuantityTypeIdentifierHeartRateVariabilitySDNN")
-    append_avg_min_max(items, covered, aggregate, "HKQuantityTypeIdentifierRespiratoryRate")
-    append_avg_min_max(items, covered, aggregate, "HKQuantityTypeIdentifierOxygenSaturation")
-    append_avg_min_max(items, covered, aggregate, "HKQuantityTypeIdentifierVO2Max")
+    append_avg_min_max(lines, covered, aggregate, "HKQuantityTypeIdentifierHeartRate")
+    append_avg_min_max(lines, covered, aggregate, "HKQuantityTypeIdentifierRestingHeartRate")
+    append_avg_min_max(lines, covered, aggregate, "HKQuantityTypeIdentifierWalkingHeartRateAverage")
+    append_avg_min_max(lines, covered, aggregate, "HKQuantityTypeIdentifierHeartRateVariabilitySDNN")
+    append_avg_min_max(lines, covered, aggregate, "HKQuantityTypeIdentifierRespiratoryRate")
+    append_avg_min_max(lines, covered, aggregate, "HKQuantityTypeIdentifierOxygenSaturation")
+    append_avg_min_max(lines, covered, aggregate, "HKQuantityTypeIdentifierVO2Max")
 
     systolic = aggregate[:types]["HKQuantityTypeIdentifierBloodPressureSystolic"]
     diastolic = aggregate[:types]["HKQuantityTypeIdentifierBloodPressureDiastolic"]
     if systolic || diastolic
-      parts = []
-      if systolic&.dig(:quantity_count).to_i.positive?
-        parts << I18n.t("healthkit.preview.items.systolic_avg", value: format_number(average_quantity(systolic)), unit: display_unit(systolic, override: "mmHg"))
-      end
-      if diastolic&.dig(:quantity_count).to_i.positive?
-        parts << I18n.t("healthkit.preview.items.diastolic_avg", value: format_number(average_quantity(diastolic)), unit: display_unit(diastolic, override: "mmHg"))
-      end
-      items << I18n.t("healthkit.preview.items.blood_pressure", parts: parts.join(", "))
+      lines << bullet(
+        [
+          blood_pressure_part("systolic", systolic),
+          blood_pressure_part("diastolic", diastolic)
+        ].compact.join("; ")
+      )
       covered.concat([ "HKQuantityTypeIdentifierBloodPressureSystolic", "HKQuantityTypeIdentifierBloodPressureDiastolic" ].select { |type| aggregate[:types][type] })
     end
 
-    return if items.empty?
-
-    [ section_text(:cardio, items), covered ]
+    [ lines, covered ]
   end
 
-  def sleep_section(aggregate)
+  def sleep_lines(aggregate)
     sleep = aggregate[:types]["HKCategoryTypeIdentifierSleepAnalysis"]
-    return unless sleep
+    return [ [], [] ] unless sleep
 
-    items = [
-      I18n.t(
-        "healthkit.preview.items.sleep_duration",
-        label: label_for("HKCategoryTypeIdentifierSleepAnalysis"),
-        hours: format_number(sleep[:duration_seconds] / 3600.0),
-        count: display_count(sleep)
-      )
-    ]
-
+    lines = [ bullet("Sleep #{format_number(sleep[:duration_seconds] / 3600.0)} hours across #{display_count(sleep)} segments") ]
     if sleep[:values].any?
       values = sleep[:values].sort_by { |value, _count| value.to_s }.map { |value, count| "#{value} (#{count})" }.join(", ")
-      items << I18n.t("healthkit.preview.items.sleep_values", values: values)
+      lines << bullet("Sleep category values #{values}")
     end
 
-    [ section_text(:sleep, items), [ "HKCategoryTypeIdentifierSleepAnalysis" ] ]
+    [ lines, [ "HKCategoryTypeIdentifierSleepAnalysis" ] ]
   end
 
-  def nutrition_section(aggregate)
-    items = []
+  def nutrition_lines(aggregate)
+    lines = []
     covered = []
 
-    append_total_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierDietaryEnergyConsumed", unit: "kcal")
-    append_total_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierDietaryCarbohydrates")
-    append_total_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierDietaryProtein")
-    append_total_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierDietaryFatTotal")
-    append_total_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierDietarySugar")
-    append_total_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierDietaryWater")
+    append_total_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierDietaryEnergyConsumed", unit: "kcal")
+    append_total_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierDietaryCarbohydrates")
+    append_total_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierDietaryProtein")
+    append_total_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierDietaryFatTotal")
+    append_total_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierDietarySugar")
+    append_total_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierDietaryWater")
 
-    return if items.empty?
-
-    [ section_text(:nutrition, items), covered ]
+    [ lines, covered ]
   end
 
-  def body_section(aggregate, period_type)
-    items = []
+  def body_lines(aggregate, period_type)
+    lines = []
     covered = []
 
     weight = aggregate[:types]["HKQuantityTypeIdentifierBodyMass"]
     if weight&.dig(:quantity_count).to_i.positive?
-      items << if period_type == :day
-        quantity_item("HKQuantityTypeIdentifierBodyMass", format_number(weight[:latest_quantity_value]), display_unit(weight, override: "kg"))
+      lines << if period_type == :day
+        bullet("Weight #{format_number(weight[:latest_quantity_value])} #{display_unit(weight, override: 'kg')}")
       else
-        avg_min_max_item("HKQuantityTypeIdentifierBodyMass", weight, unit: "kg")
+        bullet("Weight avg #{format_number(average_quantity(weight))} #{display_unit(weight, override: 'kg')}; min #{format_number(weight[:quantity_min])}; max #{format_number(weight[:quantity_max])}")
       end
       covered << "HKQuantityTypeIdentifierBodyMass"
     end
 
-    append_average_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierBodyMassIndex")
-    append_average_quantity(items, covered, aggregate, "HKQuantityTypeIdentifierBodyFatPercentage")
+    append_average_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierBodyMassIndex")
+    append_average_quantity(lines, covered, aggregate, "HKQuantityTypeIdentifierBodyFatPercentage")
 
     height = aggregate[:types]["HKQuantityTypeIdentifierHeight"]
     if height&.dig(:quantity_count).to_i.positive?
-      items << quantity_item("HKQuantityTypeIdentifierHeight", format_number(height[:latest_quantity_value]), display_unit(height))
+      lines << bullet("Height #{format_number(height[:latest_quantity_value])} #{display_unit(height)}")
       covered << "HKQuantityTypeIdentifierHeight"
     end
 
     temperature = aggregate[:types]["HKQuantityTypeIdentifierBodyTemperature"]
     if temperature&.dig(:quantity_count).to_i.positive?
-      items << if period_type == :day
-        quantity_item("HKQuantityTypeIdentifierBodyTemperature", format_number(temperature[:latest_quantity_value]), display_unit(temperature, override: "C"))
+      lines << if period_type == :day
+        bullet("Body temperature #{format_number(temperature[:latest_quantity_value])} #{display_unit(temperature, override: 'C')}")
       else
-        average_item("HKQuantityTypeIdentifierBodyTemperature", average_quantity(temperature), display_unit(temperature, override: "C"))
+        bullet("Body temperature avg #{format_number(average_quantity(temperature))} #{display_unit(temperature, override: 'C')}")
       end
       covered << "HKQuantityTypeIdentifierBodyTemperature"
     end
 
-    return if items.empty?
-
-    [ section_text(:body, items), covered ]
+    [ lines, covered ]
   end
 
-  def activities_section(aggregate)
-    items = []
+  def activity_lines(aggregate)
+    lines = []
     covered = []
 
     workout = aggregate[:types]["HKWorkoutTypeIdentifier"]
     if workout
-      items << I18n.t("healthkit.preview.items.count_with_minutes", label: label_for("HKWorkoutTypeIdentifier"), count: display_count(workout), minutes: format_number(workout[:duration_seconds] / 60.0))
+      lines << bullet("Workouts #{display_count(workout)} with #{format_number(workout[:duration_seconds] / 60.0)} total minutes")
       covered << "HKWorkoutTypeIdentifier"
     end
 
     audio = aggregate[:types]["HKCategoryTypeIdentifierAudioExposureEvent"]
     if audio
-      items << I18n.t("healthkit.preview.items.count_with_minutes", label: label_for("HKCategoryTypeIdentifierAudioExposureEvent"), count: display_count(audio), minutes: format_number(audio[:duration_seconds] / 60.0))
+      lines << bullet("Audio exposure events #{display_count(audio)} with #{format_number(audio[:duration_seconds] / 60.0)} total minutes")
       covered << "HKCategoryTypeIdentifierAudioExposureEvent"
     end
 
-    return if items.empty?
-
-    [ section_text(:activities, items), covered ]
+    [ lines, covered ]
   end
 
-  def assessments_section(aggregate)
+  def assessment_lines(aggregate)
     covered = ASSESSMENT_TYPES.select { |record_type| aggregate[:types][record_type] }
-    return if covered.empty?
-
-    items = covered.map do |record_type|
-      type_aggregate = aggregate[:types][record_type]
-      I18n.t("healthkit.preview.items.count_records", label: label_for(record_type), count: display_count(type_aggregate))
+    lines = covered.map do |record_type|
+      bullet("#{label_for(record_type)} #{display_count(aggregate[:types][record_type])} records")
     end
 
-    [ section_text(:assessments, items), covered ]
+    [ lines, covered ]
   end
 
-  def characteristics_section(aggregate)
+  def characteristic_lines(aggregate)
     covered = CHARACTERISTIC_TYPES.select { |record_type| aggregate[:types][record_type] }
-    return if covered.empty?
-
-    items = covered.map do |record_type|
-      I18n.t("healthkit.preview.items.characteristic", label: label_for(record_type), record_type: record_type)
+    lines = covered.map do |record_type|
+      bullet("#{label_for(record_type)} present (#{record_type})")
     end
 
-    [ section_text(:characteristics, items), covered ]
+    [ lines, covered ]
   end
 
-  def other_items(aggregate, record_types)
-    record_types.map do |record_type|
-      type_aggregate = aggregate[:types][record_type]
-      I18n.t("healthkit.preview.items.other_record", label: label_for(record_type), record_type: record_type, count: display_count(type_aggregate))
-    end
-  end
-
-  def append_total_quantity(items, covered, aggregate, record_type, transform: 1.0, unit: nil)
+  def append_total_quantity(lines, covered, aggregate, record_type, transform: 1.0, unit: nil)
     type_aggregate = aggregate[:types][record_type]
     return unless type_aggregate&.dig(:quantity_count).to_i.positive?
 
-    items << quantity_item(record_type, format_number(type_aggregate[:quantity_sum] * transform), display_unit(type_aggregate, override: unit))
+    lines << bullet("#{label_for(record_type)} #{format_number(type_aggregate[:quantity_sum] * transform)} #{display_unit(type_aggregate, override: unit)}")
     covered << record_type
   end
 
-  def append_average_quantity(items, covered, aggregate, record_type, unit: nil)
+  def append_average_quantity(lines, covered, aggregate, record_type, unit: nil)
     type_aggregate = aggregate[:types][record_type]
     return unless type_aggregate&.dig(:quantity_count).to_i.positive?
 
-    items << average_item(record_type, average_quantity(type_aggregate), display_unit(type_aggregate, override: unit))
+    lines << bullet("#{label_for(record_type)} avg #{format_number(average_quantity(type_aggregate))} #{display_unit(type_aggregate, override: unit)}")
     covered << record_type
   end
 
-  def append_avg_min_max(items, covered, aggregate, record_type)
+  def append_avg_min_max(lines, covered, aggregate, record_type)
     type_aggregate = aggregate[:types][record_type]
     return unless type_aggregate&.dig(:quantity_count).to_i.positive?
 
-    items << avg_min_max_item(record_type, type_aggregate)
+    lines << bullet("#{label_for(record_type)} avg #{format_number(average_quantity(type_aggregate))} #{display_unit(type_aggregate)}; min #{format_number(type_aggregate[:quantity_min])}; max #{format_number(type_aggregate[:quantity_max])}")
     covered << record_type
   end
 
-  def quantity_item(record_type, value, unit)
-    I18n.t("healthkit.preview.items.quantity", label: label_for(record_type), value: value, unit: unit)
-  end
+  def add_lines(target_lines, mentioned, payload)
+    lines, record_types = payload
+    return if lines.blank?
 
-  def average_item(record_type, value, unit)
-    I18n.t("healthkit.preview.items.average", label: label_for(record_type), value: format_number(value), unit: unit, avg_label: metric_label(:avg))
-  end
-
-  def avg_min_max_item(record_type, type_aggregate, unit: nil)
-    I18n.t(
-      "healthkit.preview.items.avg_min_max",
-      label: label_for(record_type),
-      avg_label: metric_label(:avg),
-      min_label: metric_label(:min),
-      max_label: metric_label(:max),
-      avg_value: format_number(average_quantity(type_aggregate)),
-      min_value: format_number(type_aggregate[:quantity_min]),
-      max_value: format_number(type_aggregate[:quantity_max]),
-      unit: display_unit(type_aggregate, override: unit)
-    )
-  end
-
-  def section_text(section_key, items)
-    I18n.t("healthkit.preview.section_sentence", label: I18n.t("healthkit.preview.sections.#{section_key}"), items: items.join(". "))
-  end
-
-  def add_section(sections, mentioned, section)
-    return unless section
-
-    text, record_types = section
-    return if text.blank?
-
-    sections << text
+    target_lines.concat(lines)
     mentioned.merge(record_types)
   end
 
@@ -560,9 +529,7 @@ class HealthkitSummaryPreviewer
   end
 
   def display_unit(type_aggregate, override: nil)
-    return override if override.present?
-
-    type_aggregate[:unit].to_s.strip
+    override.presence || type_aggregate[:unit].to_s.strip
   end
 
   def extract_quantity(payload_hash)
@@ -612,50 +579,39 @@ class HealthkitSummaryPreviewer
   end
 
   def source_ref_for(period_type, starts_on)
-    if period_type.to_sym == :month
-      "healthkit:month:#{starts_on.strftime('%Y-%m')}"
-    else
-      "healthkit:day:#{starts_on.iso8601}"
-    end
+    period_type.to_sym == :month ? "healthkit:month:#{starts_on.strftime('%Y-%m')}" : "healthkit:day:#{starts_on.iso8601}"
   end
 
   def occurred_at_for(period_type, starts_on, ends_on)
-    if period_type.to_sym == :month
-      ends_on.end_of_day
-    else
-      starts_on.end_of_day
-    end
+    period_type.to_sym == :month ? ends_on.end_of_day : starts_on.end_of_day
   end
 
   def header_for(period_type, starts_on)
     if period_type.to_sym == :month
-      I18n.t("healthkit.preview.headers.month", date: I18n.l(starts_on, format: "%B %Y"))
+      "Apple Health monthly summary for #{starts_on.strftime('%B %Y')}."
     else
-      I18n.t("healthkit.preview.headers.day", date: I18n.l(starts_on, format: :long_date))
+      "Apple Health daily summary for #{starts_on.strftime('%B %d, %Y')}."
     end
   end
 
-  def coverage_sentence(period_type, aggregate)
-    return if period_type.to_sym == :day
-
-    I18n.t(
-      "healthkit.preview.coverage",
-      days_count: aggregate[:days_count],
-      days_with_data: aggregate[:days_with_data],
-      record_count: aggregate[:record_count]
-    )
-  end
-
-  def empty_input_for(period_type, starts_on)
+  def period_label(period_type, starts_on, ends_on)
     if period_type.to_sym == :month
-      I18n.t("healthkit.preview.headers.empty_month", date: I18n.l(starts_on, format: "%B %Y"))
+      starts_on.strftime("%B %Y")
+    elsif starts_on == ends_on
+      starts_on.strftime("%B %d, %Y")
     else
-      I18n.t("healthkit.preview.headers.empty_day", date: I18n.l(starts_on, format: :long_date))
+      "#{starts_on.strftime('%B %d, %Y')} to #{ends_on.strftime('%B %d, %Y')}"
     end
   end
 
-  def metric_label(key)
-    I18n.t("healthkit.preview.metrics.#{key}")
+  def bullet(text)
+    "- #{text}."
+  end
+
+  def blood_pressure_part(kind, aggregate)
+    return unless aggregate&.dig(:quantity_count).to_i.positive?
+
+    "Blood pressure #{kind} avg #{format_number(average_quantity(aggregate))} #{display_unit(aggregate, override: 'mmHg')}"
   end
 
   def format_number(value)
@@ -668,10 +624,6 @@ class HealthkitSummaryPreviewer
   end
 
   def label_for(record_type)
-    I18n.t("healthkit.preview.record_types.#{record_type_key(record_type)}", default: record_type)
-  end
-
-  def record_type_key(record_type)
-    record_type.to_s.tr(".", "_").underscore
+    RECORD_TYPE_LABELS.fetch(record_type, record_type)
   end
 end
