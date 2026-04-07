@@ -1,7 +1,7 @@
 class Person < ApplicationRecord
   has_many :entries, dependent: :destroy
   has_many :healthkit_records, dependent: :destroy
-  has_one :healthkit_sync, dependent: :destroy
+  has_many :healthkit_syncs, dependent: :destroy
   has_many :llm_logs, dependent: :destroy
 
   validates :name, presence: true

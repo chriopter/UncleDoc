@@ -221,7 +221,7 @@ final class HealthKitSyncService: ObservableObject {
         guard let personUUID = configuration.selectedPersonUUID else { return }
 
         do {
-            let status = try await apiClient.fetchSyncStatus(personUUID: personUUID)
+            let status = try await apiClient.fetchSyncStatus(personUUID: personUUID, deviceID: DeviceIdentityStore.shared.deviceID)
             var config = configuration
             config.lastSuccessfulSyncAt = status.sync.lastSuccessfulSyncAt ?? status.sync.lastSyncedAt ?? config.lastSuccessfulSyncAt
             config.syncedRecordCount = status.sync.syncedRecordCount

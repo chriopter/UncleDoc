@@ -109,8 +109,20 @@ final class APIClient: NSObject, @unchecked Sendable {
         return try await request(path: "ios/healthkit/people", method: "GET", body: Optional<Data>.none, responseType: Response.self).people
     }
 
-    func fetchSyncStatus(personUUID: String) async throws -> HealthKitSyncStatusResponse {
-        try await request(path: "ios/healthkit/status?person_uuid=\(personUUID.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? personUUID)", method: "GET", body: Optional<Data>.none, responseType: HealthKitSyncStatusResponse.self)
+    func fetchSyncStatus(personUUID: String, deviceID: String? = nil) async throws -> HealthKitSyncStatusResponse {
+        var queryItems = [
+            URLQueryItem(name: "person_uuid", value: personUUID)
+        ]
+        if let deviceID {
+            queryItems.append(URLQueryItem(name: "device_id", value: deviceID))
+        }
+
+        var components = URLComponents()
+        components.path = "ios/healthkit/status"
+        components.queryItems = queryItems
+
+        let path = components.string ?? "ios/healthkit/status?person_uuid=\(personUUID.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? personUUID)"
+        try await request(path: path, method: "GET", body: Optional<Data>.none, responseType: HealthKitSyncStatusResponse.self)
     }
 
     func sync(_ payload: HealthKitSyncRequest) async throws -> HealthKitSyncStatusResponse.SyncSummary {
