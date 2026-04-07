@@ -8,31 +8,15 @@ Bring your own LLM. UncleDoc does not provide medical advice and should support 
 
 ## 1. What It Does
 
-UncleDoc keeps a household's health information in one place and makes it usable day to day.
+UncleDoc keeps a household's health information in one place without turning it into a hospital system. It is built for fast daily use: log what happened, attach documents, and get a record you can actually search, review, and chat with. If you bring an LLM, UncleDoc can turn messy health notes into something much more structured and useful.
 
-- **Multi-person household record**
-Track multiple people in one app, each with their own history, overview, files, and trends.
-
-- **Fast timeline logging**
-Add notes, measurements, timestamps, and uploads in a single stream that stays easy to scan later.
-
-- **Structured health record**
-Notes can stay simple, or become structured facts that power charts, summaries, planning, and search.
-
-- **Useful everyday views**
-Each person gets an `Overview`, `Log`, `Trends`, `Calendar`, `Files`, `Baby`, and `HealthKit` area.
-
-- **Baby mode**
-Feeding, diaper, sleep, and growth workflows are faster when you are tracking a baby and do not want extra friction.
-
-- **LLM-powered parsing and chat**
-If you configure an LLM, UncleDoc can turn notes into structured data, summarize health history, and answer questions against the record.
-
-- **Admin side without clutter**
-Settings, raw database browsing, LLM setup, prompt preview, and logs stay available without getting in the way of normal use.
-
-- **Bilingual UI**
-The app supports both English and German via Rails I18n.
+- Multi-person health records
+- Fast timeline logging with file uploads
+- Overview, log, trends, calendar, and files views
+- Baby mode for feeding, diapers, sleep, and growth
+- HealthKit sync through the iOS app
+- Optional LLM parsing, summaries, and chat
+- Bilingual UI in English and German
 
 ## 2. iOS App
 
@@ -44,22 +28,13 @@ The iOS app stays intentionally thin, with the main product experience still liv
 
 ## 3. Installation
 
-### Requirements
-
-- Ruby `4.0.2`
-- Bundler
-- SQLite3
-
-### Local setup
+### Local dev
 
 ```bash
-bundle install
-bin/rails db:prepare
-bundle exec bin/rails db:seed
 bin/dev
 ```
 
-`db:seed` prepares demo profiles, including `Demo Nora` for the overview demo.
+If you want demo content, run `bundle exec bin/rails db:prepare db:seed` first.
 
 ### Run tests
 
@@ -67,14 +42,17 @@ bin/dev
 bin/rails test
 ```
 
-### What `bin/dev` starts
+### Deploy
 
-- Rails on `0.0.0.0:3000`
-- the Tailwind watcher
+```bash
+kamal setup
+kamal deploy
+```
 
 ## 4. Details
 
-### Stack
+<details>
+<summary>Stack</summary>
 
 - Ruby `4.0.2`
 - Rails `8.1`
@@ -85,7 +63,10 @@ bin/rails test
 - Solid Queue / Solid Cache / Solid Cable
 - `ruby_llm`
 
-### Data model
+</details>
+
+<details>
+<summary>Data model</summary>
 
 UncleDoc starts with a simple model: a person, a timeline of entries, and optional structured data layered on top.
 
@@ -96,7 +77,10 @@ UncleDoc starts with a simple model: a person, a timeline of entries, and option
 | `UserPreference` | Saved app and LLM preferences | locale, date format, provider, model |
 | `HealthkitRecord` / `HealthkitSync` | Raw imported iOS health data and sync state | source payloads, sync metadata |
 
-### Normal data and parsing
+</details>
+
+<details>
+<summary>Normal data and parsing</summary>
 
 The normal flow is deliberately simple: write a note, attach a document if needed, and let UncleDoc keep it as-is or enrich it with structure.
 
@@ -108,7 +92,10 @@ The normal flow is deliberately simple: write a note, attach a document if neede
 
 This means the app is still useful without parsing, but gets much stronger once structured data exists.
 
-### LLM integration
+</details>
+
+<details>
+<summary>LLM integration</summary>
 
 LLM support is optional.
 
@@ -121,7 +108,10 @@ If configured, UncleDoc can:
 
 Supported providers currently include `OpenAI`, `Fireworks`, `OpenRouter`, `Ollama`, `xAI`, `Mistral`, `Perplexity`, and `DeepSeek`.
 
-### HealthKit compaction
+</details>
+
+<details>
+<summary>HealthKit compaction</summary>
 
 HealthKit imports are stored separately first, then compacted into timeline-friendly summaries so the main log stays readable.
 
@@ -131,7 +121,10 @@ HealthKit imports are stored separately first, then compacted into timeline-frie
 | Sync / grouping | Organize records by person and import window | Makes updates repeatable |
 | Generated summary `Entry` | Turn many readings into one usable timeline item | Daily or grouped health summary |
 
-### Demo data
+</details>
+
+<details>
+<summary>Demo data</summary>
 
 The seed data builds three demo profiles:
 
@@ -147,7 +140,10 @@ After starting the app, open:
 http://127.0.0.1:3000/Demo%20Nora/overview
 ```
 
-### Local LAN setup
+</details>
+
+<details>
+<summary>Local LAN setup</summary>
 
 This repo is also used in a LAN-only self-hosted setup:
 
@@ -167,12 +163,17 @@ systemctl stop uncledoc-dev.service
 journalctl -u uncledoc-dev.service -f
 ```
 
-### Project notes
+</details>
+
+<details>
+<summary>Project notes</summary>
 
 - All user-facing UI text should go through Rails I18n.
 - New UI text must include both English and German translations.
 - Web UI changes should preserve Hotwire Native iOS behavior.
 - Local app data in `storage/development.sqlite3` should be treated as valuable.
+
+</details>
 
 ## License
 
