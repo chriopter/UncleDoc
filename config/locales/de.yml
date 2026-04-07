@@ -165,6 +165,10 @@ de:
         synced: "Synchronisiert"
         failed: "Fehlgeschlagen"
         not_synced: "Nicht synchronisiert"
+      reset_button: "Importierte Daten zurücksetzen"
+      reset_confirm: "Alle synchronisierten HealthKit-Daten, Sync-Status und generierten HealthKit-Zusammenfassungen für diese Person wirklich löschen?"
+      flash:
+        reset: "HealthKit-Daten wurden zurückgesetzt."
       empty_value: "-"
       empty_syncs: "Für diese Person ist noch kein HealthKit-Sync auf dem Server angekommen."
       empty_summaries: "Es sind noch keine HealthKit-Zusammenfassungs-Eintrage vorhanden."
@@ -353,32 +357,15 @@ de:
       empty_records: "Noch keine synchronisierten HealthKit-Einträge vorhanden."
       flash:
         reset: "HealthKit-Sync-Daten wurden zurückgesetzt."
-    profile:
-      title: "Profileinstellungen"
-      subtitle: "UI"
-      nav: "Profil"
     users:
       title: "Benutzer"
       subtitle: "Familie"
-      nav: "Mitglieder"
-    user_group:
-      label: "Benutzer-Einstellungen"
+      nav: "Benutzer"
+      description: "Verwalten Sie Familienmitglieder und nutzen Sie die hier angezeigten Datenbank-IDs, wenn Sie eine genaue Referenz brauchen."
+      person_id: "ID: %{id}"
     db:
       title: "DB-Ansicht"
       subtitle: "SQL"
-    display:
-      title: "Anzeigeeinstellungen"
-      subtitle: "Halten Sie den ersten Admin-Bereich einfach: Wählen Sie Sprache und Datumsformat für Ihre aktuelle Ansicht."
-    language:
-      label: "Sprache"
-      title: "App-Sprache wählen"
-      english: "English"
-      german: "Deutsch"
-    date_format:
-      label: "Datumsformat"
-      title: "Datumsanzeige wählen"
-      long: "Lang"
-      compact: "Kompakt"
     llm:
       title: "LLM"
       subtitle: "Modelle"

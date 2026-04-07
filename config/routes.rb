@@ -32,6 +32,7 @@ Rails.application.routes.draw do
     get "calendar", to: "dashboard#calendar", as: :person_calendar
     get "baby", to: "people#baby", as: :person_baby
     get "log", to: "dashboard#log", as: :person_log
+    get "research", to: "dashboard#research", as: :person_research
     get "files", to: "dashboard#files", as: :person_files
     get "healthkit", to: "dashboard#healthkit", as: :person_healthkit
     post "log_summary", to: "dashboard#summarize_log", as: :person_log_summary

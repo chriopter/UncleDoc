@@ -1,17 +1,17 @@
 <% if entry.parsed? %>
-  <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-400"><%= t("entries.parse_status.parsed") %></p>
+  <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700"><%= t("entries.parse_status.parsed") %></p>
 <% elsif entry.pending_parse? %>
-  <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-300">
+  <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">
     <%= t("entries.parse_status.pending_short") %>
     <span class="sr-only"><%= t("entries.parse_status.pending") %></span>
   </p>
 <% elsif entry.skipped_parse? %>
-  <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+  <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
     <%= t("entries.parse_status.skipped_short") %>
     <span class="sr-only"><%= t("entries.parse_status.skipped") %></span>
   </p>
 <% elsif entry.failed_parse? %>
-  <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-rose-300">
+  <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-rose-700">
     <%= t("entries.parse_status.failed_short") %>
     <span class="sr-only"><%= t("entries.parse_status.failed") %></span>
   </p>

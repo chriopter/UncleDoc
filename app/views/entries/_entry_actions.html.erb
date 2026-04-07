@@ -1,6 +1,6 @@
 <div class="flex items-center gap-2">
   <details class="relative">
-    <summary class="flex cursor-pointer list-none items-center rounded-full border border-white/10 bg-white/5 p-2 text-slate-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white">
+    <summary class="flex cursor-pointer list-none items-center rounded-full border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800">
       <span class="sr-only"><%= t("entries.db_row.toggle") %></span>
       <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <ellipse cx="12" cy="5" rx="7" ry="3" />
@@ -9,16 +9,16 @@
       </svg>
     </summary>
 
-    <div class="absolute right-0 z-10 mt-2 w-[min(30rem,88vw)] overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-2xl ring-1 ring-black/30">
-      <div class="border-b border-white/10 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+    <div class="absolute right-0 z-10 mt-2 w-[min(30rem,88vw)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ring-1 ring-black/5">
+      <div class="border-b border-slate-200 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
         <%= t("entries.db_row.toggle") %>
       </div>
-      <pre class="max-h-96 overflow-auto px-4 py-3 text-[11px] leading-5 text-slate-200 whitespace-pre-wrap break-words"><%= JSON.pretty_generate(entry.attributes) %></pre>
+      <pre class="max-h-96 overflow-auto px-4 py-3 text-[11px] leading-5 text-slate-700 whitespace-pre-wrap break-words"><%= JSON.pretty_generate(entry.attributes) %></pre>
     </div>
   </details>
 
   <%= link_to edit_person_entry_path(entry.person, entry),
-      class: "inline-flex items-center rounded-full border border-white/10 bg-white/5 p-2 text-slate-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white",
+      class: "inline-flex items-center rounded-full border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800",
       data: { turbo_frame: dom_id(entry) },
       aria: { label: t("actions.edit") } do %>
     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -28,7 +28,7 @@
   <% end %>
 
   <%= button_to reparse_person_entry_path(entry.person, entry), method: :patch,
-      class: "inline-flex items-center rounded-full border border-white/10 bg-white/5 p-2 text-slate-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white",
+      class: "inline-flex items-center rounded-full border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800",
       aria: { label: t("entries.reparse.trigger") } do %>
     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 1 0 3-6.708" />
@@ -38,7 +38,7 @@
 
   <% if entry.parseable_data.present? %>
     <details class="relative">
-      <summary class="flex cursor-pointer list-none items-center rounded-full border border-white/10 bg-white/5 p-2 text-slate-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white">
+      <summary class="flex cursor-pointer list-none items-center rounded-full border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800">
         <span class="sr-only"><%= t("entries.raw_data.toggle") %></span>
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5.25 12 5.25S20.268 7.943 21.542 12C20.268 16.057 16.477 18.75 12 18.75S3.732 16.057 2.458 12Z" />
@@ -46,17 +46,17 @@
         </svg>
       </summary>
 
-      <div class="absolute right-0 z-10 mt-2 w-[min(24rem,80vw)] overflow-hidden rounded-2xl border border-white/10 bg-slate-950 shadow-2xl ring-1 ring-black/30">
-        <div class="border-b border-white/10 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+      <div class="absolute right-0 z-10 mt-2 w-[min(24rem,80vw)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ring-1 ring-black/5">
+        <div class="border-b border-slate-200 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
           <%= t("entries.raw_data.toggle") %>
         </div>
-        <pre class="max-h-80 overflow-auto px-4 py-3 text-[11px] leading-5 text-slate-200 whitespace-pre-wrap break-words"><%= JSON.pretty_generate(entry.parseable_data) %></pre>
+        <pre class="max-h-80 overflow-auto px-4 py-3 text-[11px] leading-5 text-slate-700 whitespace-pre-wrap break-words"><%= JSON.pretty_generate(entry.parseable_data) %></pre>
       </div>
     </details>
   <% end %>
 
   <%= button_to person_entry_path(entry.person, entry), method: :delete,
-      class: "inline-flex items-center rounded-full border border-white/10 bg-white/5 p-2 text-slate-400 transition hover:border-red-400/30 hover:bg-red-500/10 hover:text-red-300",
+      class: "inline-flex items-center rounded-full border border-slate-200 bg-white p-2 text-slate-400 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-600",
       data: { turbo_confirm: t("entries.destroy_confirm") },
       aria: { label: t("actions.delete") } do %>
     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

@@ -67,7 +67,7 @@ class HealthkitController < ApplicationController
     @person.entries.healthkit_generated.destroy_all
 
     respond_to do |format|
-      format.html { redirect_to settings_path(section: :healthkit), notice: t("settings.healthkit.flash.reset") }
+      format.html { redirect_to person_healthkit_path(person_slug: @person.name), notice: t("dashboard.healthkit.flash.reset") }
       format.json { render json: { ok: true } }
     end
   end

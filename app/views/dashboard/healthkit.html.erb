@@ -48,12 +48,17 @@
       </div>
 
       <div class="rounded-[1.75rem] border border-slate-200 bg-slate-50/80 p-4">
-        <div class="flex items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"><%= t("dashboard.healthkit.syncs_label") %></p>
             <h2 class="mt-1 text-lg font-bold text-slate-950"><%= t("dashboard.healthkit.syncs_title") %></h2>
           </div>
-          <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600"><%= t("dashboard.healthkit.stats.devices_value", count: @healthkit_syncs.size) %></span>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600"><%= t("dashboard.healthkit.stats.devices_value", count: @healthkit_syncs.size) %></span>
+            <% if @healthkit_syncs.any? || @healthkit_record_count.positive? || @healthkit_summary_count.positive? %>
+              <%= button_to t("dashboard.healthkit.reset_button"), ios_healthkit_reset_path(person_uuid: @person.uuid), method: :delete, class: "inline-flex rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100", form: { class: "inline-block", data: { turbo_confirm: t("dashboard.healthkit.reset_confirm") } } %>
+            <% end %>
+          </div>
         </div>
 
         <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">

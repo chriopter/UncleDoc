@@ -94,6 +94,42 @@ class HealthkitSummaryPreviewerTest < ActiveSupport::TestCase
     assert_includes preview.input, "Audiogram"
   end
 
+  test "normalizes heart rate units to bpm in summaries" do
+    person = Person.create!(name: "Pulse Units", birth_date: Date.new(2020, 1, 1))
+
+    create_record(person, "HKQuantityTypeIdentifierHeartRate", "2026-04-05 08:00:00", quantity: "1.5 count/s")
+    create_record(person, "HKQuantityTypeIdentifierRestingHeartRate", "2026-04-05 09:00:00", quantity: "1.1 count/s")
+    create_record(person, "HKQuantityTypeIdentifierWalkingHeartRateAverage", "2026-04-05 10:00:00", quantity: "90 count/min")
+
+    preview = HealthkitSummaryPreviewer.call(person:, today: Date.new(2026, 4, 6)).find do |item|
+      item.source_ref == "healthkit:day:2026-04-05"
+    end
+
+    assert_includes preview.input, "Pulse avg 90 bpm; min 90; max 90"
+    assert_includes preview.input, "Resting pulse avg 66 bpm; min 66; max 66"
+    assert_includes preview.input, "Walking pulse avg 90 bpm; min 90; max 90"
+    refute_includes preview.input, "count/s"
+    refute_includes preview.input, "count/min"
+  end
+
+  test "normalizes mixed monthly units before aggregation" do
+    person = Person.create!(name: "Monthly Units", birth_date: Date.new(2020, 1, 1))
+
+    create_record(person, "HKQuantityTypeIdentifierHeartRate", "2026-02-10 08:00:00", quantity: "84 count/min")
+    create_record(person, "HKQuantityTypeIdentifierHeartRate", "2026-02-11 08:00:00", quantity: "1.4 count/s")
+    create_record(person, "HKQuantityTypeIdentifierBodyMass", "2026-02-10 09:00:00", quantity: "94000 g")
+    create_record(person, "HKQuantityTypeIdentifierBodyMass", "2026-02-11 09:00:00", quantity: "94 kg")
+    create_record(person, "HKQuantityTypeIdentifierRestingHeartRate", "2026-03-01 08:00:00", quantity: "1 count/s")
+
+    preview = HealthkitSummaryPreviewer.call(person:, today: Date.new(2026, 4, 6)).find do |item|
+      item.source_ref == "healthkit:month:2026-02"
+    end
+
+    assert_includes preview.input, "Pulse avg 84 bpm; min 84; max 84"
+    assert_includes preview.input, "Weight avg 94 kg; min 94; max 94"
+    refute_includes preview.input, "94000 kg"
+  end
+
   private
 
   def create_record(person, record_type, start_at, quantity: nil, value: nil, end_at: nil, source_name: "Health")

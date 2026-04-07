@@ -47,7 +47,7 @@ class ApplicationController < ActionController::Base
   end
 
   def settings_path_for(section = nil)
-    settings_path(section: section)
+    settings_path({ section: section, locale: params[:locale].presence, date_format: params[:date_format].presence }.compact)
   end
 
   def initialize_entry_for_current_person

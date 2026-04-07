@@ -1,5 +1,5 @@
 <% if entry.parseable_data.present? %>
-  <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+  <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70">
     <% Array(entry.parseable_data).each_with_index do |item, index| %>
       <% next unless item.is_a?(Hash) && item["type"].present? %>
       <% label_key = item["type"].to_s.downcase %>
@@ -35,9 +35,9 @@
       end.filter_map(&:presence) %>
       <% next if detail_parts.blank? %>
 
-      <div class="grid gap-3 px-4 py-3 sm:grid-cols-[8rem_minmax(0,1fr)] sm:items-start <%= index.positive? ? 'border-t border-white/10' : '' %>">
-        <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= label %></div>
-        <div class="border-l border-white/10 pl-4 text-sm text-slate-100">
+      <div class="grid gap-3 px-4 py-3 sm:grid-cols-[8rem_minmax(0,1fr)] sm:items-start <%= index.positive? ? 'border-t border-slate-200' : '' %>">
+        <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"><%= label %></div>
+        <div class="border-l border-slate-200 pl-4 text-sm text-slate-700">
           <%= detail_parts.join(" • ") %>
         </div>
       </div>
