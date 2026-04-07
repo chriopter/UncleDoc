@@ -6,10 +6,11 @@
     <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort], card_classes: "md:col-span-2", entry_limit: 3 %>
   </div>
 
-  <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 xl:items-start">
-    <%= render "shared/planning_widget", person: person, card_classes: "md:col-span-2 xl:col-span-3" %>
-    <%= render "shared/sparkline_widget", person: person, type: :weight %>
-    <%= render "shared/sparkline_widget", person: person, type: :pulse %>
-    <%= render "shared/sparkline_widget", person: person, type: :blood_pressure %>
+  <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 xl:items-start">
+    <%= render "shared/planning_widget", person: person, card_classes: "md:col-span-2 xl:col-span-4" %>
+    <%= render "shared/weight_activity_widget", person: person %>
+    <%= render "shared/vital_activity_widget", person: person, type: :temperature %>
+    <%= render "shared/vital_activity_widget", person: person, type: :pulse %>
+    <%= render "shared/vital_activity_widget", person: person, type: :blood_pressure %>
   </div>
 </section>

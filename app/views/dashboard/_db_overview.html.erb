@@ -4,4 +4,22 @@
     <h2 class="mt-2 text-2xl font-bold text-slate-950"><%= t("db.title") %></h2>
     <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600"><%= t("db.description") %></p>
   </div>
+
+  <div class="grid gap-6 xl:grid-cols-2">
+    <% shell_db_tables.each do |group| %>
+      <% next if group[:tables].blank? %>
+
+      <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-black/5">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"><%= group[:label] %></p>
+        <div class="mt-4 space-y-2">
+          <% group[:tables].each do |table| %>
+            <%= link_to settings_path(section: "db_table", table: table[:name]), class: "flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-amber-200 hover:bg-amber-50 hover:text-slate-950" do %>
+              <span class="break-all"><%= table[:name] %></span>
+              <span class="ml-3 shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500"><%= t(table[:count] == 1 ? "db.table.count" : "db.table.count_plural", count: table[:count]) %></span>
+            <% end %>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+  </div>
 </section>

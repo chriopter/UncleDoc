@@ -6,7 +6,7 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     get settings_url
 
     assert_response :success
-    assert_select "h1", "Workspace settings"
+    assert_select "h2", "Display preferences"
     assert_select "span", text: "Profile"
     assert_select "span", text: "Members"
     assert_includes @response.body, "DB View"
@@ -32,6 +32,8 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h2", "Raw database view"
+    assert_includes @response.body, "/settings/db_table?table=entries"
+    assert_includes @response.body, "entries"
   end
 
   test "shows parser prompt in llm settings" do

@@ -29,12 +29,7 @@
     <% elsif defined?(log_summary_state) && log_summary_state.in?([:missing_model, :missing_api_key, :no_entries, :request_failed]) %>
       <div class="mt-6 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
         <p class="text-sm text-amber-300">
-          <% case log_summary_state %>
-          <% when :missing_model %><%= t("log_summary.states.missing_model") %>
-          <% when :missing_api_key %><%= t("log_summary.states.missing_api_key") %>
-          <% when :no_entries %><%= t("log_summary.states.no_entries") %>
-          <% when :request_failed %><%= t("log_summary.states.request_failed") %>
-          <% end %>
+          <%= t("log_summary.states.#{log_summary_state}") %>
         </p>
       </div>
     <% end %>

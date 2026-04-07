@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_06_195500) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_07_090000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -48,9 +48,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_06_195500) do
     t.string "parse_status", default: "parsed", null: false
     t.json "parseable_data", default: [], null: false
     t.integer "person_id", null: false
+    t.string "source", default: "manual", null: false
+    t.string "source_ref"
     t.boolean "todo_done", default: false, null: false
     t.datetime "todo_done_at"
     t.datetime "updated_at", null: false
+    t.index ["person_id", "source", "source_ref"], name: "index_entries_on_person_source_and_source_ref", unique: true, where: "source_ref IS NOT NULL"
     t.index ["person_id"], name: "index_entries_on_person_id"
   end
 
