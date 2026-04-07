@@ -60,13 +60,21 @@ class ApplicationController < ActionController::Base
   def current_locale
     if params[:locale].present? && %w[en de].include?(params[:locale])
       params[:locale]
+    elsif controller_name != "settings" && person_display_preference&.locale.present?
+      person_display_preference.locale
     else
       user_preference.locale
     end
   end
 
   def current_date_format
-    user_preference.date_format
+    if params[:date_format].present? && %w[long compact].include?(params[:date_format])
+      params[:date_format]
+    elsif controller_name != "settings" && person_display_preference&.date_format.present?
+      person_display_preference.date_format
+    else
+      user_preference.date_format
+    end
   end
 
   def current_llm_provider
@@ -79,6 +87,16 @@ class ApplicationController < ActionController::Base
 
   def user_preference
     @user_preference ||= UserPreference.current
+  end
+
+  def person_display_preference
+    return @person_display_preference if defined?(@person_display_preference)
+
+    @person_display_preference = if params[:person_slug].present?
+      Person.find_by(name: params[:person_slug])
+    else
+      current_person
+    end
   end
 
   def baby_feeding_timer_started_at_for(person)

@@ -82,6 +82,6 @@ class PeopleController < ApplicationController
   private
 
   def person_params
-    params.require(:person).permit(:name, :birth_date, :baby_mode)
+    params.require(:person).permit(:name, :birth_date, :baby_mode, :locale, :date_format)
   end
 end

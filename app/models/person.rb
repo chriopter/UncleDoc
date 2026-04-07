@@ -5,6 +5,8 @@ class Person < ApplicationRecord
   has_many :llm_logs, dependent: :destroy
 
   validates :name, presence: true
+  validates :locale, inclusion: { in: %w[en de] }, allow_nil: true
+  validates :date_format, inclusion: { in: %w[long compact] }, allow_nil: true
 
   before_validation :ensure_uuid, on: :create
 

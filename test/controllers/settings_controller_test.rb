@@ -101,15 +101,23 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     get settings_url(section: "llm")
 
     assert_response :success
+    assert_includes @response.body, "Model configuration"
+    assert_includes @response.body, "Parser system prompt"
+    assert_includes @response.body, "Prompt and preview"
+    assert_includes @response.body, "Affected user"
+    assert_includes @response.body, "Raw LLM request log"
     assert_includes @response.body, "Workspace usage"
+    assert_includes @response.body, "Price"
     assert_includes @response.body, "Total requests"
     assert_includes @response.body, "1"
+    assert_not_includes @response.body, "href=\"/settings/llm_prompt\""
   end
 
   test "shows dedicated llm prompt page" do
     get settings_url(section: "llm_prompt")
 
     assert_response :success
+    assert_includes @response.body, "Language model settings"
     assert_includes @response.body, "Parser system prompt"
     assert_includes @response.body, EntryDataParser.system_prompt.lines.first.strip
   end
@@ -120,21 +128,32 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     get settings_url(section: "llm")
 
     assert_response :success
-    assert_includes @response.body, "Model: llama3"
+    assert_includes @response.body, "Model configuration"
+    assert_includes @response.body, "llama3"
     assert_includes @response.body, "API key"
     assert_includes @response.body, "Edit"
   end
 
-  test "shows llm log subnav and llm logs page" do
+  test "updates preview using selected person" do
+    selected_person = people(:two)
+
+    get settings_url(section: "llm", preview_person_id: selected_person.id)
+
+    assert_response :success
+    assert_includes @response.body, "Showing live prompt data for #{selected_person.name}."
+    assert_select "select[name='preview_person_id'] option[selected='selected'][value='#{selected_person.id}']", text: selected_person.name
+  end
+
+  test "shows llm logs inside unified llm page" do
     LlmLog.create!(request_kind: "entry_parse", provider: "ollama", model: "llama3", endpoint: "http://localhost:11434/v1/chat/completions", request_payload: "{}", response_body: "[]", status_code: 200)
 
     get settings_url(section: "llm_logs")
 
     assert_response :success
-    assert_includes @response.body, "Prompt"
-    assert_includes @response.body, "Raw logs"
+    assert_includes @response.body, "Language model settings"
     assert_includes @response.body, "Raw LLM request log"
     assert_includes @response.body, "entry_parse"
+    assert_not_includes @response.body, "href=\"/settings/llm_prompt\""
   end
 
   test "preserves locale in settings" do

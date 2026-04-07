@@ -125,4 +125,23 @@ class EntryDataParserTest < ActiveSupport::TestCase
       chat_singleton.remove_method :__original_chat_call_for_healthkit_test
     end
   end
+
+  test "normalizes pulse units to bpm in healthkit summaries" do
+    person = Person.create!(name: "Pulse Normalize", birth_date: Date.new(2020, 1, 1))
+    entry = person.entries.create!(
+      input: "Apple Health monthly summary for May 2025.\n- Source: Apple Health.\n- Summary type: monthly.\n- Period: May 2025.\n- Pulse avg 121.42 count/min; min 83; max 171.\n- Resting pulse avg 1.1 count/s; min 0.9; max 1.2.",
+      occurred_at: Time.current,
+      source: Entry::SOURCES[:healthkit],
+      source_ref: "healthkit:month:2025-05",
+      facts: [],
+      parseable_data: [],
+      parse_status: "pending"
+    )
+
+    result = EntryDataParser.send(:enrich_healthkit_parseable_data, [], entry.input, entry: entry)
+
+    assert_includes result, { "type" => "healthkit_summary", "value" => "Apple Health", "quality" => "monthly" }
+    assert_includes result, { "type" => "pulse", "value" => 121.42, "unit" => "bpm" }
+    assert result.none? { |item| item["type"] == "pulse" && item["unit"].to_s.include?("count") }
+  end
 end

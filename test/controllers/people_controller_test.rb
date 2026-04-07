@@ -73,14 +73,16 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[data-turbo-method='delete'][href='#{person_path(person)}']", 1
   end
 
-  test "updates a person including datetime birth date and baby mode" do
+  test "updates a person including datetime birth date, baby mode, and personal display settings" do
     person = Person.create!(name: "Mila", birth_date: Time.zone.local(2024, 3, 10, 12, 0))
 
     patch person_url(person), params: {
       person: {
         name: "Mila Rose",
         birth_date: "2024-03-11T08:30",
-        baby_mode: "1"
+        baby_mode: "1",
+        locale: "de",
+        date_format: "compact"
       }
     }
 
@@ -89,6 +91,22 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Mila Rose", person.name
     assert_equal Time.zone.parse("2024-03-11T08:30"), person.birth_date
     assert person.baby_mode?
+    assert_equal "de", person.locale
+    assert_equal "compact", person.date_format
+  end
+
+  test "person scoped pages use personal locale and date format" do
+    person = Person.create!(name: "Locale Mila", birth_date: Time.zone.local(2024, 3, 10, 12, 0), locale: "de", date_format: "compact")
+    UserPreference.update_locale("en")
+    UserPreference.update_date_format("long")
+
+    get person_overview_url(person_slug: person.name)
+
+    assert_response :success
+    assert_equal :de, I18n.locale
+  ensure
+    UserPreference.update_locale("en")
+    UserPreference.update_date_format("long")
   end
 
   test "shows newborn age in days on overview" do
