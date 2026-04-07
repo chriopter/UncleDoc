@@ -3,6 +3,13 @@ module ApplicationHelper
     request.user_agent.to_s.include?("UncleDoc iOS")
   end
 
+  def viewport_meta_content
+    content = "width=device-width,initial-scale=1,viewport-fit=cover"
+    return content unless native_app_request?
+
+    "#{content},maximum-scale=1,user-scalable=no"
+  end
+
   def app_revision_tooltip
     details = app_revision_details
     return unless details
