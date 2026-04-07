@@ -36,7 +36,7 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "entries"
   end
 
-  test "db table paginates newest rows first" do
+  test "db table uses infinite scroll and newest rows first" do
     person = people(:one)
     Entry.delete_all
 
@@ -56,13 +56,15 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes @response.body, "db pagination 54"
     assert_not_includes @response.body, "db pagination 0"
-    assert_includes @response.body, "Page 1 of 2"
+    assert_includes @response.body, "Loading more rows..."
+    assert_includes @response.body, "page=2"
 
-    get settings_url(section: "db_table", table: "entries", page: 2)
+    get settings_url(section: "db_table", table: "entries", page: 2, format: :turbo_stream)
 
     assert_response :success
+    assert_equal Mime[:turbo_stream].to_s, response.media_type
+    assert_includes @response.body, "turbo-stream action=\"append\" target=\"db_table_rows\""
     assert_includes @response.body, "db pagination 0"
-    assert_includes @response.body, "Page 2 of 2"
   end
 
   test "db table can delete an entry row" do

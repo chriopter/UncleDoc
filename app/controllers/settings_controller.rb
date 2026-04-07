@@ -138,9 +138,11 @@ class SettingsController < ApplicationController
       columns: columns,
       rows: connection.select_all("SELECT * FROM #{quoted_table}#{order_sql} LIMIT #{per_page} OFFSET #{offset}").to_a,
       count: total_count,
+      rendered_count: [ offset + per_page, total_count ].min,
       page: current_page,
       per_page: per_page,
       total_pages: total_pages,
+      next_page: current_page < total_pages ? current_page + 1 : nil,
       primary_key: primary_key,
       deletable: database_table_deletable?(table_name, primary_key),
       order_column: order_column
