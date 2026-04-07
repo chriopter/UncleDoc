@@ -2,6 +2,8 @@
 
 UncleDoc is a self-hosted family health manager built in Rails.
 
+<img src="docs/screenshots/overview-demo-nora.png" alt="Demo Nora overview" width="60%" />
+
 ## 1. What It Does
 
 UncleDoc helps a household keep health information in one place.
@@ -13,8 +15,6 @@ UncleDoc helps a household keep health information in one place.
 - Support both English and German via Rails I18n.
 
 It can turn notes and uploaded documents into structured health records, and if an LLM is configured, that data can also power summaries and chat.
-
-<img src="docs/screenshots/overview-demo-nora.png" alt="Demo Nora overview" width="40%" />
 
 <details open>
 <summary>Overview</summary>
@@ -56,23 +56,28 @@ UncleDoc also includes an iOS app that gives you a more native way to use the sa
 ## 3. Features
 
 <details open>
-<summary>Baby mode</summary>
+<summary>Feature list</summary>
 
-UncleDoc includes a dedicated baby mode for households that want faster tracking during the newborn and infant phase. It adds baby-specific views and quick actions for feeding, diapers, sleep, and growth-related logging. That keeps the same health record structure, while making the everyday workflow much lighter for parents.
+- **Overview**
+The main dashboard brings together recent activity, planning, and health trends for one person. It is designed to be the fastest place to understand what matters today.
 
-</details>
+- **Log**
+The log captures notes, facts, files, and timestamps in one timeline. It works well for quick manual entry and for reviewing history later.
 
-<details>
-<summary>HealthKit integration</summary>
+- **Trends**
+Trend views turn structured data into readable charts and patterns. This makes weight, vitals, and recurring events easier to understand over time.
 
-Rails exposes HealthKit endpoints under `/ios/healthkit/*`.
+- **Files**
+Documents and images can live alongside normal health entries. That keeps uploaded reports connected to the same person and timeline.
 
-- `GET /ios/healthkit/people`
-- `GET /ios/healthkit/status`
-- `POST /ios/healthkit/sync`
-- `DELETE|POST /ios/healthkit/reset`
+- **Baby mode**
+Baby mode adds faster workflows for feeding, diapers, sleep, and growth-related tracking. It keeps the same record structure while making everyday parenting tasks much lighter.
 
-Imported HealthKit data is stored separately from manual entries and can generate summary entries for a person.
+- **HealthKit sync**
+The iOS app can bring HealthKit data into UncleDoc. Imported data can then be compacted into timeline-friendly summaries instead of flooding the log.
+
+- **LLM-powered parsing and chat**
+If you configure an LLM, UncleDoc can turn notes into structured health data, generate summaries, and answer questions against a person's record. The app still works without it, but becomes much more powerful with it.
 
 </details>
 
