@@ -275,6 +275,7 @@
 				INFOPLIST_FILE = UncleDoc/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = UncleDoc;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Give access to your self hosted UncleDoc instance to save your records.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Give access to your self hosted UncleDoc instance to write synced health records and related updates.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -311,6 +312,7 @@
 				INFOPLIST_FILE = UncleDoc/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = UncleDoc;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Give access to your self hosted UncleDoc instance to save your records.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Give access to your self hosted UncleDoc instance to write synced health records and related updates.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
