@@ -17,6 +17,10 @@ class DashboardController < ApplicationController
     @entries = filtered_entries(@person, @entry_sort)
   end
 
+  def research
+    @person = Person.find_by!(name: params[:person_slug])
+  end
+
   def calendar
     @person = Person.find_by!(name: params[:person_slug])
     @year = (params[:year] || Time.zone.today.year).to_i

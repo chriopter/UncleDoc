@@ -4,9 +4,9 @@
 
     <div class="flex flex-wrap gap-2">
       <% entry.documents.each do |document| %>
-        <div class="inline-flex items-center gap-2 rounded-full border <%= local_assigns[:compact] == false ? 'border-white/10 bg-white/[0.06] text-slate-100' : 'border-slate-200 bg-slate-50 text-slate-700' %> px-3 py-2 text-xs font-medium">
+        <div class="inline-flex items-center gap-2 rounded-full border <%= local_assigns[:compact] == false ? 'border-slate-200 bg-white text-slate-700' : 'border-slate-200 bg-slate-50 text-slate-700' %> px-3 py-2 text-xs font-medium">
           <span class="max-w-[12rem] truncate"><%= document.filename.to_s %></span>
-          <%= link_to rails_blob_path(document, disposition: "inline"), class: "font-semibold #{local_assigns[:compact] == false ? 'text-amber-300' : 'text-amber-700'}" do %>
+          <%= link_to rails_blob_path(document, disposition: "inline"), class: "font-semibold #{local_assigns[:compact] == false ? 'text-amber-700' : 'text-amber-700'}" do %>
             <%= t("entries.documents.open") %>
           <% end %>
         </div>

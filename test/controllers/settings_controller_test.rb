@@ -1,15 +1,23 @@
 require "test_helper"
 
 class SettingsControllerTest < ActionDispatch::IntegrationTest
-  test "shows profile settings by default" do
+  test "shows users settings by default" do
     Person.delete_all  # Clear fixtures for this test
     get settings_url
 
     assert_response :success
-    assert_select "h2", "Display preferences"
-    assert_includes @response.body, "Profile"
-    assert_includes @response.body, "Members"
+    assert_select "h2", "All family members"
+    assert_includes @response.body, "Users"
     assert_includes @response.body, "DB View"
+    assert_not_includes @response.body, "/settings/healthkit"
+  end
+
+  test "legacy healthkit settings path falls back to users" do
+    get settings_url(section: "healthkit")
+
+    assert_response :success
+    assert_select "h2", "All family members"
+    assert_not_includes @response.body, "HealthKit Sync"
   end
 
   test "shows the users section" do
@@ -137,7 +145,7 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "updates locale preference from URL params" do
-    get settings_url(section: "profile", locale: "de")
+    get settings_url(section: "users", locale: "de")
 
     assert_response :success
     assert_equal "de", UserPreference.current.locale
@@ -147,9 +155,9 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "updates date format preference via patch" do
-    patch settings_url(section: "profile", date_format: "compact")
+    patch settings_url(section: "users", date_format: "compact")
 
-    assert_redirected_to settings_path(section: "profile")
+    assert_redirected_to settings_path(section: "users")
     assert_equal "compact", UserPreference.current.date_format
 
     # Reset

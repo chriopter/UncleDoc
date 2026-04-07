@@ -75,6 +75,16 @@ class HealthkitSummaryPreviewer
     characteristic.wheelchairUse
   ].freeze
 
+  HEART_RATE_TYPES = %w[
+    HKQuantityTypeIdentifierHeartRate
+    HKQuantityTypeIdentifierRestingHeartRate
+    HKQuantityTypeIdentifierWalkingHeartRateAverage
+  ].freeze
+
+  MASS_TYPES = %w[
+    HKQuantityTypeIdentifierBodyMass
+  ].freeze
+
   def self.call(person:, today: Time.zone.today)
     new(person:, today:).call
   end
@@ -271,6 +281,8 @@ class HealthkitSummaryPreviewer
     type_aggregate[:last_at] = [ type_aggregate[:last_at], start_at ].compact.max
 
     if quantity_value
+      quantity_value, quantity_unit = normalize_quantity_for_aggregate(record_type, quantity_value, quantity_unit)
+
       type_aggregate[:quantity_sum] += quantity_value
       type_aggregate[:quantity_count] += 1
       type_aggregate[:quantity_min] = [ type_aggregate[:quantity_min], quantity_value ].compact.min
@@ -494,7 +506,10 @@ class HealthkitSummaryPreviewer
     type_aggregate = aggregate[:types][record_type]
     return unless type_aggregate&.dig(:quantity_count).to_i.positive?
 
-    lines << bullet("#{label_for(record_type)} avg #{format_number(average_quantity(type_aggregate))} #{display_unit(type_aggregate, override: unit)}")
+    avg_value = average_quantity(type_aggregate)
+    avg_value, display_unit_value = normalize_quantity_for_display(record_type, avg_value, display_unit(type_aggregate, override: unit))
+
+    lines << bullet("#{label_for(record_type)} avg #{format_number(avg_value)} #{display_unit_value}")
     covered << record_type
   end
 
@@ -502,7 +517,14 @@ class HealthkitSummaryPreviewer
     type_aggregate = aggregate[:types][record_type]
     return unless type_aggregate&.dig(:quantity_count).to_i.positive?
 
-    lines << bullet("#{label_for(record_type)} avg #{format_number(average_quantity(type_aggregate))} #{display_unit(type_aggregate)}; min #{format_number(type_aggregate[:quantity_min])}; max #{format_number(type_aggregate[:quantity_max])}")
+    avg_value = average_quantity(type_aggregate)
+    min_value = type_aggregate[:quantity_min]
+    max_value = type_aggregate[:quantity_max]
+    avg_value, display_unit_value = normalize_quantity_for_display(record_type, avg_value, display_unit(type_aggregate))
+    min_value, = normalize_quantity_for_display(record_type, min_value, display_unit(type_aggregate))
+    max_value, = normalize_quantity_for_display(record_type, max_value, display_unit(type_aggregate))
+
+    lines << bullet("#{label_for(record_type)} avg #{format_number(avg_value)} #{display_unit_value}; min #{format_number(min_value)}; max #{format_number(max_value)}")
     covered << record_type
   end
 
@@ -530,6 +552,31 @@ class HealthkitSummaryPreviewer
 
   def display_unit(type_aggregate, override: nil)
     override.presence || type_aggregate[:unit].to_s.strip
+  end
+
+  def normalize_quantity_for_display(record_type, value, unit)
+    return [ value, unit ] if value.nil?
+    if HEART_RATE_TYPES.include?(record_type)
+      case unit.to_s.strip.downcase
+      when "count/s"
+        return [ value * 60.0, "bpm" ]
+      when "count/min"
+        return [ value, "bpm" ]
+      end
+    end
+
+    if MASS_TYPES.include?(record_type)
+      case unit.to_s.strip.downcase
+      when "g"
+        return [ value / 1000.0, "kg" ]
+      end
+    end
+
+    [ value, unit ]
+  end
+
+  def normalize_quantity_for_aggregate(record_type, value, unit)
+    normalize_quantity_for_display(record_type, value, unit)
   end
 
   def extract_quantity(payload_hash)

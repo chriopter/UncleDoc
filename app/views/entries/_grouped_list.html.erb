@@ -2,7 +2,7 @@
   <% grouped_entries_by_day(entries).each do |date, day_entries| %>
     <section class="space-y-3">
       <div class="sticky top-0 z-[1] -mx-1 px-1 py-1 backdrop-blur-sm">
-        <div class="inline-flex items-center rounded-full border border-white/10 bg-slate-950/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+        <div class="inline-flex items-center rounded-full border border-amber-200 bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-800 shadow-sm ring-1 ring-amber-100/80">
           <%= log_day_label(date) %>
         </div>
       </div>
@@ -14,9 +14,9 @@
           <% end %>
         </div>
       <% else %>
-        <div class="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.03]">
+        <div class="overflow-hidden rounded-[1.5rem] border border-amber-100/80 bg-white/90 shadow-sm ring-1 ring-amber-100/40">
           <% day_entries.each_with_index do |entry, index| %>
-            <div class="<%= index.positive? ? 'border-t border-white/10' : '' %>">
+            <div class="<%= index.positive? ? 'border-t border-slate-100' : '' %>">
               <%= render "entries/entry", entry: entry, grouped: true %>
             </div>
           <% end %>

@@ -1,4 +1,4 @@
-<article class="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4 transition hover:border-white/15 hover:bg-white/[0.06]">
+<article class="rounded-[1.5rem] border border-pink-100/80 bg-white/90 p-4 shadow-sm ring-1 ring-pink-100/40 transition hover:border-pink-200 hover:bg-pink-50/35">
   <div class="flex gap-3">
     <div class="flex-shrink-0">
     <% if entry.feeding? %>
@@ -50,16 +50,16 @@
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div class="min-w-0 flex-1">
           <% if entry.fact_items.present? %>
-            <ul class="space-y-1 text-sm leading-snug text-white">
+            <ul class="space-y-1 text-sm leading-snug text-slate-900">
               <% entry.fact_items.each do |fact| %>
                 <li class="break-words">• <%= fact %></li>
               <% end %>
             </ul>
           <% end %>
-          <p class="mt-2 text-xs leading-snug text-slate-400"><span class="font-semibold uppercase tracking-[0.14em]"><%= t("entries.raw_input.label") %></span> <%= entry.input %></p>
+          <p class="mt-2 text-xs leading-snug text-slate-500"><span class="font-semibold uppercase tracking-[0.14em] text-slate-600"><%= t("entries.raw_input.label") %></span> <%= entry.input %></p>
           <%= render "entries/data_details", entry: entry %>
           <%= render "entries/parse_status", entry: entry %>
-          <p class="mt-2 text-[11px] text-slate-400"><%= l(entry.display_time, format: :long) %></p>
+          <p class="mt-2 text-[11px] text-slate-500"><%= l(entry.display_time, format: :long) %></p>
         </div>
 
         <%= render "entries/entry_actions", entry: entry %>

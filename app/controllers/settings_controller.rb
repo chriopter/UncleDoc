@@ -2,14 +2,10 @@ class SettingsController < ApplicationController
   def show
     save_preferences if params[:locale].present? || params[:llm_provider].present?
 
-    @section = params[:section].in?(%w[profile llm llm_prompt llm_prompt_preview llm_logs db db_table users healthkit]) ? params[:section] : "profile"
+    @section = params[:section].in?(%w[llm llm_prompt llm_prompt_preview llm_logs db db_table users]) ? params[:section] : "users"
     @database_table = database_table_detail(params[:table], page: params[:page]) if @section == "db_table" && params[:table].present?
     @people = Person.recent_first if @section == "users"
     @person = Person.new if @section == "users"
-    if @section == "healthkit"
-      @healthkit_syncs = HealthkitSync.includes(:person).order(updated_at: :desc)
-      @healthkit_records = HealthkitRecord.includes(:person).recent_first.limit(200)
-    end
     @llm_logs = LlmLog.order(created_at: :desc).limit(200) if @section == "llm_logs"
     @llm_stats = llm_stats if @section == "llm"
     load_prompt_preview if @section == "llm_prompt_preview"
@@ -71,7 +67,7 @@ class SettingsController < ApplicationController
   end
 
   def resolved_section
-    params[:section].in?(%w[profile llm llm_prompt llm_prompt_preview llm_logs db db_table users healthkit]) ? params[:section] : "profile"
+    params[:section].in?(%w[llm llm_prompt llm_prompt_preview llm_logs db db_table users]) ? params[:section] : "users"
   end
 
   def llm_stats

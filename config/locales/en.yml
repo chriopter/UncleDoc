@@ -165,6 +165,10 @@ en:
         synced: "Synced"
         failed: "Failed"
         not_synced: "Not synced"
+      reset_button: "Reset imported data"
+      reset_confirm: "Delete all synced HealthKit records, sync state, and generated HealthKit summaries for this person?"
+      flash:
+        reset: "HealthKit data was reset."
       empty_value: "-"
       empty_syncs: "No HealthKit sync has reached the server for this person yet."
       empty_summaries: "No HealthKit summary entries are available yet."
@@ -353,32 +357,15 @@ en:
       empty_records: "No HealthKit records have been synced yet."
       flash:
         reset: "HealthKit sync data was reset."
-    profile:
-      title: "Profile settings"
-      subtitle: "UI"
-      nav: "Profile"
     users:
       title: "Users"
       subtitle: "Family"
-      nav: "Members"
-    user_group:
-      label: "User settings"
+      nav: "Users"
+      description: "Manage family members and use the database IDs shown here when you need a precise reference."
+      person_id: "ID: %{id}"
     db:
       title: "DB View"
       subtitle: "SQL"
-    display:
-      title: "Display preferences"
-      subtitle: "Keep the first admin area simple: choose language and date format for your current view."
-    language:
-      label: "Language"
-      title: "Choose app language"
-      english: "English"
-      german: "Deutsch"
-    date_format:
-      label: "Date format"
-      title: "Choose date display"
-      long: "Long"
-      compact: "Compact"
     llm:
       title: "LLM"
       subtitle: "Models"

@@ -75,6 +75,34 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Occurred"
     assert_includes @response.body, "Parsed type"
     assert_includes @response.body, I18n.l(person.entries.first.display_time, format: :long)
+    assert_select "input[type='date'][name='date']", 1
+    assert_select "select[name='date']", 0
+    assert_not_includes @response.body, I18n.t("chat.title", name: person.name)
+  end
+
+  test "research page shows the health chat" do
+    person = Person.create!(name: "Research Rita", birth_date: Date.new(2024, 1, 1))
+
+    get person_research_url(person_slug: person.name)
+
+    assert_response :success
+    assert_includes @response.body, I18n.t("chat.title", name: person.name)
+    assert_includes @response.body, person_chat_path(person_slug: person.name)
+    assert_includes @response.body, I18n.t("chat.welcome", name: person.name)
+  end
+
+  test "data menu links to log while research stays separate" do
+    person = Person.create!(name: "Menu Marta", birth_date: Date.new(2024, 1, 1))
+
+    get person_files_url(person_slug: person.name)
+
+    assert_response :success
+    assert_includes @response.body, person_log_path(person_slug: person.name)
+    assert_includes @response.body, person_research_path(person_slug: person.name)
+    assert_includes @response.body, I18n.t("nav.data")
+    assert_includes @response.body, I18n.t("nav.files")
+    assert_includes @response.body, I18n.t("nav.healthkit")
+    assert_includes @response.body, I18n.t("nav.research")
   end
 
   test "shows baby dashboard and ai summary on baby log page" do
@@ -330,6 +358,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "healthkit:day:2026-04-05"
     assert_includes @response.body, "Apple Health daily summary"
     assert_includes @response.body, "Step count 4123 count."
+    assert_includes @response.body, "Reset imported data"
   end
 
   test "healthkit page paginates summary entries" do
