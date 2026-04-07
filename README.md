@@ -6,6 +6,8 @@ The app is optimized for fast household logging, bilingual UI (`en` / `de`), sim
 
 ## 1. What It Does
 
+![Demo Nora overview](docs/screenshots/overview-demo-nora.png)
+
 <details open>
 <summary>Overview</summary>
 
@@ -43,10 +45,6 @@ After starting the app, open:
 ```text
 http://127.0.0.1:3000/Demo%20Nora/overview
 ```
-
-Overview screenshot:
-
-![Demo Nora overview](docs/screenshots/overview-demo-nora.png)
 
 </details>
 
