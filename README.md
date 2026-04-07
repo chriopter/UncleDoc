@@ -6,25 +6,17 @@ UncleDoc is a self-hosted family health manager built in Rails. It lets you ente
 
 Bring your own LLM. UncleDoc does not provide medical advice and should support your record-keeping, not replace professional care.
 
-## 1. What It Does
-
-UncleDoc keeps a household's health information in one place without turning it into a hospital system. It is built for fast daily use: log what happened, attach documents, and get a record you can actually search, review, and chat with. If you bring an LLM, UncleDoc can turn messy health notes into something much more structured and useful.
+## 1. Features
 
 - Multi-person health records
 - Fast timeline logging with file uploads
-- Overview, log, trends, calendar, and files views
+- LLM parsing to extract health info, appointments, to-dos and file content
 - Baby mode for feeding, diapers, sleep, and growth
 - HealthKit sync through the iOS app
-- Optional LLM parsing, summaries, and chat
-- Bilingual UI in English and German
 
 ## 2. iOS App
 
-UncleDoc also includes an iOS app so the same household health record feels at home on iPhone.
-
-It can sync HealthKit data into UncleDoc, which means device-collected measurements can live alongside manual notes and uploaded documents.
-
-The iOS app stays intentionally thin, with the main product experience still living in Rails.
+UncleDoc also includes an iOS app so the same household health record feels at home on iPhone. Coming soon.
 
 ## 3. Installation
 
