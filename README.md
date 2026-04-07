@@ -1,8 +1,10 @@
 # UncleDoc
 
-UncleDoc is a self-hosted family health manager built in Rails.
+UncleDoc is a self-hosted family health manager built in Rails. It lets you enter health data or upload documents, then chat with the resulting health record.
 
 <img src="docs/screenshots/overview-demo-nora.png" alt="Demo Nora overview" width="60%" />
+
+Bring your own LLM. UncleDoc does not provide medical advice and should support your record-keeping, not replace professional care.
 
 ## 1. What It Does
 
@@ -22,25 +24,6 @@ It can turn notes and uploaded documents into structured health records, and if 
 - UncleDoc is designed for quick daily logging first, with structure added when useful.
 - The overview page acts as the main dashboard for recent activity, planning, and trends.
 - The admin/settings area keeps technical controls available without getting in the way of normal use.
-
-</details>
-
-<details>
-<summary>Demo data</summary>
-
-The seed data builds three demo profiles:
-
-- `Demo Nora`
-- `Demo Theo`
-- `Demo Mila`
-
-`Demo Nora` is the best overview/demo profile and includes curated recent activity, planning items, and chartable measurements.
-
-After starting the app, open:
-
-```text
-http://127.0.0.1:3000/Demo%20Nora/overview
-```
 
 </details>
 
@@ -258,6 +241,25 @@ systemctl status uncledoc-dev.service
 systemctl restart uncledoc-dev.service
 systemctl stop uncledoc-dev.service
 journalctl -u uncledoc-dev.service -f
+```
+
+</details>
+
+<details>
+<summary>Demo data</summary>
+
+The seed data builds three demo profiles:
+
+- `Demo Nora`
+- `Demo Theo`
+- `Demo Mila`
+
+`Demo Nora` is the best overview/demo profile and includes curated recent activity, planning items, and chartable measurements.
+
+After starting the app, open:
+
+```text
+http://127.0.0.1:3000/Demo%20Nora/overview
 ```
 
 </details>
