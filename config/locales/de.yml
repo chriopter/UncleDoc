@@ -126,9 +126,9 @@ de:
       views:
         summaries: "Zusammenfassungen"
         raw: "Rohdaten"
-      summary_title: "Vorschau der Zusammenfassungen"
+      summary_title: "Zusammenfassungs-Eintrage"
       raw_title: "Rohe HealthKit-Daten"
-      summary_count: "%{count} Vorschauen"
+      summary_count: "%{count} Zusammenfassungs-Eintrage"
       raw_count: "%{count} rohe Einträge"
       stats:
         sync_state: "Sync-Status"
@@ -154,6 +154,11 @@ de:
         records: "Rohzeilen"
         types: "Eintragstypen"
         missing: "Fehlend"
+      summary_entry_source: "Generierter Zusammenfassungs-Eintrag"
+      pagination:
+        previous: "Zuruck"
+        next: "Weiter"
+        page: "Seite %{current} von %{total}"
       sync_states:
         pending: "Ausstehend"
         syncing: "Synchronisiert gerade"
@@ -162,7 +167,7 @@ de:
         not_synced: "Nicht synchronisiert"
       empty_value: "-"
       empty_syncs: "Für diese Person ist noch kein HealthKit-Sync auf dem Server angekommen."
-      empty_summaries: "Es sind noch keine Zusammenfassungs-Vorschauen verfügbar."
+      empty_summaries: "Es sind noch keine HealthKit-Zusammenfassungs-Eintrage vorhanden."
       empty_raw: "Es wurden noch keine rohen HealthKit-Daten synchronisiert."
 
   chat:
@@ -215,6 +220,7 @@ de:
       note: "Notiz"
       symptom: "Symptom"
       lab_result: "Laborwert"
+      healthkit_summary: "Apple-Health-Zusammenfassung"
     facts:
       title: "Fakten"
     edit:
@@ -257,6 +263,7 @@ de:
       todo: "Aufgabe"
       note: "Notiz"
       lab_result: "Laborwert"
+      healthkit_summary: "Apple-Health-Zusammenfassung"
     data_values:
       wet: "nass"
       solid: "fest"

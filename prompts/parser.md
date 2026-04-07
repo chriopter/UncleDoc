@@ -29,6 +29,7 @@ Rules:
 - When the note fits one of these app-critical widget types, prefer that exact canonical type: `temperature`, `pulse`, `weight`, `height`, `bottle_feeding`, `breast_feeding`, `diaper`.
 - For clear measurements, feedings, diapers, medication, vaccination, appointments, todos, symptoms, or lab values, return at least one `parseable_data` item.
 - Return at most one `todo` item per entry.
+- Return at most one `healthkit_summary` item per entry.
 - `todo` completion state is app-managed. Never encode checked/done state from the app into `parseable_data`.
 - `todo` is only for actionable reminders, checks, or follow-ups.
 - Medical findings, measurements, symptoms, vaccinations, medication, vitals, and similar health data are never `todo` or `appointment`.
@@ -36,6 +37,7 @@ Rules:
 - Use `occurred_at` only when the input implies a specific event time. Otherwise return `null`.
 - Prefer concrete document facts over generic descriptions like "invoice uploaded" or "report attached".
 - `llm_response` must always be present with `status`, `confidence`, and `note` in English.
+- When `Entry source` is `healthkit`, treat the note as a generated Apple Health summary. Always return one `healthkit_summary` item with `value: "Apple Health"` and `quality: "daily"` or `quality: "monthly"` based on the note, while also extracting obvious measurements like `weight`, `pulse`, `sleep`, or `blood_pressure` when they are present.
 
 Canonical types:
 
@@ -54,6 +56,7 @@ Canonical types:
 - `symptom`: `type`, `value`, optional `location`, optional `quality`
 - `blood_pressure`: `type`, `systolic`, `diastolic`, optional `unit`
 - `lab_result`: `type`, `value`, `result`, optional `unit`, optional `ref`, optional `flag`
+- `healthkit_summary`: `type`, `value`, optional `quality`
 
 Mapping hints:
 
@@ -73,3 +76,4 @@ Examples:
 - `ask about feeding amount` -> `parseable_data`: `[ { "type": "todo", "value": "ask about feeding amount", "quality": "pinned" } ]`
 - `Blood pressure 120/80` -> `parseable_data`: `[ { "type": "blood_pressure", "systolic": 120, "diastolic": 80, "unit": "mmHg" } ]`
 - `Hemoglobin 15.2 g/dl (13.5-17.5)` -> `parseable_data`: `[ { "type": "lab_result", "value": "Hemoglobin", "result": 15.2, "unit": "g/dl", "ref": "13.5-17.5" } ]`
+- `Apple Health monthly summary for March 2026. Entry source: healthkit.` -> `parseable_data`: `[ { "type": "healthkit_summary", "value": "Apple Health", "quality": "monthly" } ]`

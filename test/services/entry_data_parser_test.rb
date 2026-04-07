@@ -60,4 +60,22 @@ class EntryDataParserTest < ActiveSupport::TestCase
     assert_equal "g/dl", result.first["unit"]
     assert_equal "13.5-17.5", result.first["ref"]
   end
+
+  test "user prompt includes source metadata for healthkit entries" do
+    person = Person.create!(name: "Prompt Source", birth_date: Date.new(2020, 1, 1))
+    entry = person.entries.create!(
+      input: "Apple Health monthly summary",
+      occurred_at: Time.current,
+      source: Entry::SOURCES[:healthkit],
+      source_ref: "healthkit:month:2026-03",
+      facts: [],
+      parseable_data: [],
+      parse_status: "pending"
+    )
+
+    prompt = EntryDataParser.user_prompt(entry.input, entry: entry)
+
+    assert_includes prompt, "Entry source: healthkit"
+    assert_includes prompt, "Entry reference: healthkit:month:2026-03"
+  end
 end

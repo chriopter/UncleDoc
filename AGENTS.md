@@ -24,6 +24,14 @@
 - Keep the app easy to self-host and easy to understand.
 - **Use `t()` helper in views for all user-facing text. Never hardcode English strings. Add translations to both `en.yml` and `de.yml`.**
 
+## iOS App
+
+- This repo also includes a native iOS app in `ios/UncleDoc.xcodeproj`.
+- The iOS app is a thin Hotwire Native shell around the Rails app, so prefer keeping product UI and flow in Rails unless the feature is truly device-specific.
+- Native app requests identify themselves with the `UncleDoc iOS` user agent; use `native_app_request?` when the web UI needs iOS-specific adjustments.
+- When changing shared layouts, preserve native app behavior too: respect safe areas, avoid horizontal overflow, and avoid browser-style zoom or sideways drift inside the app shell.
+- Put native-only work in Swift for device capabilities like HealthKit, server onboarding, and other OS integrations.
+
 ## Local Deployment
 
 - This app is currently run on a LAN-only server from `/root/uncledoc`.

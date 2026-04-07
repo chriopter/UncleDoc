@@ -301,7 +301,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Doctor invoice uploaded"
   end
 
-  test "healthkit page shows summary previews and sync state" do
+  test "healthkit page shows summary entries and sync state" do
     person = Person.create!(name: "Healthkitty", birth_date: Date.new(2024, 1, 1))
     person.healthkit_syncs.create!(
       device_id: "iphone-main",
@@ -318,16 +318,41 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
       start_at: Time.zone.local(2026, 4, 5, 8, 0),
       payload: { "quantity" => "4123 count" }
     )
+    HealthkitSummarySyncService.call(person:, today: Date.new(2026, 4, 6))
 
     get person_healthkit_url(person_slug: person.name)
 
     assert_response :success
     assert_includes @response.body, "HealthKit for Healthkitty"
-    assert_includes @response.body, "Summary previews"
+    assert_includes @response.body, "Summary entries"
     assert_includes @response.body, "Raw data"
     assert_includes @response.body, "iphone-main"
     assert_includes @response.body, "healthkit:day:2026-04-05"
-    assert_includes @response.body, "Step count 4123 count"
+    assert_includes @response.body, "Apple Health daily summary"
+    assert_includes @response.body, "Step count 4123 count."
+  end
+
+  test "healthkit page paginates summary entries" do
+    person = Person.create!(name: "PagedKit", birth_date: Date.new(2024, 1, 1))
+
+    25.times do |index|
+      person.entries.create!(
+        source: Entry::SOURCES[:healthkit],
+        source_ref: "healthkit:day:2026-03-#{format('%02d', index + 1)}",
+        occurred_at: Time.zone.local(2026, 3, index + 1, 23, 59),
+        input: "Apple Health daily summary for March #{index + 1}, 2026.\n- Step count #{index + 1} count.",
+        facts: [],
+        parseable_data: [],
+        parse_status: "parsed"
+      )
+    end
+
+    get person_healthkit_url(person_slug: person.name, page: 2)
+
+    assert_response :success
+    assert_includes @response.body, "Page 2 of 2"
+    assert_includes @response.body, "healthkit:day:2026-03-05"
+    assert_not_includes @response.body, "healthkit:day:2026-03-25"
   end
 
   test "healthkit page can switch to raw data view" do

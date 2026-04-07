@@ -10,22 +10,17 @@ class HealthkitSummaryPreviewerTest < ActiveSupport::TestCase
     create_record(person, "HKCategoryTypeIdentifierSleepAnalysis", "2026-04-01 00:00:00", end_at: "2026-04-01 07:30:00", value: "0")
     create_record(person, "HKDataTypeIdentifierAudiogram", "2026-04-05 12:00:00")
 
-    previews = I18n.with_locale(:en) do
-      HealthkitSummaryPreviewer.call(person:, today: Date.new(2026, 4, 6))
-    end
+    previews = HealthkitSummaryPreviewer.call(person:, today: Date.new(2026, 4, 6))
 
-    assert_equal 37, previews.size
+    assert_equal 5, previews.size
     assert previews.any? { |preview| preview.source_ref == "healthkit:month:2026-02" }
-    assert previews.any? { |preview| preview.source_ref == "healthkit:day:2026-03-15" }
+    assert previews.any? { |preview| preview.source_ref == "healthkit:day:2026-03-01" }
     assert previews.any? { |preview| preview.source_ref == "healthkit:day:2026-04-05" }
 
     february = previews.find { |preview| preview.source_ref == "healthkit:month:2026-02" }
-    assert_includes february.input, "Coverage: 19 daily summaries"
+    assert_includes february.input, "Apple Health monthly summary for February 2026."
+    assert_includes february.input, "- Coverage: 1 days with data, 1 raw records."
     assert_includes february.input, "Step count 120 count"
-
-    empty_day = previews.find { |preview| preview.source_ref == "healthkit:day:2026-03-15" }
-    assert_equal [], empty_day.present_record_types
-    assert_includes empty_day.input, "No HealthKit data was recorded for this day"
   end
 
   test "mentions all present record types in preview text" do
@@ -35,16 +30,14 @@ class HealthkitSummaryPreviewerTest < ActiveSupport::TestCase
     create_record(person, "HKDataTypeIdentifierAudiogram", "2026-04-05 12:00:00")
     create_record(person, "characteristic.activityMoveMode", "2026-04-05 12:05:00")
 
-    preview = I18n.with_locale(:en) do
-      HealthkitSummaryPreviewer.call(person:, today: Date.new(2026, 4, 6)).find do |item|
-        item.source_ref == "healthkit:day:2026-04-05"
-      end
+    preview = HealthkitSummaryPreviewer.call(person:, today: Date.new(2026, 4, 6)).find do |item|
+      item.source_ref == "healthkit:day:2026-04-05"
     end
 
     assert_equal [], preview.missing_record_types
     assert_includes preview.input, "Step count 4123 count"
-    assert_includes preview.input, "Audiogram 1 record"
-    assert_includes preview.input, "Activity move mode (characteristic.activityMoveMode)"
+    assert_includes preview.input, "Audiogram 1 records"
+    assert_includes preview.input, "Activity move mode present (characteristic.activityMoveMode)"
   end
 
   test "splits overnight durations across touched days" do
@@ -58,18 +51,16 @@ class HealthkitSummaryPreviewerTest < ActiveSupport::TestCase
       value: "0"
     )
 
-    previews = I18n.with_locale(:en) do
-      HealthkitSummaryPreviewer.call(person:, today: Date.new(2026, 4, 6))
-    end
+    previews = HealthkitSummaryPreviewer.call(person:, today: Date.new(2026, 4, 6))
     april_fourth = previews.find { |preview| preview.source_ref == "healthkit:day:2026-04-04" }
     april_fifth = previews.find { |preview| preview.source_ref == "healthkit:day:2026-04-05" }
 
-    assert_includes april_fourth.input, "Sleep analysis 1 hours"
-    assert_includes april_fifth.input, "Sleep analysis 7 hours"
+    assert_includes april_fourth.input, "Sleep 1 hours"
+    assert_includes april_fifth.input, "Sleep 7 hours"
     assert_equal [ "HKCategoryTypeIdentifierSleepAnalysis" ], april_fifth.present_record_types
   end
 
-  test "uses localized summary text" do
+  test "keeps summary text in english" do
     person = Person.create!(name: "Localized", birth_date: Date.new(2020, 1, 1))
     create_record(person, "HKQuantityTypeIdentifierStepCount", "2026-04-05 08:00:00", quantity: "4123 count")
 
@@ -77,9 +68,9 @@ class HealthkitSummaryPreviewerTest < ActiveSupport::TestCase
       HealthkitSummaryPreviewer.call(person:, today: Date.new(2026, 4, 6)).find { |item| item.source_ref == "healthkit:day:2026-04-05" }
     end
 
-    assert_includes preview.input, "HealthKit-Tageszusammenfassung"
-    assert_includes preview.input, "Bewegung"
-    assert_includes preview.input, "Schritte 4123 count"
+    assert_includes preview.input, "Apple Health daily summary"
+    assert_includes preview.input, "- Source: Apple Health."
+    assert_includes preview.input, "Step count 4123 count"
   end
 
   test "ignores malformed payload shapes without crashing" do
@@ -95,10 +86,8 @@ class HealthkitSummaryPreviewerTest < ActiveSupport::TestCase
       payload: "[]"
     )
 
-    preview = I18n.with_locale(:en) do
-      HealthkitSummaryPreviewer.call(person:, today: Date.new(2026, 4, 6)).find do |item|
-        item.source_ref == "healthkit:day:2026-04-05"
-      end
+    preview = HealthkitSummaryPreviewer.call(person:, today: Date.new(2026, 4, 6)).find do |item|
+      item.source_ref == "healthkit:day:2026-04-05"
     end
 
     assert_equal [], preview.missing_record_types

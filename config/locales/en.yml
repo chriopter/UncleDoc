@@ -126,9 +126,9 @@ en:
       views:
         summaries: "Summaries"
         raw: "Raw data"
-      summary_title: "Summary previews"
+      summary_title: "Summary entries"
       raw_title: "Raw HealthKit data"
-      summary_count: "%{count} previews"
+      summary_count: "%{count} summary entries"
       raw_count: "%{count} raw records"
       stats:
         sync_state: "Sync state"
@@ -154,6 +154,11 @@ en:
         records: "Raw rows"
         types: "Record types"
         missing: "Missing"
+      summary_entry_source: "Generated summary entry"
+      pagination:
+        previous: "Previous"
+        next: "Next"
+        page: "Page %{current} of %{total}"
       sync_states:
         pending: "Pending"
         syncing: "Syncing"
@@ -162,7 +167,7 @@ en:
         not_synced: "Not synced"
       empty_value: "-"
       empty_syncs: "No HealthKit sync has reached the server for this person yet."
-      empty_summaries: "No summary previews are available yet."
+      empty_summaries: "No HealthKit summary entries are available yet."
       empty_raw: "No raw HealthKit records have been synced yet."
 
   chat:
@@ -215,6 +220,7 @@ en:
       note: "Note"
       symptom: "Symptom"
       lab_result: "Lab Result"
+      healthkit_summary: "Apple Health Summary"
     facts:
       title: "Facts"
     edit:
@@ -257,6 +263,7 @@ en:
       todo: "Todo"
       note: "Note"
       lab_result: "Lab Result"
+      healthkit_summary: "Apple Health Summary"
     data_values:
       wet: "wet"
       solid: "solid"

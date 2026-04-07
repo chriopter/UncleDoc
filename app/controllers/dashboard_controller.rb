@@ -35,15 +35,25 @@ class DashboardController < ApplicationController
   def healthkit
     @person = Person.find_by!(name: params[:person_slug])
     @healthkit_view = params[:view].in?(%w[summaries raw]) ? params[:view] : "summaries"
+    @healthkit_page = [ params[:page].to_i, 1 ].max
+    @healthkit_per_page = 20
     @healthkit_syncs = @person.healthkit_syncs.order(updated_at: :desc)
-    @healthkit_records = @person.healthkit_records.recent_first.limit(200)
     @healthkit_record_count = @person.healthkit_records.count
     @healthkit_record_type_count = @person.healthkit_records.distinct.count(:record_type)
-    @healthkit_previews = HealthkitSummaryPreviewer.call(person: @person).sort_by(&:starts_on).reverse
-    @healthkit_daily_summary_count = @healthkit_previews.count { |preview| preview.period_type == :day }
-    @healthkit_monthly_summary_count = @healthkit_previews.count { |preview| preview.period_type == :month }
+    @healthkit_summary_scope = @person.entries.healthkit_generated.order(occurred_at: :desc, created_at: :desc)
+    @healthkit_summary_count = @healthkit_summary_scope.count
+    @healthkit_daily_summary_count = @healthkit_summary_scope.where("source_ref LIKE ?", "healthkit:day:%").count
+    @healthkit_monthly_summary_count = @healthkit_summary_scope.where("source_ref LIKE ?", "healthkit:month:%").count
     @healthkit_latest_sync = @healthkit_syncs.max_by { |sync| sync.last_synced_at || sync.updated_at || Time.zone.at(0) }
     @healthkit_last_successful_sync_at = @healthkit_syncs.filter_map(&:last_successful_sync_at).max
+
+    active_scope = @healthkit_view == "raw" ? @person.healthkit_records.recent_first : @healthkit_summary_scope
+    @healthkit_total_pages = [ (active_scope.count.to_f / @healthkit_per_page).ceil, 1 ].max
+    @healthkit_page = [ @healthkit_page, @healthkit_total_pages ].min
+    offset = (@healthkit_page - 1) * @healthkit_per_page
+
+    @healthkit_records = @person.healthkit_records.recent_first.limit(@healthkit_per_page).offset(offset) if @healthkit_view == "raw"
+    @healthkit_summary_entries = @healthkit_summary_scope.limit(@healthkit_per_page).offset(offset) if @healthkit_view == "summaries"
   end
 
   def chat

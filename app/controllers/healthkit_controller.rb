@@ -40,6 +40,7 @@ class HealthkitController < ApplicationController
 
     upsert_healthkit_records(records) if records.any?
     sync.update!(synced_record_count: HealthkitRecord.where(person_id: @person.id).count)
+    HealthkitSummarySyncJob.perform_later(@person.id) if sync.status == "synced" || ActiveModel::Type::Boolean.new.cast(params[:completed])
 
     render json: {
       ok: true,
@@ -59,6 +60,7 @@ class HealthkitController < ApplicationController
   def reset
     @person.healthkit_records.destroy_all
     @person.healthkit_syncs.destroy_all
+    @person.entries.healthkit_generated.destroy_all
 
     respond_to do |format|
       format.html { redirect_to settings_path(section: :healthkit), notice: t("settings.healthkit.flash.reset") }

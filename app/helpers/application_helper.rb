@@ -264,7 +264,7 @@ module ApplicationHelper
     end
 
     buckets.filter_map do |bucket|
-      entry = entries.where(occurred_at: bucket[:range]).order(occurred_at: :desc, created_at: :desc).first
+      entry = preferred_measurement_entry(entries, bucket[:range])
       next unless entry
 
       item = entry.first_parseable_data_of_type(type.to_s)
@@ -364,7 +364,7 @@ module ApplicationHelper
     end
 
     buckets.filter_map do |bucket|
-      entry = entries.where(occurred_at: bucket[:range]).order(occurred_at: :desc, created_at: :desc).first
+      entry = preferred_measurement_entry(entries, bucket[:range])
       next unless entry
 
         item = entry.first_parseable_data_of_type("weight")
@@ -394,7 +394,7 @@ module ApplicationHelper
     end
 
     buckets.filter_map do |bucket|
-      entry = entries.where(occurred_at: bucket[:range]).order(occurred_at: :desc, created_at: :desc).first
+      entry = preferred_measurement_entry(entries, bucket[:range])
       next unless entry
 
       item = entry.first_parseable_data_of_type("height")
@@ -512,6 +512,20 @@ module ApplicationHelper
     return true if entry.sleep?
 
     entry.input.to_s.downcase.match?(/sleep|schlaf/i)
+  end
+
+  def preferred_measurement_entry(scope, range)
+    scope.where(occurred_at: range).order(occurred_at: :desc, created_at: :desc).to_a.min_by do |entry|
+      [ healthkit_measurement_priority(entry), -(entry.occurred_at || Time.at(0)).to_i, -(entry.created_at || Time.at(0)).to_i ]
+    end
+  end
+
+  def healthkit_measurement_priority(entry)
+    return 0 unless entry.healthkit_generated?
+    return 1 if entry.source_ref.to_s.start_with?("healthkit:day:")
+    return 2 if entry.source_ref.to_s.start_with?("healthkit:month:")
+
+    3
   end
 
   private

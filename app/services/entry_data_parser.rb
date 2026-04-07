@@ -33,6 +33,10 @@ class EntryDataParser
     "blood_pressure" => "blood_pressure",
     "blood pressure" => "blood_pressure",
     "bp" => "blood_pressure",
+    "healthkit" => "healthkit_summary",
+    "health_summary" => "healthkit_summary",
+    "apple_health" => "healthkit_summary",
+    "apple_health_summary" => "healthkit_summary",
     "task" => "todo",
     "to_do" => "todo",
     "appointment" => "appointment",
@@ -168,6 +172,8 @@ class EntryDataParser
     <<~PROMPT.strip
       Current time: #{Time.current.iso8601}
       Time zone: #{Time.zone.tzinfo.name}
+      Entry source: #{entry&.respond_to?(:source) ? entry.source.presence || "manual" : "manual"}
+      Entry reference: #{entry&.respond_to?(:source_ref) ? entry.source_ref.presence || "none" : "none"}
       Input: #{input.presence || "(none)"}
       Attached documents: #{document_list(entry)}
     PROMPT
