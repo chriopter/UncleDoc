@@ -47,12 +47,12 @@ class DashboardController < ApplicationController
     @healthkit_latest_sync = @healthkit_syncs.max_by { |sync| sync.last_synced_at || sync.updated_at || Time.zone.at(0) }
     @healthkit_last_successful_sync_at = @healthkit_syncs.filter_map(&:last_successful_sync_at).max
 
-    active_scope = @healthkit_view == "raw" ? @person.healthkit_records.recent_first : @healthkit_summary_scope
+    active_scope = @healthkit_view == "raw" ? @person.healthkit_records.import_recent_first : @healthkit_summary_scope
     @healthkit_total_pages = [ (active_scope.count.to_f / @healthkit_per_page).ceil, 1 ].max
     @healthkit_page = [ @healthkit_page, @healthkit_total_pages ].min
     offset = (@healthkit_page - 1) * @healthkit_per_page
 
-    @healthkit_records = @person.healthkit_records.recent_first.limit(@healthkit_per_page).offset(offset) if @healthkit_view == "raw"
+    @healthkit_records = @person.healthkit_records.import_recent_first.limit(@healthkit_per_page).offset(offset) if @healthkit_view == "raw"
     @healthkit_summary_entries = @healthkit_summary_scope.limit(@healthkit_per_page).offset(offset) if @healthkit_view == "summaries"
   end
 

@@ -38,6 +38,11 @@ Rules:
 - Prefer concrete document facts over generic descriptions like "invoice uploaded" or "report attached".
 - `llm_response` must always be present with `status`, `confidence`, and `note` in English.
 - When `Entry source` is `healthkit`, treat the note as a generated Apple Health summary. Always return one `healthkit_summary` item with `value: "Apple Health"` and `quality: "daily"` or `quality: "monthly"` based on the note, while also extracting obvious measurements like `weight`, `pulse`, `sleep`, or `blood_pressure` when they are present.
+- For Apple Health summary entries, do not stop at `healthkit_summary` alone. Convert every quantified Apple Health bullet into the best canonical item you can:
+  - `weight`, `pulse`, `sleep`, `blood_pressure`, `temperature`, `height` when they clearly fit
+  - use `lab_result` for other numeric Apple Health metrics such as step count, walking distance, active energy, basal energy, flights climbed, walking speed, walking step length, HRV, respiratory rate, oxygen saturation, VO2 max, workouts, and dietary totals
+- For Apple Health `lab_result` items, use the metric name as `value` and the measured number as `result`.
+- Apple Health summary entries are generated data, not todos, appointments, medication, or vaccination.
 
 Canonical types:
 
@@ -77,3 +82,5 @@ Examples:
 - `Blood pressure 120/80` -> `parseable_data`: `[ { "type": "blood_pressure", "systolic": 120, "diastolic": 80, "unit": "mmHg" } ]`
 - `Hemoglobin 15.2 g/dl (13.5-17.5)` -> `parseable_data`: `[ { "type": "lab_result", "value": "Hemoglobin", "result": 15.2, "unit": "g/dl", "ref": "13.5-17.5" } ]`
 - `Apple Health monthly summary for March 2026. Entry source: healthkit.` -> `parseable_data`: `[ { "type": "healthkit_summary", "value": "Apple Health", "quality": "monthly" } ]`
+- `Apple Health daily summary for April 05, 2026. - Step count 3972 count. - Walking and running distance 2.78 km. - Active energy burned 150.55 kcal.` -> `parseable_data`: `[ { "type": "healthkit_summary", "value": "Apple Health", "quality": "daily" }, { "type": "lab_result", "value": "Step count", "result": 3972, "unit": "count" }, { "type": "lab_result", "value": "Walking and running distance", "result": 2.78, "unit": "km" }, { "type": "lab_result", "value": "Active energy burned", "result": 150.55, "unit": "kcal" } ]`
+- `Apple Health monthly summary for March 2026. - Weight avg 97 kg; min 96.4; max 97.8. - Resting pulse avg 58 bpm; min 54; max 63.` -> `parseable_data`: `[ { "type": "healthkit_summary", "value": "Apple Health", "quality": "monthly" }, { "type": "weight", "value": 97, "unit": "kg" }, { "type": "pulse", "value": 58, "unit": "bpm" } ]`

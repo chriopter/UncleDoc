@@ -4,4 +4,5 @@ class HealthkitRecord < ApplicationRecord
   validates :external_id, :record_type, :start_at, :device_id, presence: true
 
   scope :recent_first, -> { order(start_at: :desc, created_at: :desc) }
+  scope :import_recent_first, -> { order(id: :desc) }
 end

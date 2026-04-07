@@ -78,4 +78,51 @@ class EntryDataParserTest < ActiveSupport::TestCase
     assert_includes prompt, "Entry source: healthkit"
     assert_includes prompt, "Entry reference: healthkit:month:2026-03"
   end
+
+  test "enriches healthkit summaries with lab results and native measurements" do
+    person = Person.create!(name: "HealthKit Parse", birth_date: Date.new(2020, 1, 1))
+    entry = person.entries.create!(
+      input: "Apple Health daily summary for April 05, 2026.\n- Source: Apple Health.\n- Summary type: daily.\n- Period: April 05, 2026.\n- Step count 3972 count.\n- Walking and running distance 2.78 km.\n- Active energy burned 150.55 kcal.\n- Weight 97 kg.",
+      occurred_at: Time.current,
+      source: Entry::SOURCES[:healthkit],
+      source_ref: "healthkit:day:2026-04-05",
+      facts: [],
+      parseable_data: [],
+      parse_status: "pending"
+    )
+
+    preference = UserPreference.current
+    preference.llm_provider = "ollama"
+    preference.llm_model = "llama3"
+    preference.save!
+
+    chat_singleton = LlmChatRequest.singleton_class
+    chat_singleton.alias_method :__original_chat_call_for_healthkit_test, :call
+
+    chat_singleton.define_method(:call) do |**|
+      LlmChatRequest::Response.new(
+        content: {
+          facts: [ "Step count 3972", "Walking and running distance 2.78 km", "Weight 97 kg" ],
+          parseable_data: [ { type: "healthkit_summary", value: "Apple Health", quality: "daily" } ],
+          occurred_at: nil,
+          llm_response: { status: "structured", confidence: "high", note: "Apple Health summary parsed." }
+        }.to_json,
+        status_code: 200,
+        body: "{}"
+      )
+    end
+
+    result = EntryDataParser.call(input: entry.input, preference:, entry: entry)
+
+    assert_includes result.parseable_data, { "type" => "healthkit_summary", "value" => "Apple Health", "quality" => "daily" }
+    assert_includes result.parseable_data, { "type" => "weight", "value" => 97, "unit" => "kg" }
+    assert_includes result.parseable_data, { "type" => "lab_result", "value" => "Step count", "result" => 3972, "unit" => "count" }
+    assert_includes result.parseable_data, { "type" => "lab_result", "value" => "Walking and running distance", "result" => 2.78, "unit" => "km" }
+    assert_includes result.parseable_data, { "type" => "lab_result", "value" => "Active energy burned", "result" => 150.55, "unit" => "kcal" }
+  ensure
+    if chat_singleton.method_defined?(:__original_chat_call_for_healthkit_test)
+      chat_singleton.alias_method :call, :__original_chat_call_for_healthkit_test
+      chat_singleton.remove_method :__original_chat_call_for_healthkit_test
+    end
+  end
 end
