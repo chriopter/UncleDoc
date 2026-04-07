@@ -39,6 +39,30 @@ namespace :healthkit do
     end
   end
 
+  desc "Requeue parsing for generated HealthKit summary entries"
+  task reparse_summaries: :environment do
+    people = if ENV["PERSON_UUID"].present? || ENV["PERSON_NAME"].present?
+      [ healthkit_task_person ]
+    else
+      Person.joins(:entries).where(entries: { source: Entry::SOURCES[:healthkit] }).distinct.order(:name)
+    end
+
+    people.each do |person|
+      count = 0
+
+      person.entries.where(source: Entry::SOURCES[:healthkit]).find_each do |entry|
+        entry.update!(facts: [], parseable_data: [], llm_response: {}, parse_status: EntryDataParser.ready? ? "pending" : "skipped")
+        if entry.pending_parse?
+          EntryDataParseJob.perform_later(entry.id)
+          count += 1
+        end
+      end
+
+      puts "#{person.name} (#{person.uuid})"
+      puts "  reparsed: #{count}"
+    end
+  end
+
   def healthkit_task_today
     Date.iso8601(ENV["TODAY"])
   rescue ArgumentError, TypeError

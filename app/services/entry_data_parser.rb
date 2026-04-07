@@ -56,6 +56,27 @@ class EntryDataParser
     "beats/min" => "bpm"
   }.freeze
 
+  HEALTHKIT_METRIC_PATTERNS = [
+    [ /\AStep count (?<value>-?\d+(?:\.\d+)?) (?<unit>count)\.?\z/i, "Step count" ],
+    [ /\AWalking and running distance (?<value>-?\d+(?:\.\d+)?) (?<unit>km|m)\.?\z/i, "Walking and running distance" ],
+    [ /\ACycling distance (?<value>-?\d+(?:\.\d+)?) (?<unit>km|m)\.?\z/i, "Cycling distance" ],
+    [ /\AActive energy burned (?<value>-?\d+(?:\.\d+)?) (?<unit>kcal)\.?\z/i, "Active energy burned" ],
+    [ /\ABasal energy burned (?<value>-?\d+(?:\.\d+)?) (?<unit>kcal)\.?\z/i, "Basal energy burned" ],
+    [ /\AFlights climbed (?<value>-?\d+(?:\.\d+)?) (?<unit>count)\.?\z/i, "Flights climbed" ],
+    [ /\AWalking speed avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "Walking speed" ],
+    [ /\AWalking step length avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "Walking step length" ],
+    [ /\AHeart rate variability avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "Heart rate variability" ],
+    [ /\ARespiratory rate avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "Respiratory rate" ],
+    [ /\AOxygen saturation avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "Oxygen saturation" ],
+    [ /\AVO2 max avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "VO2 max" ],
+    [ /\ADietary energy consumed (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "Dietary energy consumed" ],
+    [ /\ADietary carbohydrates (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "Dietary carbohydrates" ],
+    [ /\ADietary protein (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "Dietary protein" ],
+    [ /\ADietary fat (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "Dietary fat" ],
+    [ /\ADietary sugar (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "Dietary sugar" ],
+    [ /\ADietary water (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "Dietary water" ]
+  ].freeze
+
   def self.call(input:, preference: UserPreference.current, entry: nil)
     return Result.new(facts: [], parseable_data: [], occurred_at: nil, llm_response: {}, error: :blank_input) if input.blank? && entry_documents(entry).blank?
 
@@ -63,9 +84,12 @@ class EntryDataParser
     return Result.new(facts: [], parseable_data: [], occurred_at: nil, llm_response: {}, error: configuration_error) if configuration_error.present?
 
     payload = request_payload_with_retry(input, preference, entry: entry)
+    parseable_data = sanitize_parseable_data(payload["parseable_data"])
+    parseable_data = enrich_healthkit_parseable_data(parseable_data, input, entry: entry)
+
     Result.new(
       facts: sanitize_facts(payload["facts"]),
-      parseable_data: sanitize_parseable_data(payload["parseable_data"]),
+      parseable_data: parseable_data,
       occurred_at: sanitize_occurred_at(payload["occurred_at"]),
       llm_response: sanitize_llm_response(payload["llm_response"])
     )
@@ -333,6 +357,89 @@ class EntryDataParser
     facts = sanitize_facts(payload["facts"])
     data = sanitize_parseable_data(payload["parseable_data"])
     facts.present? || data.present?
+  end
+
+  def self.enrich_healthkit_parseable_data(parseable_data, input, entry: nil)
+    return parseable_data unless entry&.respond_to?(:source) && entry.source == Entry::SOURCES[:healthkit]
+
+    enriched = parseable_data.deep_dup
+    summary_quality = entry.source_ref.to_s.start_with?("healthkit:month:") || input.to_s.downcase.include?("monthly summary") ? "monthly" : "daily"
+
+    unless enriched.any? { |item| item["type"] == "healthkit_summary" }
+      enriched << { "type" => "healthkit_summary", "value" => "Apple Health", "quality" => summary_quality }
+    end
+
+    lines = input.to_s.split("\n").map { |line| line.strip.sub(/\A-\s*/, "").sub(/\.$/, "") }.reject(&:blank?)
+
+    blood_pressure = {}
+
+    lines.each do |line|
+      case line
+      when /\AWeight (?<value>-?\d+(?:\.\d+)?) (?<unit>kg|lb)\z/i
+        append_unique_measurement(enriched, "weight", Regexp.last_match[:value], Regexp.last_match[:unit])
+      when /\AHeight (?<value>-?\d+(?:\.\d+)?) (?<unit>cm|m)\z/i
+        append_unique_measurement(enriched, "height", Regexp.last_match[:value], Regexp.last_match[:unit])
+      when /\ABody temperature(?: avg)? (?<value>-?\d+(?:\.\d+)?) (?<unit>C|F)\z/i
+        append_unique_measurement(enriched, "temperature", Regexp.last_match[:value], Regexp.last_match[:unit])
+      when /\A(?:Resting pulse|Walking pulse|Pulse) avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\z/i
+        append_unique_measurement(enriched, "pulse", Regexp.last_match[:value], Regexp.last_match[:unit])
+      when /\ASleep (?<value>-?\d+(?:\.\d+)?) hours(?: across .*?)?\z/i
+        append_unique_measurement(enriched, "sleep", Regexp.last_match[:value], "h")
+      when /\ABlood pressure systolic avg (?<value>-?\d+(?:\.\d+)?) (?<unit>mmHg)\z/i
+        blood_pressure["systolic"] = normalize_value(Regexp.last_match[:value])
+        blood_pressure["unit"] = Regexp.last_match[:unit]
+      when /\ABlood pressure diastolic avg (?<value>-?\d+(?:\.\d+)?) (?<unit>mmHg)\z/i
+        blood_pressure["diastolic"] = normalize_value(Regexp.last_match[:value])
+        blood_pressure["unit"] = Regexp.last_match[:unit]
+      else
+        metric_name, metric_value, metric_unit = healthkit_metric_from_line(line)
+        next unless metric_name
+
+        append_unique_lab_result(enriched, metric_name, metric_value, metric_unit)
+      end
+    end
+
+    if blood_pressure["systolic"].present? && blood_pressure["diastolic"].present? && enriched.none? { |item| item["type"] == "blood_pressure" }
+      enriched << {
+        "type" => "blood_pressure",
+        "systolic" => blood_pressure["systolic"],
+        "diastolic" => blood_pressure["diastolic"],
+        "unit" => blood_pressure["unit"] || "mmHg"
+      }
+    end
+
+    sanitize_parseable_data(enriched)
+  end
+
+  def self.healthkit_metric_from_line(line)
+    HEALTHKIT_METRIC_PATTERNS.each do |pattern, label|
+      match = line.match(pattern)
+      next unless match
+
+      return [ label, match[:value], match[:unit] ]
+    end
+
+    if (match = line.match(/\AWorkouts (?<count>-?\d+(?:\.\d+)?) with (?<minutes>-?\d+(?:\.\d+)?) total minutes\z/i))
+      return [ "Workouts", match[:count], "count" ]
+    end
+
+    if (match = line.match(/\AAudio exposure events (?<count>-?\d+(?:\.\d+)?) with (?<minutes>-?\d+(?:\.\d+)?) total minutes\z/i))
+      return [ "Audio exposure events", match[:count], "count" ]
+    end
+
+    nil
+  end
+
+  def self.append_unique_measurement(items, type, value, unit)
+    return if items.any? { |item| item["type"] == type }
+
+    items << { "type" => type, "value" => value, "unit" => unit }
+  end
+
+  def self.append_unique_lab_result(items, name, value, unit)
+    return if items.any? { |item| item["type"] == "lab_result" && item["value"] == name }
+
+    items << { "type" => "lab_result", "value" => name, "result" => value, "unit" => unit }
   end
 
   def self.fallback_document_input(input, entry)
