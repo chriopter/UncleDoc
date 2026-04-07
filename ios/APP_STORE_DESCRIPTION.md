@@ -25,7 +25,7 @@ If you enable AI features, you choose the LLM provider yourself. Any data sent t
 
 If you connect an LLM provider, UncleDoc can parse free-text notes into structured records, generate summaries, and answer questions about a person's history. The app works fully without this feature.
 
-UncleDoc is a record-keeping tool, not a medical device, and does not provide medical advice, diagnosis, or treatment.
+UncleDoc is a record-keeping tool, not a medical device. It does not provide medical advice, diagnosis, or treatment.
 
 ## Languages
 
