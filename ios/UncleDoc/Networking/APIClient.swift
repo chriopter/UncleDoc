@@ -122,7 +122,7 @@ final class APIClient: NSObject, @unchecked Sendable {
         components.queryItems = queryItems
 
         let path = components.string ?? "ios/healthkit/status?person_uuid=\(personUUID.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? personUUID)"
-        try await request(path: path, method: "GET", body: Optional<Data>.none, responseType: HealthKitSyncStatusResponse.self)
+        return try await request(path: path, method: "GET", body: Optional<Data>.none, responseType: HealthKitSyncStatusResponse.self)
     }
 
     func sync(_ payload: HealthKitSyncRequest) async throws -> HealthKitSyncStatusResponse.SyncSummary {
