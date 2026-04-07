@@ -200,10 +200,17 @@ en:
     sort:
       occurred: "Occurred"
       entered: "Entered"
+    source:
+      manual: "Manual"
+      healthkit: "Healthkit"
+      healthkit_day: "HK Daily"
+      healthkit_month: "HK Monthly"
     filters:
       date: "Date"
+      source: "Source"
       parseable_type: "Parsed type"
       all_dates: "All dates"
+      all_sources: "All sources"
       all_types: "All parsed types"
       apply: "Apply"
       reset: "Reset"
@@ -290,6 +297,7 @@ en:
       failed: "LLM parse failed. Keep the note and try again later."
     day_groups:
       today: "Today"
+      yesterday: "Yesterday"
     parsed_data:
       title: "Parsed"
       empty: "No parsed data yet"
@@ -464,6 +472,8 @@ en:
       response: "Response"
       raw_data:
         toggle: "Show raw log data"
+      view_compact: "Compact"
+      view_raw: "Raw"
       empty: "No LLM requests have been logged yet."
     llm_prompt:
       nav: "Prompt"

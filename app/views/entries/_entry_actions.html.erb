@@ -1,6 +1,6 @@
 <div class="flex items-center gap-2">
   <details class="relative">
-    <summary class="flex cursor-pointer list-none items-center rounded-full border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800">
+    <summary class="flex cursor-pointer list-none items-center rounded-full border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800">
       <span class="sr-only"><%= t("entries.db_row.toggle") %></span>
       <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <ellipse cx="12" cy="5" rx="7" ry="3" />
@@ -18,7 +18,7 @@
   </details>
 
   <%= link_to edit_person_entry_path(entry.person, entry),
-      class: "inline-flex items-center rounded-full border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800",
+      class: "inline-flex items-center rounded-full border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800",
       data: { turbo_frame: dom_id(entry) },
       aria: { label: t("actions.edit") } do %>
     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -28,7 +28,7 @@
   <% end %>
 
   <%= button_to reparse_person_entry_path(entry.person, entry), method: :patch,
-      class: "inline-flex items-center rounded-full border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800",
+      class: "inline-flex items-center rounded-full border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800",
       aria: { label: t("entries.reparse.trigger") } do %>
     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 1 0 3-6.708" />
@@ -38,7 +38,7 @@
 
   <% if entry.parseable_data.present? %>
     <details class="relative">
-      <summary class="flex cursor-pointer list-none items-center rounded-full border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800">
+      <summary class="flex cursor-pointer list-none items-center rounded-full border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800">
         <span class="sr-only"><%= t("entries.raw_data.toggle") %></span>
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5.25 12 5.25S20.268 7.943 21.542 12C20.268 16.057 16.477 18.75 12 18.75S3.732 16.057 2.458 12Z" />
@@ -56,7 +56,7 @@
   <% end %>
 
   <%= button_to person_entry_path(entry.person, entry), method: :delete,
-      class: "inline-flex items-center rounded-full border border-slate-200 bg-white p-2 text-slate-400 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-600",
+      class: "inline-flex items-center rounded-full border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600",
       data: { turbo_confirm: t("entries.destroy_confirm") },
       aria: { label: t("actions.delete") } do %>
     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

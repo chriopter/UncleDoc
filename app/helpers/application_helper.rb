@@ -71,8 +71,9 @@ module ApplicationHelper
 
   def log_day_label(date)
     return t("entries.day_groups.today") if date == Time.zone.today
+    return t("entries.day_groups.yesterday") if date == Time.zone.yesterday
 
-    formatted_date(date)
+    l(date, format: "%-d. %B")
   end
 
   def settings_option_class(selected)
@@ -171,7 +172,7 @@ module ApplicationHelper
   end
 
   def log_filter_params(overrides = {})
-    params.permit(:sort, :date, :parseable_type).to_h.symbolize_keys.merge(overrides).compact
+    params.permit(:sort, :date, :parseable_type, :source).to_h.symbolize_keys.merge(overrides).compact
   end
 
   def log_filter_date_label(date)

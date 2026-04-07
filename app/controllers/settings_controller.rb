@@ -37,6 +37,27 @@ class SettingsController < ApplicationController
     redirect_to settings_path(section: "db_table", table: table_name, page: params[:page]), alert: t("db.table.delete_failed", message: error.message)
   end
 
+  def prompt_preview
+    person = Person.find(params[:person_id])
+    kind = params[:kind]
+
+    text = case kind
+    when "parser"
+      system = EntryDataParser.system_prompt
+      user = EntryDataParser.user_prompt("Example input: 38.2 Fieber")
+      "=== SYSTEM ===\n\n#{system}\n\n=== USER ===\n\n#{user}"
+    when "summary"
+      entries = person.entries.order(occurred_at: :desc)
+      system = LogSummaryGenerator.system_prompt
+      user = LogSummaryGenerator.summary_prompt(person, entries)
+      "=== SYSTEM ===\n\n#{system}\n\n=== USER ===\n\n#{user}"
+    else
+      "Unknown prompt kind: #{kind}"
+    end
+
+    render plain: text
+  end
+
   def llm_models
     provider = params[:llm_provider].presence || UserPreference.current.llm_provider
     metadata = UserPreference.provider_metadata(provider)

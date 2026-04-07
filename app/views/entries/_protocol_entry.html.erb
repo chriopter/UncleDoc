@@ -1,131 +1,86 @@
 <% display_time = entry.occurred_at || entry.created_at %>
 <% raw_text = entry.input.presence || (entry.documents_attached? ? t("entries.documents.document_only") : nil) %>
-<% preview_text = entry_preview_text(entry) %>
 <% fact_preview = entry.fact_summary.presence %>
 <% preview_labels = entry_preview_data_labels(entry) %>
-<% parsed_preview = preview_labels.join(" • ").presence || (entry.healthkit_generated? ? entry.source_ref : nil) %>
+<% show_date = local_assigns[:show_date] %>
+<% date = local_assigns[:date] %>
 
-<details class="group bg-white/95" data-entry-collapsible="true">
-  <summary class="grid cursor-pointer list-none grid-cols-[6rem_minmax(0,1fr)_2.75rem] items-start gap-3 px-4 py-3 transition hover:bg-amber-50/40 [&::-webkit-details-marker]:hidden sm:px-5 xl:grid-cols-[6.5rem_minmax(0,1fr)_2.75rem]">
-    <div class="shrink-0 px-1 py-1">
-      <div class="text-lg font-semibold leading-none text-amber-700 sm:text-base">
-        <%= display_time.strftime("%H:%M") %>
-      </div>
-      <%= render "entries/parse_status", entry: entry %>
-      <% if entry.healthkit_generated? %>
-        <span class="mt-2 inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-800"><%= t("entries.data_labels.healthkit_summary") %></span>
+<details class="group" data-entry-collapsible="true">
+  <summary class="flex cursor-pointer list-none items-center gap-3 px-3 py-2 transition hover:bg-amber-50/40 [&::-webkit-details-marker]:hidden">
+    <div class="w-20 shrink-0 text-right">
+      <% if show_date %>
+        <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700"><%= log_day_label(date) %></p>
       <% end %>
     </div>
 
-    <div class="min-w-0 flex-1">
-      <div class="grid gap-3 md:grid-cols-3 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1.1fr)_minmax(0,0.95fr)]" data-entry-preview-grid="true">
-        <div class="min-w-0">
-          <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 xl:hidden"><%= t("entries.raw_input.title") %></p>
-          <p class="line-clamp-2 break-words text-sm font-medium leading-snug text-slate-900 [overflow-wrap:anywhere]"><%= preview_text %></p>
-        </div>
-
-        <div class="min-w-0">
-          <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 xl:hidden"><%= t("entries.facts.title") %></p>
-          <% if fact_preview.present? %>
-            <p class="line-clamp-2 break-words text-sm leading-snug text-slate-700 [overflow-wrap:anywhere]"><%= fact_preview %></p>
-          <% else %>
-            <p class="line-clamp-2 text-sm leading-snug text-slate-400">-</p>
-          <% end %>
-        </div>
-
-        <div class="min-w-0">
-          <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 xl:hidden"><%= t("entries.parsed_data.title") %></p>
-          <% if parsed_preview.present? %>
-            <p class="line-clamp-2 break-words text-sm leading-snug text-slate-700 [overflow-wrap:anywhere]"><%= parsed_preview %></p>
-          <% else %>
-            <p class="line-clamp-2 text-sm leading-snug text-slate-400">-</p>
-          <% end %>
-        </div>
-      </div>
+    <div class="min-w-0 flex-1 flex items-center gap-2">
+      <% if fact_preview.present? %>
+        <p class="min-w-0 truncate text-sm text-slate-800"><%= fact_preview %></p>
+      <% elsif raw_text.present? %>
+        <p class="min-w-0 truncate text-sm text-slate-400"><%= raw_text.truncate(80) %></p>
+      <% else %>
+        <p class="text-sm text-slate-300">-</p>
+      <% end %>
+      <% if entry.source_ref.to_s.start_with?("healthkit:month:") %>
+        <span class="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600"><%= t("entries.source.healthkit_month") %></span>
+      <% elsif entry.source_ref.to_s.start_with?("healthkit:day:") %>
+        <span class="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600"><%= t("entries.source.healthkit_day") %></span>
+      <% elsif entry.healthkit_generated? %>
+        <span class="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600"><%= t("entries.source.healthkit") %></span>
+      <% else %>
+        <span class="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700"><%= t("entries.source.manual") %></span>
+      <% end %>
     </div>
 
-    <div class="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition group-open:rotate-180 group-open:text-amber-700 xl:mt-0 xl:self-center">
-      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-      </svg>
-    </div>
+    <svg class="h-3.5 w-3.5 shrink-0 text-slate-300 transition group-open:rotate-180 group-open:text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+    </svg>
   </summary>
 
-  <div class="border-t border-slate-100 px-4 pb-4 pt-4 sm:px-5">
-    <div class="grid gap-3 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:gap-4 sm:items-start">
-      <div class="shrink-0 self-start px-1 py-1">
-        <div class="text-lg font-semibold leading-none text-amber-700 sm:text-base">
-          <%= display_time.strftime("%H:%M") %>
-        </div>
-        <p class="mt-1 text-[11px] text-slate-500"><%= l(display_time, format: :long) %></p>
+  <div class="border-t border-slate-100 px-3 py-3 ml-[5.75rem]">
+    <div class="flex items-start justify-between gap-3">
+      <p class="text-xs text-slate-400"><%= l(display_time, format: :long) %></p>
+      <%= render "entries/entry_actions", entry: entry %>
+    </div>
 
-        <div class="mt-4 hidden lg:flex">
-          <%= render "entries/entry_actions", entry: entry %>
-        </div>
+    <% if entry.healthkit_generated? || entry.documents_attached? %>
+      <div class="mt-2 flex flex-wrap items-center gap-1.5">
+        <% if entry.healthkit_generated? && entry.source_ref.present? %>
+          <span class="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700"><%= entry.source_ref %></span>
+        <% end %>
+        <% if entry.documents_attached? %>
+          <span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700"><%= t("entries.documents.title") %></span>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="mt-3 grid gap-4 lg:grid-cols-3">
+      <div class="min-w-0">
+        <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("entries.raw_input.title") %></p>
+        <p class="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap break-words"><%= raw_text %></p>
+        <%= render "entries/documents", entry: entry, compact: false %>
       </div>
 
-      <div class="min-w-0 flex-1">
-        <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(16rem,0.95fr)] lg:items-start">
-          <div class="min-w-0 px-1 py-1 lg:pr-5">
-            <div class="flex justify-end lg:hidden">
-              <%= render "entries/entry_actions", entry: entry %>
-            </div>
-
-            <% if entry.healthkit_generated? %>
-          <div class="mb-3 flex flex-wrap items-center gap-2">
-            <span class="inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-800"><%= t("entries.data_labels.healthkit_summary") %></span>
-            <% if entry.source_ref.present? %>
-              <span class="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-500"><%= entry.source_ref %></span>
+      <div class="min-w-0 border-t border-slate-100 pt-3 lg:border-t-0 lg:border-l lg:border-slate-100 lg:pl-4 lg:pt-0">
+        <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("entries.facts.title") %></p>
+        <% if entry.fact_items.present? %>
+          <ul class="space-y-1 text-sm leading-relaxed text-slate-700">
+            <% entry.fact_items.each do |fact| %>
+              <li class="break-words">- <%= fact %></li>
             <% end %>
-            <% preview_labels.each do |label| %>
-              <span class="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-600"><%= label %></span>
-            <% end %>
-            <% if entry.documents_attached? %>
-              <span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-700"><%= t("entries.documents.title") %></span>
-            <% end %>
-          </div>
-            <% elsif preview_labels.any? || entry.documents_attached? %>
-              <div class="mb-3 flex flex-wrap items-center gap-2">
-                <% preview_labels.each do |label| %>
-                  <span class="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold text-slate-600"><%= label %></span>
-                <% end %>
-                <% if entry.documents_attached? %>
-                  <span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-700"><%= t("entries.documents.title") %></span>
-                <% end %>
-              </div>
-            <% end %>
+          </ul>
+        <% else %>
+          <p class="text-sm text-slate-400"><%= t("entries.parsed_data.empty") %></p>
+        <% end %>
+      </div>
 
-            <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"><%= t("entries.raw_input.title") %></p>
-            <p class="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap break-words"><%= raw_text %></p>
-            <div class="mt-4">
-              <%= render "entries/documents", entry: entry, compact: false %>
-            </div>
-          </div>
-
-          <div class="min-w-0 border-t border-slate-100 pt-3 lg:border-t-0 lg:border-l lg:border-slate-100 lg:px-5 lg:pt-1">
-            <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"><%= t("entries.facts.title") %></p>
-
-            <% if entry.fact_items.present? %>
-              <ul class="space-y-1.5 text-base leading-relaxed text-slate-950">
-                <% entry.fact_items.each do |fact| %>
-                  <li class="break-words">- <%= fact %></li>
-                <% end %>
-              </ul>
-            <% else %>
-              <p class="text-sm text-slate-500"><%= t("entries.parsed_data.empty") %></p>
-            <% end %>
-          </div>
-
-          <div class="border-t border-slate-100 pt-3 lg:border-t-0 lg:border-l lg:border-slate-100 lg:pl-5 lg:pt-3">
-            <p class="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"><%= t("entries.parsed_data.title") %></p>
-
-            <% if entry.parseable_data.present? %>
-              <%= render "entries/data_details", entry: entry %>
-            <% else %>
-              <p class="text-sm text-slate-500"><%= t("entries.parsed_data.empty") %></p>
-            <% end %>
-          </div>
-        </div>
+      <div class="min-w-0 border-t border-slate-100 pt-3 lg:border-t-0 lg:border-l lg:border-slate-100 lg:pl-4 lg:pt-0">
+        <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("entries.parsed_data.title") %></p>
+        <% if entry.parseable_data.present? %>
+          <%= render "entries/data_details", entry: entry %>
+        <% else %>
+          <p class="text-sm text-slate-400"><%= t("entries.parsed_data.empty") %></p>
+        <% end %>
       </div>
     </div>
   </div>
