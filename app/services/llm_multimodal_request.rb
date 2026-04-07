@@ -8,7 +8,7 @@ require "tmpdir"
 
 class LlmMultimodalRequest
   Response = Struct.new(:content, :status_code, :body, keyword_init: true)
-  RETRIABLE_ERRORS = [Errno::ECONNRESET, EOFError, Net::ReadTimeout, Net::OpenTimeout, IOError].freeze
+  RETRIABLE_ERRORS = [ Errno::ECONNRESET, EOFError, Net::ReadTimeout, Net::OpenTimeout, IOError ].freeze
 
   def self.call(request_kind:, preference:, instructions:, prompt:, attachments:, person: nil, entry: nil, temperature: nil, model: nil)
     endpoint = "#{preference.llm_api_base.chomp('/')}/chat/completions"

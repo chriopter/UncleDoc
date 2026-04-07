@@ -101,7 +101,6 @@ class EntryDataParser
   end
 
   def self.request_text_completion(input, preference, entry: nil)
-
     LlmChatRequest.call(
       request_kind: "entry_parse",
       preference: preference,
@@ -335,6 +334,6 @@ class EntryDataParser
     return input if extracted.blank?
     return extracted if input.blank?
 
-    [input, extracted].join("\n\n")
+    [ input, extracted ].join("\n\n")
   end
 end
