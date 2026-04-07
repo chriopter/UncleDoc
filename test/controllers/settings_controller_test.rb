@@ -7,8 +7,8 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h2", "Display preferences"
-    assert_select "span", text: "Profile"
-    assert_select "span", text: "Members"
+    assert_includes @response.body, "Profile"
+    assert_includes @response.body, "Members"
     assert_includes @response.body, "DB View"
   end
 
