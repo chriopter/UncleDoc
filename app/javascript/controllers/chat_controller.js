@@ -54,8 +54,8 @@ export default class extends Controller {
 
     const bubble = document.createElement("div")
     bubble.className = role === "user"
-      ? "max-w-[80%] rounded-2xl rounded-tr-md bg-amber-600 px-4 py-3 text-sm leading-relaxed text-white"
-      : "max-w-[80%] rounded-2xl rounded-tl-md bg-white/10 px-4 py-3 text-sm leading-relaxed text-slate-100"
+      ? "max-w-[85%] rounded-2xl rounded-tr-md bg-slate-950 px-4 py-3 text-sm leading-relaxed text-white"
+      : "max-w-[85%] rounded-2xl rounded-tl-md border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed text-slate-700 shadow-sm"
 
     const contentEl = document.createElement("div")
     contentEl.setAttribute("data-role", "content")

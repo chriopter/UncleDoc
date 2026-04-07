@@ -170,6 +170,13 @@ de:
       flash:
         reset: "HealthKit-Daten wurden zurückgesetzt."
       empty_value: "-"
+      stats_label: "Übersicht"
+      stats_title: "Sync-Statistiken"
+      entries_label: "Einträge"
+      entries_title: "HealthKit-Einträge im Protokoll"
+      view_all_entries: "Alle HealthKit-Einträge"
+      view_daily: "Tages-Zusammenfassungen"
+      view_monthly: "Monats-Zusammenfassungen"
       empty_syncs: "Für diese Person ist noch kein HealthKit-Sync auf dem Server angekommen."
       empty_summaries: "Es sind noch keine HealthKit-Zusammenfassungs-Eintrage vorhanden."
       empty_raw: "Es wurden noch keine rohen HealthKit-Daten synchronisiert."
@@ -179,6 +186,7 @@ de:
     subtitle: "%{count} Einträge in der Patientenakte"
     welcome: "Hallo! Ich habe die vollständige Patientenakte für %{name}. Frag mich alles — Zusammenfassungen, Muster, Medikamentenhistorie, anstehende Termine oder alles andere aus dem Protokoll."
     placeholder: "Frage zur Patientenakte stellen…"
+    system_prompt_label: "System-Prompt & Patientenakte"
 
   log_summary:
     label: "KI"
@@ -205,7 +213,15 @@ de:
       healthkit: "Healthkit"
       healthkit_day: "HK Tages"
       healthkit_month: "HK Monats"
+    tags:
+      appointment: "Termin"
+      todo: "Todo"
+      document: "Dokument"
+      parse_error: "Parse Fehler"
+      pending: "Ausstehend"
+      skipped: "Übersprungen"
     filters:
+      label: "Filter"
       date: "Datum"
       source: "Quelle"
       parseable_type: "Geparster Typ"
@@ -244,6 +260,7 @@ de:
       placeholder: "Was ist heute passiert?"
       submit: "Eintragen"
       title: "Gesundheitsinfo für %{name} protokollieren"
+      new_entry: "Neuer Eintrag"
       use_current_time: "Jetzt"
       change_time: "Zeit ändern"
     documents:
@@ -410,6 +427,7 @@ de:
       credentials_hint: "UncleDoc greift auf `%{env_key}` zurück, wenn hier kein Schlüssel gespeichert ist."
       endpoint_hint: "API-Basis: %{endpoint}"
       save: "LLM-Einstellungen speichern"
+      test: "Test"
       edit: "Bearbeiten"
       setup: "LLM einrichten"
       prompt_label: "Parser-Prompt"
@@ -430,6 +448,7 @@ de:
       preview_person_label: "Betroffene Person"
       preview_person_placeholder: "Person wahlen"
       preview_person_submit: "Vorschau aktualisieren"
+      view_full_prompt: "Vollständigen Prompt anzeigen"
       preview_context_label: "Vorschaukontext"
       preview_context_title: "Ausgewahlte Person"
       preview_context_selected: "Es werden Live-Promptdaten fur %{name} angezeigt."
@@ -472,8 +491,11 @@ de:
       response: "Antwort"
       raw_data:
         toggle: "Rohe Logdaten anzeigen"
-      view_compact: "Kompakt"
-      view_raw: "Roh"
+      col_time: "Zeit"
+      col_kind: "Art"
+      col_provider: "Anbieter"
+      col_model: "Modell"
+      col_status: "Status"
       empty: "Es wurden noch keine LLM-Anfragen protokolliert."
     llm_prompt:
       nav: "Prompt"
@@ -489,19 +511,20 @@ de:
       user_label: "Benutzer"
       sections:
         parser: "Eintrags-Parser"
-        summary: "Log-Zusammenfassung"
+        summary: "Chat-Prompt"
     flash:
       saved: "Einstellungen gespeichert."
 
   files:
     label: "Dateien"
     title: "Dateien für %{name}"
-    subtitle: "Rechnungen, Berichte und Schnappschüsse direkt im Eintragsformular hochladen. Die Dokumente bleiben am Eintrag und werden direkt vom LLM geparst."
+    upload_label: "Upload"
+    upload_title: "Dokument hinzufügen"
     empty: "Noch keine Dateien"
-    empty_subtitle: "Laden Sie oben im Eintragsformular das erste Dokument hoch."
+    empty_subtitle: "Laden Sie oben das erste Dokument hoch."
     stats:
-      documents: "Dokumente"
-      entries: "Einträge"
+      documents_count: "%{count} Dateien"
+      entries_count: "%{count} Einträge"
     list:
       label: "Archiv"
       title: "Hochgeladene Dokumente"

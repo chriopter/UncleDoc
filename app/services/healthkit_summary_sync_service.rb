@@ -40,7 +40,7 @@ class HealthkitSummarySyncService
         end
       end
 
-      deleted_entries = existing_entries.values.reject { |entry| monthly_summary_entry?(entry) }
+      deleted_entries = existing_entries.values
       @deleted_count = deleted_entries.size
       deleted_entries.each(&:destroy!)
     end
@@ -83,9 +83,5 @@ class HealthkitSummarySyncService
 
   def monthly_preview?(preview)
     preview.period_type.to_sym == :month
-  end
-
-  def monthly_summary_entry?(entry)
-    entry.source_ref.to_s.start_with?("healthkit:month:")
   end
 end

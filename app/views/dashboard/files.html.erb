@@ -1,31 +1,30 @@
 <%= turbo_stream_from [@person, :entries] %>
 
-<section class="space-y-6">
-  <section class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur">
-    <div class="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-      <div class="space-y-4">
-        <div>
-          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("files.label") %></p>
-          <h1 class="mt-1 text-3xl font-black tracking-tight text-slate-950"><%= t("files.title", name: @person.name) %></h1>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600"><%= t("files.subtitle") %></p>
-        </div>
-
-        <%= render "dashboard/files_stats", document_count: @document_count, document_entries: @document_entries %>
-      </div>
-
-      <div class="w-full max-w-xl xl:w-[28rem]">
-        <%= render "entries/inline_form", entry: Entry.new, person: @person %>
-      </div>
+<section class="space-y-5">
+  <section class="rounded-[2rem] border border-white/70 bg-white/90 p-5 ring-1 ring-black/5 backdrop-blur">
+    <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+      <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("files.label") %></p>
+      <h1 class="text-2xl font-black tracking-tight text-slate-950"><%= t("files.title", name: @person.name) %></h1>
     </div>
   </section>
 
-  <section class="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm ring-1 ring-black/5">
-    <div class="mb-5 flex items-end justify-between gap-4 border-b border-white/10 pb-5">
+  <section class="rounded-[2rem] border border-slate-200 bg-white p-5 ring-1 ring-black/5">
+    <div class="mb-4 border-b border-slate-200 pb-3">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"><%= t("files.upload_label") %></p>
+      <h2 class="mt-0.5 text-lg font-bold text-slate-950"><%= t("files.upload_title") %></h2>
+    </div>
+    <%= render "entries/inline_form", entry: Entry.new, person: @person %>
+  </section>
+
+  <section class="rounded-[2rem] border border-slate-200 bg-white p-5 ring-1 ring-black/5">
+    <div class="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
       <div>
-        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300"><%= t("files.list.label") %></p>
-        <h2 class="mt-1 text-3xl font-black tracking-tight"><%= t("files.list.title") %></h2>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"><%= t("files.list.label") %></p>
+        <h2 class="mt-0.5 text-lg font-bold text-slate-950"><%= t("files.list.title") %></h2>
       </div>
-      <span class="inline-flex rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-slate-300"><%= t(@document_count == 1 ? "files.list.count" : "files.list.count_plural", count: @document_count) %></span>
+      <div class="flex items-center gap-2">
+        <%= render "dashboard/files_stats", document_count: @document_count, document_entries: @document_entries %>
+      </div>
     </div>
 
     <%= render "dashboard/files_list", document_entries: @document_entries %>

@@ -9,6 +9,7 @@ Rails.application.routes.draw do
   patch "settings(/:section)", to: "settings#update"
   delete "settings/db_row", to: "settings#destroy_db_row", as: :settings_db_row
   post "settings/llm_models", to: "settings#llm_models", as: :settings_llm_models
+  post "settings/llm_test", to: "settings#llm_test", as: :settings_llm_test
   get "settings/prompt_preview/:kind/:person_id", to: "settings#prompt_preview", as: :settings_prompt_preview
   get "ios/healthkit/people", to: "healthkit#people"
   get "ios/healthkit/status", to: "healthkit#status"

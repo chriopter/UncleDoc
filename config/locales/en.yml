@@ -170,6 +170,13 @@ en:
       flash:
         reset: "HealthKit data was reset."
       empty_value: "-"
+      stats_label: "Overview"
+      stats_title: "Sync statistics"
+      entries_label: "Entries"
+      entries_title: "HealthKit entries in log"
+      view_all_entries: "View all HealthKit entries"
+      view_daily: "Daily summaries"
+      view_monthly: "Monthly summaries"
       empty_syncs: "No HealthKit sync has reached the server for this person yet."
       empty_summaries: "No HealthKit summary entries are available yet."
       empty_raw: "No raw HealthKit records have been synced yet."
@@ -179,6 +186,7 @@ en:
     subtitle: "%{count} entries in Patientenakte"
     welcome: "Hello! I have the complete health record for %{name}. Ask me anything — summaries, patterns, medication history, upcoming appointments, or anything else from the log."
     placeholder: "Ask a question about the health record…"
+    system_prompt_label: "System prompt & Patientenakte"
 
   log_summary:
     label: "AI"
@@ -205,7 +213,15 @@ en:
       healthkit: "Healthkit"
       healthkit_day: "HK Daily"
       healthkit_month: "HK Monthly"
+    tags:
+      appointment: "Event"
+      todo: "Todo"
+      document: "Document"
+      parse_error: "Parse Error"
+      pending: "Pending"
+      skipped: "Skipped"
     filters:
+      label: "Filters"
       date: "Date"
       source: "Source"
       parseable_type: "Parsed type"
@@ -244,6 +260,7 @@ en:
       placeholder: "What happened today?"
       submit: "Add"
       title: "Log health info for %{name}"
+      new_entry: "New entry"
       use_current_time: "Now"
       change_time: "Change time"
     documents:
@@ -410,6 +427,7 @@ en:
       credentials_hint: "UncleDoc falls back to `%{env_key}` if no key is saved here."
       endpoint_hint: "API base: %{endpoint}"
       save: "Save LLM settings"
+      test: "Test"
       edit: "Edit"
       setup: "Set up LLM"
       prompt_label: "Parser prompt"
@@ -430,6 +448,7 @@ en:
       preview_person_label: "Affected user"
       preview_person_placeholder: "Choose a user"
       preview_person_submit: "Update preview"
+      view_full_prompt: "View full prompt"
       preview_context_label: "Preview context"
       preview_context_title: "Selected person"
       preview_context_selected: "Showing live prompt data for %{name}."
@@ -472,8 +491,11 @@ en:
       response: "Response"
       raw_data:
         toggle: "Show raw log data"
-      view_compact: "Compact"
-      view_raw: "Raw"
+      col_time: "Time"
+      col_kind: "Kind"
+      col_provider: "Provider"
+      col_model: "Model"
+      col_status: "Status"
       empty: "No LLM requests have been logged yet."
     llm_prompt:
       nav: "Prompt"
@@ -489,19 +511,20 @@ en:
       user_label: "User"
       sections:
         parser: "Entry parser"
-        summary: "Log summary"
+        summary: "Chat prompt"
     flash:
       saved: "Settings saved."
 
   files:
     label: "Files"
     title: "Files for %{name}"
-    subtitle: "Upload invoices, reports, and snapshots right from the entry form. Attached documents stay on the entry and are parsed directly by the LLM."
+    upload_label: "Upload"
+    upload_title: "Add document"
     empty: "No files yet"
-    empty_subtitle: "Upload the first document from the entry form above."
+    empty_subtitle: "Upload the first document from the form above."
     stats:
-      documents: "Documents"
-      entries: "Entries"
+      documents_count: "%{count} files"
+      entries_count: "%{count} entries"
     list:
       label: "Archive"
       title: "Uploaded documents"
