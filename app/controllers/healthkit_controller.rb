@@ -9,7 +9,7 @@ class HealthkitController < ApplicationController
   end
 
   def status
-    sync = @person.healthkit_sync
+    sync = healthkit_sync_for_status
 
     render json: {
       person: { uuid: @person.uuid, name: @person.name },
@@ -58,7 +58,7 @@ class HealthkitController < ApplicationController
 
   def reset
     @person.healthkit_records.destroy_all
-    @person.healthkit_sync&.destroy
+    @person.healthkit_syncs.destroy_all
 
     respond_to do |format|
       format.html { redirect_to settings_path(section: :healthkit), notice: t("settings.healthkit.flash.reset") }
@@ -135,5 +135,11 @@ class HealthkitController < ApplicationController
 
   def stringify_details(details)
     details.transform_values(&:to_s)
+  end
+
+  def healthkit_sync_for_status
+    return @person.healthkit_syncs.find_by(device_id: params[:device_id].to_s) if params[:device_id].present?
+
+    @person.healthkit_syncs.order(updated_at: :desc, created_at: :desc).first
   end
 end
