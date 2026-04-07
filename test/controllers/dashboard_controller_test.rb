@@ -358,6 +358,8 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "HealthKit for Healthkitty"
     assert_includes @response.body, "iphone-main"
     assert_includes @response.body, "Reset imported data"
+    assert_includes @response.body, "Rebuild summaries"
+    assert_includes @response.body, "Re-parse HealthKit entries"
   end
 
   test "healthkit page shows stats and links to log" do
@@ -380,6 +382,26 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes @response.body, "3"
     assert_select "a[href*='source=healthkit']"
+  end
+
+  test "healthkit page can queue summary rebuild" do
+    person = Person.create!(name: "Queue Sync", birth_date: Date.new(2024, 1, 1))
+
+    assert_enqueued_with(job: HealthkitSummarySyncJob, args: [ person.id ]) do
+      post person_healthkit_sync_summaries_url(person_slug: person.name)
+    end
+
+    assert_redirected_to person_healthkit_path(person_slug: person.name)
+  end
+
+  test "healthkit page can queue reparse" do
+    person = Person.create!(name: "Queue Reparse", birth_date: Date.new(2024, 1, 1))
+
+    assert_enqueued_with(job: HealthkitSummaryReparseJob, args: [ person.id ]) do
+      post person_healthkit_reparse_url(person_slug: person.name)
+    end
+
+    assert_redirected_to person_healthkit_path(person_slug: person.name)
   end
 
   test "log can filter by date and parsed type" do

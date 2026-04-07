@@ -53,6 +53,20 @@ class DashboardController < ApplicationController
     @healthkit_last_successful_sync_at = @healthkit_syncs.filter_map(&:last_successful_sync_at).max
   end
 
+  def queue_healthkit_summary_sync
+    person = Person.find_by!(name: params[:person_slug])
+    HealthkitSummarySyncJob.perform_later(person.id)
+
+    redirect_to person_healthkit_path(person_slug: person.name), notice: t("dashboard.healthkit.flash.sync_queued")
+  end
+
+  def queue_healthkit_reparse
+    person = Person.find_by!(name: params[:person_slug])
+    HealthkitSummaryReparseJob.perform_later(person.id)
+
+    redirect_to person_healthkit_path(person_slug: person.name), notice: t("dashboard.healthkit.flash.reparse_queued")
+  end
+
   def chat
     @person = Person.find_by!(name: params[:person_slug])
     entries = @person.entries.order(occurred_at: :asc)
