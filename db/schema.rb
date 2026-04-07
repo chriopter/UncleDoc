@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_04_170501) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_06_195500) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -54,6 +54,37 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_04_170501) do
     t.index ["person_id"], name: "index_entries_on_person_id"
   end
 
+  create_table "healthkit_records", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "device_id", null: false
+    t.datetime "end_at"
+    t.string "external_id", null: false
+    t.json "payload", default: {}, null: false
+    t.integer "person_id", null: false
+    t.string "record_type", null: false
+    t.string "source_name"
+    t.datetime "start_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["person_id", "external_id"], name: "index_healthkit_records_on_person_id_and_external_id", unique: true
+    t.index ["person_id", "record_type", "start_at"], name: "idx_on_person_id_record_type_start_at_6a6717a011"
+    t.index ["person_id"], name: "index_healthkit_records_on_person_id"
+  end
+
+  create_table "healthkit_syncs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.json "details", default: {}, null: false
+    t.string "device_id", null: false
+    t.text "last_error"
+    t.datetime "last_successful_sync_at"
+    t.datetime "last_synced_at"
+    t.integer "person_id", null: false
+    t.string "status", default: "pending", null: false
+    t.integer "synced_record_count", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["person_id", "device_id"], name: "index_healthkit_syncs_on_person_id_and_device_id", unique: true
+    t.index ["person_id"], name: "index_healthkit_syncs_on_person_id"
+  end
+
   create_table "llm_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "endpoint", null: false
@@ -80,6 +111,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_04_170501) do
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.datetime "updated_at", null: false
+    t.string "uuid", null: false
+    t.index ["uuid"], name: "index_people_on_uuid", unique: true
   end
 
   create_table "user_preferences", force: :cascade do |t|
@@ -95,6 +128,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_04_170501) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "entries", "people", on_delete: :cascade
+  add_foreign_key "healthkit_records", "people"
+  add_foreign_key "healthkit_syncs", "people"
   add_foreign_key "llm_logs", "entries", on_delete: :cascade
   add_foreign_key "llm_logs", "people", on_delete: :cascade
 end
