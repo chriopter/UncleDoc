@@ -1,9 +1,17 @@
 <section class="space-y-6">
   <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm ring-1 ring-black/5">
     <div class="flex flex-col gap-3 border-b border-slate-200 bg-slate-950 px-5 py-4 text-white md:flex-row md:items-center md:justify-between">
-      <h3 class="text-lg font-bold"><%= table[:name] %></h3>
+      <div>
+        <h3 class="text-lg font-bold"><%= table[:name] %></h3>
+        <p class="mt-1 text-xs text-slate-300">
+          <%= t(table[:count] == 1 ? "db.table.count" : "db.table.count_plural", count: table[:count]) %>
+          <% if table[:order_column].present? %>
+            · <%= t("db.table.sorted_by", column: table[:order_column]) %>
+          <% end %>
+        </p>
+      </div>
       <div class="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-slate-300">
-        <%= table[:columns].join(", ") %>
+        <%= t("db.table.page", current: table[:page], total: table[:total_pages]) %>
       </div>
     </div>
 
@@ -14,6 +22,9 @@
             <% table[:columns].each do |column| %>
               <th class="px-4 py-3 font-semibold"><%= column %></th>
             <% end %>
+            <% if table[:deletable] %>
+              <th class="px-4 py-3 font-semibold"><%= t("db.table.actions") %></th>
+            <% end %>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 bg-white text-slate-800">
@@ -23,15 +34,44 @@
                 <% table[:columns].each do |column| %>
                   <td class="max-w-xs px-4 py-3 align-top text-xs leading-5 text-slate-700"><%= row[column].presence || "-" %></td>
                 <% end %>
+                <% if table[:deletable] %>
+                  <td class="px-4 py-3 align-top text-xs">
+                    <% row_id = row[table[:primary_key]] %>
+                    <% if row_id.present? %>
+                      <%= button_to t("db.table.delete"), settings_db_row_path(table: table[:name], row_id: row_id, page: table[:page]), method: :delete, form_class: "inline", class: "rounded-full border border-rose-200 bg-rose-50 px-3 py-1 font-semibold text-rose-700 transition hover:bg-rose-100", data: { turbo_confirm: t("db.table.delete_confirm", table: table[:name], id: row_id) } %>
+                    <% else %>
+                      <span class="text-slate-400"><%= t("db.table.delete_unavailable_short") %></span>
+                    <% end %>
+                  </td>
+                <% end %>
               </tr>
             <% end %>
           <% else %>
             <tr>
-              <td colspan="<%= table[:columns].size %>" class="px-4 py-8 text-center text-sm text-slate-500"><%= t("db.table.empty") %></td>
+              <td colspan="<%= table[:columns].size + (table[:deletable] ? 1 : 0) %>" class="px-4 py-8 text-center text-sm text-slate-500"><%= t("db.table.empty") %></td>
             </tr>
           <% end %>
         </tbody>
       </table>
+    </div>
+
+    <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-5 py-4 text-sm">
+      <% previous_page = table[:page] - 1 %>
+      <% next_page = table[:page] + 1 %>
+
+      <% if table[:page] > 1 %>
+        <%= link_to t("db.table.previous"), settings_path(section: "db_table", table: table[:name], page: previous_page), class: "rounded-full border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 transition hover:border-amber-200 hover:bg-amber-50 hover:text-slate-950" %>
+      <% else %>
+        <span class="rounded-full border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-400"><%= t("db.table.previous") %></span>
+      <% end %>
+
+      <span class="text-slate-500"><%= t("db.table.page", current: table[:page], total: table[:total_pages]) %></span>
+
+      <% if table[:page] < table[:total_pages] %>
+        <%= link_to t("db.table.next"), settings_path(section: "db_table", table: table[:name], page: next_page), class: "rounded-full border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 transition hover:border-amber-200 hover:bg-amber-50 hover:text-slate-950" %>
+      <% else %>
+        <span class="rounded-full border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-400"><%= t("db.table.next") %></span>
+      <% end %>
     </div>
   </section>
 </section>

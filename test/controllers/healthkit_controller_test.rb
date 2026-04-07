@@ -70,4 +70,22 @@ class HealthkitControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, other_person.healthkit_syncs.count
     assert_equal 1, other_person.healthkit_records.count
   end
+
+  test "status stays synced for display after a successful sync" do
+    person = Person.create!(name: "Display Sync", birth_date: Date.new(2024, 3, 10))
+    sync = HealthkitSync.create!(
+      person: person,
+      device_id: "device-a",
+      status: "syncing",
+      last_synced_at: 5.minutes.ago,
+      last_successful_sync_at: 10.minutes.ago,
+      synced_record_count: 99
+    )
+
+    get "/ios/healthkit/status", params: { person_uuid: person.uuid, device_id: sync.device_id }
+
+    assert_response :success
+    payload = JSON.parse(response.body)
+    assert_equal "synced", payload.dig("sync", "status")
+  end
 end

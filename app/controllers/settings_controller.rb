@@ -3,7 +3,7 @@ class SettingsController < ApplicationController
     save_preferences if params[:locale].present? || params[:llm_provider].present?
 
     @section = params[:section].in?(%w[profile llm llm_prompt llm_prompt_preview llm_logs db db_table users healthkit]) ? params[:section] : "profile"
-    @database_table = database_table_detail(params[:table]) if @section == "db_table" && params[:table].present?
+    @database_table = database_table_detail(params[:table], page: params[:page]) if @section == "db_table" && params[:table].present?
     @people = Person.recent_first if @section == "users"
     @person = Person.new if @section == "users"
     if @section == "healthkit"
@@ -20,6 +20,22 @@ class SettingsController < ApplicationController
     save_preferences
 
     redirect_to settings_path(section: resolved_section), notice: t("settings.flash.saved")
+  end
+
+  def destroy_db_row
+    table_name = params[:table].to_s
+    row_id = params[:row_id].to_s
+    detail = database_table_detail(table_name, page: params[:page])
+
+    return redirect_to(settings_path(section: "db"), alert: t("db.table.delete_unavailable")) unless detail&.dig(:deletable)
+
+    delete_database_row!(table_name, row_id, detail[:primary_key])
+
+    redirect_to settings_path(section: "db_table", table: table_name, page: params[:page]), notice: t("db.table.delete_success", table: table_name, id: row_id)
+  rescue ActiveRecord::RecordNotFound
+    redirect_to settings_path(section: "db_table", table: table_name, page: params[:page]), alert: t("db.table.delete_missing", table: table_name, id: row_id)
+  rescue StandardError => error
+    redirect_to settings_path(section: "db_table", table: table_name, page: params[:page]), alert: t("db.table.delete_failed", message: error.message)
   end
 
   def llm_models
@@ -101,17 +117,60 @@ class SettingsController < ApplicationController
     }
   end
 
-  def database_table_detail(table_name)
+  def database_table_detail(table_name, page: 1)
     connection = ActiveRecord::Base.connection
     return nil unless connection.tables.include?(table_name)
 
     quoted_table = connection.quote_table_name(table_name)
+    columns = connection.columns(table_name).map(&:name)
+    primary_key = connection.primary_key(table_name)
+    per_page = 50
+    current_page = [ page.to_i, 1 ].max
+    total_count = connection.select_value("SELECT COUNT(*) FROM #{quoted_table}").to_i
+    total_pages = [ (total_count.to_f / per_page).ceil, 1 ].max
+    current_page = [ current_page, total_pages ].min
+    offset = (current_page - 1) * per_page
+    order_column = primary_key.presence || (columns.include?("created_at") ? "created_at" : (columns.include?("updated_at") ? "updated_at" : nil))
+    order_sql = order_column.present? ? " ORDER BY #{connection.quote_column_name(order_column)} DESC" : ""
 
     {
       name: table_name,
-      columns: connection.columns(table_name).map(&:name),
-      rows: connection.select_all("SELECT * FROM #{quoted_table} LIMIT 200").to_a,
-      count: connection.select_value("SELECT COUNT(*) FROM #{quoted_table}").to_i
+      columns: columns,
+      rows: connection.select_all("SELECT * FROM #{quoted_table}#{order_sql} LIMIT #{per_page} OFFSET #{offset}").to_a,
+      count: total_count,
+      page: current_page,
+      per_page: per_page,
+      total_pages: total_pages,
+      primary_key: primary_key,
+      deletable: database_table_deletable?(table_name, primary_key),
+      order_column: order_column
     }
+  end
+
+  def database_table_deletable?(table_name, primary_key)
+    primary_key.present? && !%w[ar_internal_metadata schema_migrations user_preferences].include?(table_name)
+  end
+
+  def delete_database_row!(table_name, row_id, primary_key)
+    model = database_table_record_model(table_name, primary_key)
+
+    if model
+      model.find(row_id).destroy!
+      return
+    end
+
+    connection = ActiveRecord::Base.connection
+    deleted = connection.delete(
+      "DELETE FROM #{connection.quote_table_name(table_name)} WHERE #{connection.quote_column_name(primary_key)} = #{connection.quote(row_id)}"
+    )
+    raise ActiveRecord::RecordNotFound if deleted.zero?
+  end
+
+  def database_table_record_model(table_name, primary_key)
+    model = table_name.classify.safe_constantize
+    return nil unless model&.ancestors&.include?(ApplicationRecord)
+    return nil unless model.table_name == table_name && model.primary_key == primary_key
+
+    model
   end
 end
