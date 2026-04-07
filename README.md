@@ -162,6 +162,12 @@ journalctl -u uncledoc-dev.service -f
 
 </details>
 
+## Privacy
+
+UncleDoc does not collect user data for its own service. The app is self-hosted, so your health data stays on infrastructure you control.
+
+If you enable AI features, you choose the LLM provider yourself. Any data sent to an LLM depends on the provider and configuration you decide to use.
+
 ## License
 
-UncleDoc is released under the `O'Saasy` license. In practice, that means the code can be used, modified, and self-hosted, but not used to launch a competing hosted/SaaS version of UncleDoc itself. See `LICENSE`.
+UncleDoc is released under the `O'Saasy` license. In practice, that means the code can be used, modified, and self-hosted, but not used to launch a competing hosted/SaaS version of UncleDoc itself. See [`LICENSE`](LICENSE).
