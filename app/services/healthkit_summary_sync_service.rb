@@ -21,7 +21,6 @@ class HealthkitSummarySyncService
     Entry.transaction do
       previews.each do |preview|
         existing_entry = existing_entries.delete(preview.source_ref)
-        next if existing_entry && monthly_preview?(preview)
 
         entry = existing_entry || @person.entries.build(source: Entry::SOURCES[:healthkit], source_ref: preview.source_ref)
         changed = assign_preview(entry, preview)
@@ -79,9 +78,5 @@ class HealthkitSummarySyncService
 
     entry.public_send("#{attribute}=", value)
     true
-  end
-
-  def monthly_preview?(preview)
-    preview.period_type.to_sym == :month
   end
 end
