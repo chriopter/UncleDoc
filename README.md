@@ -1,10 +1,11 @@
 # UncleDoc
 
-UncleDoc is a self-hosted family health manager built in Rails. It lets you enter health data or upload documents, then chat with the resulting health record.
+UncleDoc is a self-hosted family health manager built in Rails.
+It lets you enter health data or upload documents, then chat with the resulting health record.
 
 <img src="docs/screenshots/overview-demo-nora.png" alt="Demo Nora overview" width="60%" />
 
-Bring your own LLM. UncleDoc does not provide medical advice and should support your record-keeping, not replace professional care.
+> Bring your own LLM. UncleDoc does not provide medical advice and should support your record-keeping, not replace professional care.
 
 ## 1. Features
 
@@ -27,12 +28,6 @@ bin/dev
 ```
 
 If you want demo content, run `bundle exec bin/rails db:prepare db:seed` first.
-
-### Run tests
-
-```bash
-bin/rails test
-```
 
 ### Deploy
 
