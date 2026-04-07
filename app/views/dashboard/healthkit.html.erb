@@ -88,6 +88,10 @@
       <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"><%= t("dashboard.healthkit.entries_label") %></p>
       <h2 class="mt-0.5 text-lg font-bold text-slate-950"><%= t("dashboard.healthkit.entries_title") %></h2>
     </div>
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+      <%= button_to t("dashboard.healthkit.rebuild_button"), person_healthkit_sync_summaries_path(person_slug: @person.name), method: :post, class: "inline-flex rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800", form: { class: "inline-block", data: { turbo_confirm: t("dashboard.healthkit.rebuild_confirm") } } %>
+      <%= button_to t("dashboard.healthkit.reparse_button"), person_healthkit_reparse_path(person_slug: @person.name), method: :post, class: "inline-flex rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-slate-950", form: { class: "inline-block", data: { turbo_confirm: t("dashboard.healthkit.reparse_confirm") } } %>
+    </div>
     <div class="flex flex-wrap items-center gap-2">
       <%= link_to person_log_path(person_slug: @person.name, source: "healthkit"), class: "inline-flex rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800" do %>
         <%= t("dashboard.healthkit.view_all_entries") %>
