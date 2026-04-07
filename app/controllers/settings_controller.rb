@@ -6,9 +6,12 @@ class SettingsController < ApplicationController
     @database_table = database_table_detail(params[:table], page: params[:page]) if @section == "db_table" && params[:table].present?
     @people = Person.recent_first if @section == "users"
     @person = Person.new if @section == "users"
-    @llm_logs = LlmLog.order(created_at: :desc).limit(200) if @section == "llm_logs"
-    @llm_stats = llm_stats if @section == "llm"
-    load_prompt_preview if @section == "llm_prompt_preview"
+
+    return unless llm_section?
+
+    @llm_logs = LlmLog.order(created_at: :desc).limit(200)
+    @llm_stats = llm_stats
+    load_prompt_preview
   end
 
   def update
@@ -70,6 +73,10 @@ class SettingsController < ApplicationController
     params[:section].in?(%w[llm llm_prompt llm_prompt_preview llm_logs db db_table users]) ? params[:section] : "users"
   end
 
+  def llm_section?
+    @section.in?(%w[llm llm_prompt llm_prompt_preview llm_logs])
+  end
+
   def llm_stats
     scope = LlmLog.all
 
@@ -98,8 +105,14 @@ class SettingsController < ApplicationController
   end
 
   def load_prompt_preview
-    person = Person.recent_first.first
-    entries = person ? person.entries.order(occurred_at: :desc).limit(5) : Entry.none
+    @preview_people = Person.recent_first
+    @preview_person = if params[:preview_person_id].present?
+      @preview_people.find { |person| person.id == params[:preview_person_id].to_i }
+    else
+      @preview_people.first
+    end
+
+    entries = @preview_person ? @preview_person.entries.order(occurred_at: :desc).limit(5) : Entry.none
 
     @prompt_previews = {
       parser: {
@@ -108,7 +121,7 @@ class SettingsController < ApplicationController
       },
       summary: {
         system: LogSummaryGenerator.system_prompt,
-        user: person ? LogSummaryGenerator.summary_prompt(person, entries) : "(no person available)"
+        user: @preview_person ? LogSummaryGenerator.summary_prompt(@preview_person, entries) : t("settings.llm.prompt_preview_empty")
       }
     }
   end

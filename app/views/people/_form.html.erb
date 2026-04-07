@@ -1,22 +1,36 @@
 <%= turbo_frame_tag "person_form" do %>
-  <%= form_with model: person, class: "space-y-4" do |form| %>
+  <%= form_with model: person, class: "space-y-3" do |form| %>
     <% if person.errors.any? %>
-      <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+      <div class="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm text-rose-800">
         <p class="font-semibold"><%= t("people.form.error_message") %></p>
         <p><%= person.errors.full_messages.to_sentence %></p>
       </div>
     <% end %>
 
-    <div class="space-y-2">
-      <%= form.label :name, t("activerecord.attributes.person.name"), class: "text-sm font-semibold text-slate-800" %>
-      <%= form.text_field :name, placeholder: t("people.form.placeholder_name"), class: "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100" %>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div class="space-y-1.5">
+        <%= form.label :name, t("activerecord.attributes.person.name"), class: "text-sm font-semibold text-slate-700" %>
+        <%= form.text_field :name, placeholder: t("people.form.placeholder_name"), class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+      </div>
+      <div class="space-y-1.5">
+        <%= form.label :birth_date, t("activerecord.attributes.person.birth_date"), class: "text-sm font-semibold text-slate-700" %>
+        <%= form.datetime_local_field :birth_date, value: person.birth_date&.strftime("%Y-%m-%dT%H:%M"), class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+      </div>
     </div>
 
-    <div class="space-y-2">
-      <%= form.label :birth_date, t("activerecord.attributes.person.birth_date"), class: "text-sm font-semibold text-slate-800" %>
-      <%= form.datetime_local_field :birth_date, value: person.birth_date&.strftime("%Y-%m-%dT%H:%M"), class: "w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100" %>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div class="space-y-1.5">
+        <%= form.label :locale, t("settings.users.language_label"), class: "text-sm font-semibold text-slate-700" %>
+        <%= form.select :locale, [[t("settings.users.use_workspace_default"), ""], [t("settings.language.english"), "en"], [t("settings.language.german"), "de"]], {}, class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+      </div>
+      <div class="space-y-1.5">
+        <%= form.label :date_format, t("settings.users.date_format_label"), class: "text-sm font-semibold text-slate-700" %>
+        <%= form.select :date_format, [[t("settings.users.use_workspace_default"), ""], [t("settings.date_format.long"), "long"], [t("settings.date_format.compact"), "compact"]], {}, class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+      </div>
     </div>
 
-    <%= form.submit t("people.form.submit"), class: "inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-base font-semibold text-white transition hover:bg-slate-800" %>
+    <div class="flex justify-end">
+      <%= form.submit t("people.form.submit"), class: "inline-flex items-center rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800" %>
+    </div>
   <% end %>
 <% end %>

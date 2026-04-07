@@ -75,6 +75,9 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Occurred"
     assert_includes @response.body, "Parsed type"
     assert_includes @response.body, I18n.l(person.entries.first.display_time, format: :long)
+    assert_select "details[data-entry-collapsible='true']", 1
+    assert_select "[data-entry-preview-grid='true']", 1
+    assert_select "[data-history-table-header='true']", 1
     assert_select "input[type='date'][name='date']", 1
     assert_select "select[name='date']", 0
     assert_not_includes @response.body, I18n.t("chat.title", name: person.name)
@@ -117,6 +120,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Bottle feeding 120 ml"
     assert_includes @response.body, "Show raw data"
     assert_includes @response.body, "Sending input to the LLM"
+    assert_select "details[data-entry-collapsible='true']", minimum: 2
   end
 
   test "overview keeps weight but moves baby-specific widgets to baby tab" do

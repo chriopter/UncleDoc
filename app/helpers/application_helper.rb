@@ -178,6 +178,24 @@ module ApplicationHelper
     I18n.l(date, format: "%A, %d.%m.%Y")
   end
 
+  def entry_preview_text(entry)
+    entry.fact_summary.presence || entry.input.presence || (entry.documents_attached? ? t("entries.documents.document_only") : nil)
+  end
+
+  def entry_preview_secondary_text(entry)
+    return entry.input if entry.fact_items.present? && entry.input.present?
+
+    entry_preview_data_labels(entry, limit: 3).join(" • ").presence
+  end
+
+  def entry_preview_data_labels(entry, limit: 2)
+    Array(entry.parseable_data).filter_map do |item|
+      next unless item.is_a?(Hash) && item["type"].present?
+
+      t("entries.data_labels.#{item['type'].to_s.downcase}", default: item["type"].to_s.humanize)
+    end.uniq.first(limit)
+  end
+
   def overview_widget_params(overrides = {})
     params.permit(:sort, :recent_range, :feeding_range, :diaper_range, :sleep_range, :weight_range, :height_range).to_h.symbolize_keys.merge(overrides).compact
   end

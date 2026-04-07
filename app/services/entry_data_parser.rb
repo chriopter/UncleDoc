@@ -53,7 +53,8 @@ class EntryDataParser
     "mins" => "min",
     "minutes" => "min",
     "minute" => "min",
-    "beats/min" => "bpm"
+    "beats/min" => "bpm",
+    "count/min" => "bpm"
   }.freeze
 
   HEALTHKIT_METRIC_PATTERNS = [
@@ -239,6 +240,7 @@ class EntryDataParser
       sanitized["unit"] = normalize_unit(sanitized["unit"]) if sanitized["unit"].present?
       sanitized["flag"] = normalize_flag(type, sanitized["flag"]) if sanitized["flag"].present?
       sanitized.transform_values! { |entry| normalize_value(entry) }
+      normalize_measurement!(sanitized)
       sanitized.reject { |_key, entry| entry.blank? && entry != false }
     end
   end
@@ -329,6 +331,20 @@ class EntryDataParser
     else
       value
     end
+  end
+
+  def self.normalize_measurement!(item)
+    return item unless item["type"] == "pulse"
+
+    case item["unit"]
+    when "count/s"
+      item["value"] = (item["value"].to_f * 60.0).round(2) if item["value"].present?
+      item["unit"] = "bpm"
+    when "count/min"
+      item["unit"] = "bpm"
+    end
+
+    item
   end
 
   def self.entry_documents(entry)
@@ -433,7 +449,9 @@ class EntryDataParser
   def self.append_unique_measurement(items, type, value, unit)
     return if items.any? { |item| item["type"] == type }
 
-    items << { "type" => type, "value" => value, "unit" => unit }
+    item = { "type" => type, "value" => value, "unit" => unit }
+    normalize_measurement!(item)
+    items << item
   end
 
   def self.append_unique_lab_result(items, name, value, unit)

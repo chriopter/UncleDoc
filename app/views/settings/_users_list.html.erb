@@ -1,48 +1,73 @@
 <%= turbo_frame_tag "people_list" do %>
   <% if people.any? %>
-    <div class="space-y-4">
+    <div class="space-y-2.5">
       <% people.each do |p| %>
-        <div class="rounded-2xl border border-slate-200 bg-white p-4">
-          <div class="mb-4 flex items-center gap-3">
-            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-800"><%= p.name.first.upcase %></div>
-            <div>
-              <p class="font-semibold text-slate-950"><%= p.name %></p>
-              <p class="text-xs text-slate-500"><%= t("settings.users.person_id", id: p.id) %></p>
-              <p class="text-xs text-slate-500"><%= formatted_birth_date(p.birth_date) %></p>
+        <details class="group overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3 transition hover:bg-slate-50">
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-sm font-black text-amber-800 ring-1 ring-amber-200/80">
+              <%= p.name.first.upcase %>
             </div>
+            <div class="flex min-w-0 flex-1 items-center gap-3">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-bold text-slate-950"><%= p.name %></p>
+                <p class="text-xs text-slate-500"><%= formatted_birth_date(p.birth_date) %></p>
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5">
+                <% if p.baby_mode? %>
+                  <span class="inline-flex items-center rounded-full border border-pink-200 bg-pink-50 px-2.5 py-0.5 text-[11px] font-semibold text-pink-800"><%= t("baby.badge") %></span>
+                <% end %>
+                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">ID: <%= p.id %></span>
+              </div>
+            </div>
+            <span class="shrink-0 text-slate-500 transition group-open:rotate-180">▾</span>
+          </summary>
+
+          <div class="border-t border-slate-200 px-4 py-4">
+            <%= form_with model: p, class: "space-y-3" do |form| %>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div class="space-y-1.5">
+                  <%= form.label :name, t("activerecord.attributes.person.name"), class: "text-sm font-semibold text-slate-700" %>
+                  <%= form.text_field :name, class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+                </div>
+                <div class="space-y-1.5">
+                  <%= form.label :birth_date, t("activerecord.attributes.person.birth_date"), class: "text-sm font-semibold text-slate-700" %>
+                  <%= form.datetime_local_field :birth_date, value: p.birth_date&.strftime("%Y-%m-%dT%H:%M"), class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+                </div>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-3 sm:items-end">
+                <div class="space-y-1.5">
+                  <%= form.label :locale, t("settings.users.language_label"), class: "text-sm font-semibold text-slate-700" %>
+                  <%= form.select :locale, [[t("settings.users.use_workspace_default"), ""], [t("settings.language.english"), "en"], [t("settings.language.german"), "de"]], {}, class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+                </div>
+                <div class="space-y-1.5">
+                  <%= form.label :date_format, t("settings.users.date_format_label"), class: "text-sm font-semibold text-slate-700" %>
+                  <%= form.select :date_format, [[t("settings.users.use_workspace_default"), ""], [t("settings.date_format.long"), "long"], [t("settings.date_format.compact"), "compact"]], {}, class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+                </div>
+                <div>
+                  <%= form.label :baby_mode, class: "inline-flex items-center gap-2 rounded-xl border border-pink-200 bg-pink-50 px-3.5 py-2.5 text-xs font-semibold text-pink-800" do %>
+                    <%= form.check_box :baby_mode, class: "h-3.5 w-3.5 rounded border-pink-300 text-pink-600 focus:ring-pink-500" %>
+                    <span><%= t("baby.badge") %></span>
+                  <% end %>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                  <%= link_to person_path(p), class: "inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600", data: { turbo_method: :delete, turbo_confirm: t("people.person.remove_confirm", name: p.name) } do %>
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12.562 3.011a17.933 17.933 0 0 1 3.167-.421m1.291-2.29 1.118-3.292A1.25 1.25 0 0 1 8.25 2.25h7.5a1.25 1.25 0 0 1 1.205.893l1.118 3.291m-9.772 3.01 12.331 0" />
+                    </svg>
+                  <% end %>
+                  <%= form.submit t("people.form.update"), class: "inline-flex items-center rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800" %>
+              </div>
+            <% end %>
           </div>
-
-          <%= form_with model: p, class: "grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end" do |form| %>
-            <div class="space-y-2">
-              <%= form.label :name, t("activerecord.attributes.person.name"), class: "text-sm font-semibold text-slate-800" %>
-              <%= form.text_field :name, class: "w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100" %>
-            </div>
-
-            <div class="space-y-2">
-              <%= form.label :birth_date, t("activerecord.attributes.person.birth_date"), class: "text-sm font-semibold text-slate-800" %>
-              <%= form.datetime_local_field :birth_date, value: p.birth_date&.strftime("%Y-%m-%dT%H:%M"), class: "w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-4 focus:ring-amber-100" %>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <%= form.label :baby_mode, class: "inline-flex items-center gap-2 rounded-xl border border-pink-200 bg-pink-50 px-3 py-3 text-sm font-medium text-pink-800" do %>
-                <%= form.check_box :baby_mode, class: "rounded border-pink-300 text-pink-600 focus:ring-pink-500" %>
-                <span><%= t("baby.badge") %></span>
-              <% end %>
-            </div>
-
-            <div class="md:col-span-3 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
-              <%= form.submit t("people.form.update"), class: "rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800" %>
-              <%= link_to person_path(p), class: "rounded-xl p-3 text-slate-400 transition hover:bg-red-50 hover:text-red-600", data: { turbo_method: :delete, turbo_confirm: t("people.person.remove_confirm", name: p.name) } do %>
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12.562 3.011a17.933 17.933 0 0 1 3.167-.421m1.291-2.29 1.118-3.292A1.25 1.25 0 0 1 8.25 2.25h7.5a1.25 1.25 0 0 1 1.205.893l1.118 3.291m-9.772 3.01 12.331 0" />
-                </svg>
-              <% end %>
-            </div>
-          <% end %>
-        </div>
+        </details>
       <% end %>
     </div>
   <% else %>
-    <div class="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-slate-500"><%= t("people.list.empty") %></div>
+    <section class="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center text-sm text-slate-500">
+      <%= t("people.list.empty") %>
+    </section>
   <% end %>
 <% end %>

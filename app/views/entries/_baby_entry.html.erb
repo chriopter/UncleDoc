@@ -1,69 +1,94 @@
-<article class="rounded-[1.5rem] border border-pink-100/80 bg-white/90 p-4 shadow-sm ring-1 ring-pink-100/40 transition hover:border-pink-200 hover:bg-pink-50/35">
-  <div class="flex gap-3">
+<% preview_text = entry_preview_text(entry) %>
+<% secondary_text = entry_preview_secondary_text(entry) %>
+
+<details class="group rounded-[1.5rem] border border-pink-100/80 bg-white/90 shadow-sm ring-1 ring-pink-100/40" data-entry-collapsible="true">
+  <summary class="flex cursor-pointer list-none items-start gap-3 p-4 transition hover:bg-pink-50/35 [&::-webkit-details-marker]:hidden">
     <div class="flex-shrink-0">
-    <% if entry.feeding? %>
-      <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-300">🤱</div>
-    <% elsif entry.sleep? %>
-      <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-300">🌙</div>
-    <% elsif entry.diaper? %>
-      <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20 text-blue-300">🧷</div>
-    <% else %>
-      <div class="flex h-10 w-10 flex-col items-center justify-center rounded-lg bg-amber-500/20 text-amber-300">
-        <span class="text-xs font-semibold uppercase"><%= l(entry.display_time, format: "%b") %></span>
-        <span class="text-base font-bold leading-none"><%= l(entry.display_time, format: "%d") %></span>
-      </div>
-    <% end %>
+      <% if entry.feeding? %>
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-500">🤱</div>
+      <% elsif entry.sleep? %>
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-500">🌙</div>
+      <% elsif entry.diaper? %>
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20 text-blue-500">🧷</div>
+      <% else %>
+        <div class="flex h-10 w-10 flex-col items-center justify-center rounded-lg bg-amber-100 text-amber-800 ring-1 ring-amber-200/80">
+          <span class="text-xs font-semibold uppercase"><%= l(entry.display_time, format: "%b") %></span>
+          <span class="text-base font-bold leading-none"><%= l(entry.display_time, format: "%d") %></span>
+        </div>
+      <% end %>
     </div>
 
     <div class="min-w-0 flex-1">
       <div class="mb-1 flex flex-wrap items-center gap-2">
-      <% if entry.feeding? %>
-        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400"><%= t("baby.types.feeding") %></span>
-        <% if entry.feeding_duration_minutes.present? %>
-          <span class="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-200"><%= t("baby.feeding.timer.duration", duration: entry.feeding_duration_minutes) %></span>
-        <% end %>
-        <% if entry.bottle_amount_ml.present? %>
-          <span class="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-200"><%= t("baby.bottle.badge", amount: entry.bottle_amount_ml) %></span>
-        <% end %>
-      <% elsif entry.sleep? %>
-        <span class="text-xs font-semibold uppercase tracking-wider text-indigo-400"><%= t("baby.types.sleep") %></span>
-        <% if entry.sleep_duration_minutes.present? %>
-          <span class="rounded-full bg-indigo-500/20 px-2 py-0.5 text-xs text-indigo-200"><%= t("baby.sleep.timer.duration", duration: entry.sleep_duration_minutes) %></span>
-        <% end %>
-      <% elsif entry.diaper? %>
-        <span class="text-xs font-semibold uppercase tracking-wider text-blue-400"><%= t("baby.types.diaper") %></span>
-        <% if entry.diaper_wet? || entry.diaper_solid? %>
-          <span class="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs text-blue-200">
-            <% values = []
-               values << t("entries.data_values.wet") if entry.diaper_wet?
-               values << t("entries.data_values.solid") if entry.diaper_solid? %>
-            <%= values.join(" + ") %>
-          </span>
-        <% end %>
-        <% if entry.diaper_rash? %>
-          <span class="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-200"><%= t("entries.data_values.rash") %></span>
-        <% end %>
-      <% end %>
-        <span class="text-xs text-slate-500">• <%= time_ago_in_words(entry.display_time) %></span>
-      </div>
-
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div class="min-w-0 flex-1">
-          <% if entry.fact_items.present? %>
-            <ul class="space-y-1 text-sm leading-snug text-slate-900">
-              <% entry.fact_items.each do |fact| %>
-                <li class="break-words">• <%= fact %></li>
-              <% end %>
-            </ul>
+        <% if entry.feeding? %>
+          <span class="text-xs font-semibold uppercase tracking-wider text-emerald-600"><%= t("baby.types.feeding") %></span>
+          <% if entry.feeding_duration_minutes.present? %>
+            <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700"><%= t("baby.feeding.timer.duration", duration: entry.feeding_duration_minutes) %></span>
           <% end %>
-          <p class="mt-2 text-xs leading-snug text-slate-500"><span class="font-semibold uppercase tracking-[0.14em] text-slate-600"><%= t("entries.raw_input.label") %></span> <%= entry.input %></p>
-          <%= render "entries/data_details", entry: entry %>
-          <%= render "entries/parse_status", entry: entry %>
-          <p class="mt-2 text-[11px] text-slate-500"><%= l(entry.display_time, format: :long) %></p>
-        </div>
+          <% if entry.bottle_amount_ml.present? %>
+            <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700"><%= t("baby.bottle.badge", amount: entry.bottle_amount_ml) %></span>
+          <% end %>
+        <% elsif entry.sleep? %>
+          <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600"><%= t("baby.types.sleep") %></span>
+          <% if entry.sleep_duration_minutes.present? %>
+            <span class="rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700"><%= t("baby.sleep.timer.duration", duration: entry.sleep_duration_minutes) %></span>
+          <% end %>
+        <% elsif entry.diaper? %>
+          <span class="text-xs font-semibold uppercase tracking-wider text-blue-600"><%= t("baby.types.diaper") %></span>
+          <% if entry.diaper_wet? || entry.diaper_solid? %>
+            <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
+              <% values = [] %>
+              <% values << t("entries.data_values.wet") if entry.diaper_wet? %>
+              <% values << t("entries.data_values.solid") if entry.diaper_solid? %>
+              <%= values.join(" + ") %>
+            </span>
+          <% end %>
+          <% if entry.diaper_rash? %>
+            <span class="rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-700"><%= t("entries.data_values.rash") %></span>
+          <% end %>
+        <% end %>
 
-        <%= render "entries/entry_actions", entry: entry %>
+        <% if entry.documents_attached? %>
+          <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700"><%= t("entries.documents.title") %></span>
+        <% end %>
       </div>
+
+      <p class="line-clamp-2 break-words text-sm font-medium leading-snug text-slate-900"><%= preview_text %></p>
+
+      <% if secondary_text.present? && secondary_text != preview_text %>
+        <p class="mt-1 line-clamp-1 text-xs leading-snug text-slate-500"><%= secondary_text %></p>
+      <% end %>
+
+      <p class="mt-2 text-[11px] text-slate-500"><%= l(entry.display_time, format: :long) %></p>
+    </div>
+
+    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition group-open:rotate-180 group-open:text-pink-700">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+      </svg>
+    </div>
+  </summary>
+
+  <div class="border-t border-pink-100 px-4 pb-4 pt-4">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div class="min-w-0 flex-1">
+        <% if entry.fact_items.present? %>
+          <ul class="space-y-1 text-sm leading-snug text-slate-900">
+            <% entry.fact_items.each do |fact| %>
+              <li class="break-words">- <%= fact %></li>
+            <% end %>
+          </ul>
+        <% end %>
+        <p class="mt-2 text-xs leading-snug text-slate-500"><span class="font-semibold uppercase tracking-[0.14em] text-slate-600"><%= t("entries.raw_input.label") %></span> <%= entry.input %></p>
+        <%= render "entries/data_details", entry: entry %>
+        <%= render "entries/parse_status", entry: entry %>
+        <div class="mt-3">
+          <%= render "entries/documents", entry: entry, compact: false %>
+        </div>
+        <p class="mt-2 text-[11px] text-slate-500"><%= l(entry.display_time, format: :long) %></p>
+      </div>
+
+      <%= render "entries/entry_actions", entry: entry %>
     </div>
   </div>
-</article>
+</details>
