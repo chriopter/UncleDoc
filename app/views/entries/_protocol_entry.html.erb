@@ -1,34 +1,52 @@
 <% display_time = entry.occurred_at || entry.created_at %>
 <% raw_text = entry.input.presence || (entry.documents_attached? ? t("entries.documents.document_only") : nil) %>
 <% fact_preview = entry.fact_summary.presence %>
-<% preview_labels = entry_preview_data_labels(entry) %>
 <% show_date = local_assigns[:show_date] %>
 <% date = local_assigns[:date] %>
 
 <details class="group" data-entry-collapsible="true">
-  <summary class="flex cursor-pointer list-none items-center gap-3 px-3 py-2 transition hover:bg-amber-50/40 [&::-webkit-details-marker]:hidden">
-    <div class="w-20 shrink-0 text-right">
+  <summary class="grid cursor-pointer list-none grid-cols-[5.5rem_minmax(0,1fr)_5.5rem_6rem_1rem] items-center gap-2 px-4 py-3.5 transition hover:bg-amber-50/40 [&::-webkit-details-marker]:hidden">
+    <div class="shrink-0 text-right">
       <% if show_date %>
         <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700"><%= log_day_label(date) %></p>
       <% end %>
     </div>
 
-    <div class="min-w-0 flex-1 flex items-center gap-2">
+    <p class="min-w-0 truncate text-sm">
       <% if fact_preview.present? %>
-        <p class="min-w-0 truncate text-sm text-slate-800"><%= fact_preview %></p>
+        <span class="text-slate-800"><%= fact_preview %></span>
       <% elsif raw_text.present? %>
-        <p class="min-w-0 truncate text-sm text-slate-400"><%= raw_text.truncate(80) %></p>
+        <span class="text-slate-400"><%= raw_text.truncate(80) %></span>
       <% else %>
-        <p class="text-sm text-slate-300">-</p>
+        <span class="text-slate-300">-</span>
       <% end %>
+    </p>
+
+    <div class="flex justify-end">
       <% if entry.source_ref.to_s.start_with?("healthkit:month:") %>
-        <span class="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600"><%= t("entries.source.healthkit_month") %></span>
+        <span class="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-rose-600">HK Monthly</span>
       <% elsif entry.source_ref.to_s.start_with?("healthkit:day:") %>
-        <span class="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600"><%= t("entries.source.healthkit_day") %></span>
+        <span class="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-rose-600">HK Daily</span>
       <% elsif entry.healthkit_generated? %>
-        <span class="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600"><%= t("entries.source.healthkit") %></span>
+        <span class="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-rose-600">HK</span>
       <% else %>
-        <span class="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700"><%= t("entries.source.manual") %></span>
+        <span class="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-amber-700">Manual</span>
+      <% end %>
+    </div>
+
+    <div class="flex justify-end">
+      <% if entry.appointment? %>
+        <span class="rounded-full bg-violet-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-violet-700"><%= t("entries.tags.appointment") %></span>
+      <% elsif entry.todo? %>
+        <span class="rounded-full bg-sky-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-sky-700"><%= t("entries.tags.todo") %></span>
+      <% elsif entry.documents_attached? %>
+        <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-emerald-700"><%= t("entries.tags.document") %></span>
+      <% elsif entry.failed_parse? %>
+        <span class="rounded-full bg-red-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-red-600"><%= t("entries.tags.parse_error") %></span>
+      <% elsif entry.pending_parse? %>
+        <span class="rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-orange-600"><%= t("entries.tags.pending") %></span>
+      <% elsif entry.skipped_parse? %>
+        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-slate-500"><%= t("entries.tags.skipped") %></span>
       <% end %>
     </div>
 
@@ -37,20 +55,15 @@
     </svg>
   </summary>
 
-  <div class="border-t border-slate-100 px-3 py-3 ml-[5.75rem]">
+  <div class="border-t border-slate-100 px-4 py-3 sm:ml-[6.5rem]">
     <div class="flex items-start justify-between gap-3">
       <p class="text-xs text-slate-400"><%= l(display_time, format: :long) %></p>
       <%= render "entries/entry_actions", entry: entry %>
     </div>
 
-    <% if entry.healthkit_generated? || entry.documents_attached? %>
-      <div class="mt-2 flex flex-wrap items-center gap-1.5">
-        <% if entry.healthkit_generated? && entry.source_ref.present? %>
-          <span class="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700"><%= entry.source_ref %></span>
-        <% end %>
-        <% if entry.documents_attached? %>
-          <span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700"><%= t("entries.documents.title") %></span>
-        <% end %>
+    <% if entry.healthkit_generated? && entry.source_ref.present? %>
+      <div class="mt-2">
+        <span class="inline-flex rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700"><%= entry.source_ref %></span>
       </div>
     <% end %>
 

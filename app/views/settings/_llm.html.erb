@@ -34,7 +34,7 @@
             <%= form.label :llm_api_key, t("settings.llm.api_key_title"), class: "text-sm font-semibold text-slate-700" %>
             <span class="text-xs text-slate-500"><%= user_preference.llm_api_key_configured? ? t("settings.llm.api_key_saved") : t("settings.llm.api_key_missing") %></span>
           </div>
-          <%= form.password_field :llm_api_key, autocomplete: "off", placeholder: t("settings.llm.api_key_placeholder"), class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-200", data: { llm_settings_target: "apiKey", action: "blur->llm-settings#lookup input->llm-settings#queueLookup" } %>
+          <%= form.password_field :llm_api_key, autocomplete: "off", placeholder: user_preference.llm_api_key_configured? ? "••••••••••••••••" : t("settings.llm.api_key_placeholder"), class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-200", data: { llm_settings_target: "apiKey", action: "blur->llm-settings#lookup input->llm-settings#queueLookup" } %>
         </div>
       </div>
 
@@ -47,7 +47,11 @@
       <p class="hidden" data-llm-settings-target="credentialsHint" data-template="<%= t("settings.llm.credentials_hint", env_key: "%{env_key}") %>"></p>
       <p class="hidden" data-llm-settings-target="endpointHint" data-template="<%= t("settings.llm.endpoint_hint", endpoint: "%{endpoint}") %>"></p>
 
-      <div class="flex items-center justify-end border-t border-slate-100 pt-3">
+      <div class="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+        <button type="button" data-action="click->llm-settings#testConnection" class="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50" data-llm-settings-target="testButton" data-test-url="<%= settings_llm_test_path %>">
+          <%= t("settings.llm.test") %>
+        </button>
+        <span class="text-xs text-slate-500" data-llm-settings-target="testResult"></span>
         <%= form.submit t("settings.llm.save"), class: "inline-flex items-center rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800" %>
       </div>
     <% end %>
@@ -87,44 +91,33 @@
 </section>
 
 <section class="rounded-[2rem] border border-slate-200 bg-white p-5 ring-1 ring-black/5">
-  <div class="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
-    <div>
-      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("settings.llm_prompt_preview.label") %></p>
-      <h3 class="mt-0.5 text-lg font-bold text-slate-950"><%= t("settings.llm.prompt_workspace_title") %></h3>
-    </div>
-
-    <%= form_with url: settings_path, method: :get, class: "flex items-end gap-2" do |form| %>
-      <%= form.hidden_field :section, value: :llm %>
-      <div class="min-w-[12rem] space-y-1">
-        <%= form.label :preview_person_id, t("settings.llm.preview_person_label"), class: "text-sm font-semibold text-slate-700" %>
-        <%= form.select :preview_person_id, @preview_people.map { |person| [person.name, person.id] }, { selected: @preview_person&.id, prompt: t("settings.llm.preview_person_placeholder") }, class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
-      </div>
-      <%= form.submit t("settings.llm.preview_person_submit"), class: "inline-flex items-center justify-center rounded-full bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-500" %>
-    <% end %>
+  <div class="mb-4 border-b border-slate-200 pb-3">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("settings.llm_prompt_preview.label") %></p>
+    <h3 class="mt-0.5 text-lg font-bold text-slate-950"><%= t("settings.llm.prompt_workspace_title") %></h3>
   </div>
 
-  <% if @preview_person.blank? %>
-    <p class="mt-4 text-xs text-slate-500"><%= t("settings.llm.prompt_preview_empty") %></p>
-  <% end %>
+  <div class="space-y-3">
+    <div class="flex items-center justify-between rounded-xl border border-slate-200 px-3.5 py-2.5">
+      <span class="text-sm font-bold text-slate-950"><%= t("settings.llm_prompt_preview.sections.parser") %></span>
+      <%= link_to t("settings.llm.view_full_prompt"), settings_prompt_preview_path(kind: "parser", person_id: @preview_person&.id || 0), target: "_blank", class: "inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100" %>
+    </div>
 
-  <% @prompt_previews.each do |key, messages| %>
-    <details class="group mt-3 rounded-xl border border-slate-200">
-      <summary class="flex cursor-pointer list-none items-center justify-between px-3.5 py-2.5 text-sm font-bold text-slate-950 hover:bg-slate-50">
-        <span><%= t("settings.llm_prompt_preview.sections.#{key}") %></span>
-        <span class="text-slate-400 transition group-open:rotate-180">▾</span>
-      </summary>
-      <div class="space-y-2 border-t border-slate-200 p-3.5">
-        <div>
-          <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500"><%= t("settings.llm_prompt_preview.system_label") %></p>
-          <pre class="rounded-xl bg-slate-950 p-3 text-xs leading-5 text-slate-100 whitespace-pre-wrap"><%= messages[:system] %></pre>
-        </div>
-        <div>
-          <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500"><%= t("settings.llm_prompt_preview.user_label") %></p>
-          <pre class="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-slate-800 whitespace-pre-wrap"><%= messages[:user] %></pre>
+    <div class="rounded-xl border border-slate-200 px-3.5 py-2.5">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="text-sm font-bold text-slate-950"><%= t("settings.llm_prompt_preview.sections.summary") %></span>
+
+        <div class="flex items-center gap-2">
+          <%= form_with url: settings_path, method: :get, class: "flex items-center gap-2" do |form| %>
+            <%= form.hidden_field :section, value: :llm %>
+            <%= form.select :preview_person_id, @preview_people.map { |person| [person.name, person.id] }, { selected: @preview_person&.id, prompt: t("settings.llm.preview_person_placeholder") }, class: "rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200", data: { action: "change->this.form.requestSubmit()" }, onchange: "this.form.requestSubmit()" %>
+          <% end %>
+          <% if @preview_person.present? %>
+            <%= link_to t("settings.llm.view_full_prompt"), settings_prompt_preview_path(kind: "summary", person_id: @preview_person.id), target: "_blank", class: "inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100" %>
+          <% end %>
         </div>
       </div>
-    </details>
-  <% end %>
+    </div>
+  </div>
 </section>
 
 <details class="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white ring-1 ring-black/5" <%= open_logs ? "open" : "" %>>
@@ -136,69 +129,36 @@
     <span class="text-slate-400 transition group-open:rotate-180">▾</span>
   </summary>
 
-  <div class="space-y-3 border-t border-slate-200 px-5 py-4">
+  <div class="border-t border-slate-200 px-5 py-4">
     <% if @llm_logs.any? %>
-      <% @llm_logs.each_with_index do |log, i| %>
-        <article class="overflow-hidden rounded-xl border border-slate-200 bg-white" data-controller="log-view">
-          <div class="flex flex-col gap-2 border-b border-slate-200 bg-slate-950 px-4 py-3 text-white md:flex-row md:items-center md:justify-between">
-            <div class="flex items-center gap-3">
-              <div>
-                <h4 class="text-base font-bold"><%= log.request_kind %></h4>
-                <p class="text-xs text-slate-300"><%= l(log.created_at, format: :long) %></p>
-              </div>
-            </div>
-            <div class="flex flex-wrap items-center gap-1.5 text-xs">
-              <span class="rounded-full border border-white/15 px-2.5 py-0.5 text-slate-300"><%= log.provider %></span>
-              <% if log.model.present? %>
-                <span class="rounded-full border border-white/15 px-2.5 py-0.5 text-slate-300"><%= log.model %></span>
-              <% end %>
-              <% if log.status_code.present? %>
-                <span class="rounded-full border border-white/15 px-2.5 py-0.5 text-slate-300">HTTP <%= log.status_code %></span>
-              <% end %>
-              <select class="rounded-full border border-white/15 bg-transparent px-2.5 py-0.5 text-xs text-slate-300 outline-none" data-log-view-target="mode" data-action="change->log-view#toggle">
-                <option value="compact" selected><%= t("settings.llm_logs.view_compact") %></option>
-                <option value="raw"><%= t("settings.llm_logs.view_raw") %></option>
-              </select>
-            </div>
-          </div>
-
-          <div class="grid gap-3 p-4 lg:grid-cols-2" data-log-view-target="compact">
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500"><%= t("settings.llm_logs.request") %></p>
-              <p class="truncate font-mono text-xs leading-5 text-slate-700"><%= log.request_payload.to_s.strip.presence || "-" %></p>
-            </div>
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500"><%= t("settings.llm_logs.response") %></p>
-              <p class="truncate font-mono text-xs leading-5 text-slate-700"><%= (log.response_body.presence || log.error_message.presence || "-").to_s.strip %></p>
-            </div>
-          </div>
-
-          <div class="hidden gap-3 p-4 lg:grid-cols-2" data-log-view-target="raw">
-            <div>
-              <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500"><%= t("settings.llm_logs.request") %></p>
-              <pre class="max-h-64 overflow-auto rounded-xl bg-slate-950 p-3 text-xs leading-5 text-slate-100 whitespace-pre-wrap"><%= log.request_payload %></pre>
-            </div>
-            <div>
-              <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500"><%= t("settings.llm_logs.response") %></p>
-              <pre class="max-h-64 overflow-auto rounded-xl bg-slate-950 p-3 text-xs leading-5 text-slate-100 whitespace-pre-wrap"><%= log.response_body.presence || log.error_message.presence || "-" %></pre>
-            </div>
-          </div>
-
-          <div class="border-t border-slate-100 px-4 py-2.5 text-xs text-slate-500">
-            <span><%= log.endpoint %></span>
-            <% if log.entry_id.present? %>
-              <span class="ml-3">entry_id=<%= log.entry_id %></span>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="border-b border-slate-200 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              <th class="pb-2 pr-3 font-semibold"><%= t("settings.llm_logs.col_time") %></th>
+              <th class="pb-2 pr-3 font-semibold"><%= t("settings.llm_logs.col_kind") %></th>
+              <th class="pb-2 pr-3 font-semibold"><%= t("settings.llm_logs.col_provider") %></th>
+              <th class="pb-2 pr-3 font-semibold"><%= t("settings.llm_logs.col_model") %></th>
+              <th class="pb-2 pr-3 font-semibold"><%= t("settings.llm_logs.col_status") %></th>
+              <th class="pb-2 font-semibold"><%= t("settings.llm_logs.response") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <% @llm_logs.each do |log| %>
+              <tr class="group">
+                <td class="whitespace-nowrap py-2 pr-3 text-slate-500"><%= l(log.created_at, format: :short) %></td>
+                <td class="whitespace-nowrap py-2 pr-3 font-semibold text-slate-900"><%= log.request_kind %></td>
+                <td class="whitespace-nowrap py-2 pr-3 text-slate-600"><%= log.provider %></td>
+                <td class="whitespace-nowrap py-2 pr-3 text-slate-600"><%= log.model.presence || "-" %></td>
+                <td class="whitespace-nowrap py-2 pr-3"><%= log.status_code.present? ? log.status_code : "-" %></td>
+                <td class="max-w-xs truncate py-2 font-mono text-slate-500"><%= (log.response_body.presence || log.error_message.presence || "-").to_s.strip.truncate(80) %></td>
+              </tr>
             <% end %>
-            <% if log.person_id.present? %>
-              <span class="ml-3">person_id=<%= log.person_id %></span>
-            <% end %>
-          </div>
-        </article>
-      <% end %>
+          </tbody>
+        </table>
+      </div>
     <% else %>
-      <section class="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center text-sm text-slate-500">
-        <%= t("settings.llm_logs.empty") %>
-      </section>
+      <p class="text-center text-sm text-slate-500"><%= t("settings.llm_logs.empty") %></p>
     <% end %>
   </div>
 </details>

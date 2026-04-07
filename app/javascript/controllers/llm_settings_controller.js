@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["provider", "apiKey", "model", "status", "credentialsHint", "endpointHint"]
+  static targets = ["provider", "apiKey", "model", "status", "credentialsHint", "endpointHint", "testButton", "testResult"]
   static values = { path: String, initialModel: String }
 
   connect() {
@@ -75,5 +75,42 @@ export default class extends Controller {
 
   updateStatus(message) {
     this.statusTarget.textContent = message || ""
+  }
+
+  async testConnection() {
+    const btn = this.testButtonTarget
+    const result = this.testResultTarget
+    const url = btn.dataset.testUrl
+
+    btn.disabled = true
+    btn.classList.add("opacity-50")
+    result.textContent = "…"
+    result.className = "text-xs text-slate-500"
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+        }
+      })
+      const data = await response.json()
+
+      if (data.error) {
+        result.textContent = data.error
+        result.className = "text-xs text-red-600"
+      } else {
+        result.textContent = data.reply
+        result.className = "text-xs text-emerald-600"
+      }
+    } catch (e) {
+      result.textContent = "Request failed"
+      result.className = "text-xs text-red-600"
+    }
+
+    btn.disabled = false
+    btn.classList.remove("opacity-50")
   }
 }

@@ -356,57 +356,30 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes @response.body, "HealthKit for Healthkitty"
-    assert_includes @response.body, "Summary entries"
-    assert_includes @response.body, "Raw data"
     assert_includes @response.body, "iphone-main"
-    assert_includes @response.body, "healthkit:day:2026-04-05"
-    assert_includes @response.body, "Apple Health daily summary"
-    assert_includes @response.body, "Step count 4123 count."
     assert_includes @response.body, "Reset imported data"
   end
 
-  test "healthkit page paginates summary entries" do
+  test "healthkit page shows stats and links to log" do
     person = Person.create!(name: "PagedKit", birth_date: Date.new(2024, 1, 1))
 
-    25.times do |index|
+    3.times do |index|
       person.entries.create!(
         source: Entry::SOURCES[:healthkit],
         source_ref: "healthkit:day:2026-03-#{format('%02d', index + 1)}",
         occurred_at: Time.zone.local(2026, 3, index + 1, 23, 59),
-        input: "Apple Health daily summary for March #{index + 1}, 2026.\n- Step count #{index + 1} count.",
+        input: "Apple Health daily summary for March #{index + 1}, 2026.",
         facts: [],
         parseable_data: [],
         parse_status: "parsed"
       )
     end
 
-    get person_healthkit_url(person_slug: person.name, page: 2)
+    get person_healthkit_url(person_slug: person.name)
 
     assert_response :success
-    assert_includes @response.body, "Page 2 of 2"
-    assert_includes @response.body, "healthkit:day:2026-03-05"
-    assert_not_includes @response.body, "healthkit:day:2026-03-25"
-  end
-
-  test "healthkit page can switch to raw data view" do
-    person = Person.create!(name: "RawKit", birth_date: Date.new(2024, 1, 1))
-    person.healthkit_records.create!(
-      device_id: "watch-1",
-      external_id: "sleep-1",
-      record_type: "HKCategoryTypeIdentifierSleepAnalysis",
-      source_name: "Health",
-      start_at: Time.zone.local(2026, 4, 5, 0, 0),
-      end_at: Time.zone.local(2026, 4, 5, 7, 30),
-      payload: { "value" => "0" }
-    )
-
-    get person_healthkit_url(person_slug: person.name, view: "raw")
-
-    assert_response :success
-    assert_includes @response.body, "Raw HealthKit data"
-    assert_includes @response.body, "HKCategoryTypeIdentifierSleepAnalysis"
-    assert_includes @response.body, "watch-1"
-    assert_includes @response.body, "&quot;value&quot;"
+    assert_includes @response.body, "3"
+    assert_select "a[href*='source=healthkit']"
   end
 
   test "log can filter by date and parsed type" do

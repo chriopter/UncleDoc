@@ -19,6 +19,10 @@ class DashboardController < ApplicationController
 
   def research
     @person = Person.find_by!(name: params[:person_slug])
+    entries = @person.entries.order(occurred_at: :asc)
+    system = LogSummaryGenerator.system_prompt
+    patientenakte = build_patientenakte(@person, entries)
+    @chat_system_prompt = "#{system}\n\n# Patientenakte: #{@person.name}\n\n#{patientenakte}"
   end
 
   def calendar
@@ -38,26 +42,15 @@ class DashboardController < ApplicationController
 
   def healthkit
     @person = Person.find_by!(name: params[:person_slug])
-    @healthkit_view = params[:view].in?(%w[summaries raw]) ? params[:view] : "summaries"
-    @healthkit_page = [ params[:page].to_i, 1 ].max
-    @healthkit_per_page = 20
     @healthkit_syncs = @person.healthkit_syncs.order(updated_at: :desc)
     @healthkit_record_count = @person.healthkit_records.count
     @healthkit_record_type_count = @person.healthkit_records.distinct.count(:record_type)
-    @healthkit_summary_scope = @person.entries.healthkit_generated.order(occurred_at: :desc, created_at: :desc)
-    @healthkit_summary_count = @healthkit_summary_scope.count
-    @healthkit_daily_summary_count = @healthkit_summary_scope.where("source_ref LIKE ?", "healthkit:day:%").count
-    @healthkit_monthly_summary_count = @healthkit_summary_scope.where("source_ref LIKE ?", "healthkit:month:%").count
+    healthkit_summary_scope = @person.entries.healthkit_generated
+    @healthkit_summary_count = healthkit_summary_scope.count
+    @healthkit_daily_summary_count = healthkit_summary_scope.where("source_ref LIKE ?", "healthkit:day:%").count
+    @healthkit_monthly_summary_count = healthkit_summary_scope.where("source_ref LIKE ?", "healthkit:month:%").count
     @healthkit_latest_sync = @healthkit_syncs.max_by { |sync| sync.last_synced_at || sync.updated_at || Time.zone.at(0) }
     @healthkit_last_successful_sync_at = @healthkit_syncs.filter_map(&:last_successful_sync_at).max
-
-    active_scope = @healthkit_view == "raw" ? @person.healthkit_records.import_recent_first : @healthkit_summary_scope
-    @healthkit_total_pages = [ (active_scope.count.to_f / @healthkit_per_page).ceil, 1 ].max
-    @healthkit_page = [ @healthkit_page, @healthkit_total_pages ].min
-    offset = (@healthkit_page - 1) * @healthkit_per_page
-
-    @healthkit_records = @person.healthkit_records.import_recent_first.limit(@healthkit_per_page).offset(offset) if @healthkit_view == "raw"
-    @healthkit_summary_entries = @healthkit_summary_scope.limit(@healthkit_per_page).offset(offset) if @healthkit_view == "summaries"
   end
 
   def chat

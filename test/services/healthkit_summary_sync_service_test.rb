@@ -28,7 +28,7 @@ class HealthkitSummarySyncServiceTest < ActiveSupport::TestCase
     )
 
     result = nil
-    assert_difference("Entry.where(source: 'healthkit').count", 0) do
+    assert_difference("person.entries.where(source: 'healthkit').count", 0) do
       result = HealthkitSummarySyncService.call(person:, today: Date.new(2026, 4, 6))
     end
 

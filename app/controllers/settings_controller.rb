@@ -37,6 +37,26 @@ class SettingsController < ApplicationController
     redirect_to settings_path(section: "db_table", table: table_name, page: params[:page]), alert: t("db.table.delete_failed", message: error.message)
   end
 
+  def llm_test
+    preference = user_preference
+    error = EntryDataParser.configuration_error_for(preference)
+    if error
+      render json: { error: I18n.t("log_summary.states.#{error}") } and return
+    end
+
+    result = LlmChatRequest.call(
+      request_kind: "test",
+      preference: preference,
+      messages: [
+        { role: "user", content: "Say hi in one sentence." }
+      ]
+    )
+
+    render json: { reply: result.content }
+  rescue StandardError => e
+    render json: { error: e.message.truncate(120) }
+  end
+
   def prompt_preview
     person = Person.find(params[:person_id])
     kind = params[:kind]

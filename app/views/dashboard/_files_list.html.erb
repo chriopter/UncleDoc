@@ -1,29 +1,29 @@
 <%= turbo_frame_tag "files_list" do %>
   <% if document_entries.any? %>
-    <div class="space-y-4">
+    <div class="space-y-2">
       <% document_entries.each do |entry| %>
-        <article class="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div class="space-y-3">
-              <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300"><%= l(entry.display_time, format: :long) %></p>
-                <p class="mt-2 text-base font-semibold text-white"><%= entry.fact_summary.presence || entry.input.presence || t("files.list.document_only") %></p>
-              </div>
+        <details class="group overflow-hidden rounded-xl border border-slate-200">
+          <summary class="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto_1rem] items-center gap-4 px-4 py-3 transition hover:bg-amber-50/40 [&::-webkit-details-marker]:hidden">
+            <p class="min-w-0 truncate text-sm text-slate-800"><%= entry.fact_summary.presence || entry.input.presence || t("files.list.document_only") %></p>
+            <span class="shrink-0 text-xs text-slate-400"><%= l(entry.display_time, format: :long) %></span>
+            <svg class="h-3.5 w-3.5 shrink-0 text-slate-300 transition group-open:rotate-180 group-open:text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+            </svg>
+          </summary>
 
-              <% if entry.input.present? %>
-                <p class="max-w-3xl text-sm leading-6 text-slate-300"><%= truncate(entry.input, length: 240) %></p>
-              <% end %>
-            </div>
-
+          <div class="border-t border-slate-100 px-4 py-3">
+            <% if entry.input.present? %>
+              <p class="mb-3 text-sm leading-relaxed text-slate-600 whitespace-pre-wrap break-words"><%= entry.input %></p>
+            <% end %>
             <%= render "entries/documents", entry: entry, compact: false %>
           </div>
-        </article>
+        </details>
       <% end %>
     </div>
   <% else %>
-    <div class="rounded-3xl border border-dashed border-white/20 bg-white/[0.04] px-6 py-16 text-center text-slate-300">
-      <p class="text-lg font-medium"><%= t("files.empty") %></p>
-      <p class="mt-2 text-sm text-slate-400"><%= t("files.empty_subtitle") %></p>
+    <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center text-sm text-slate-500">
+      <p class="font-medium text-slate-700"><%= t("files.empty") %></p>
+      <p class="mt-1 text-slate-500"><%= t("files.empty_subtitle") %></p>
     </div>
   <% end %>
 <% end %>
