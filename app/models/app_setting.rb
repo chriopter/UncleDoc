@@ -42,7 +42,11 @@ class AppSetting < ApplicationRecord
     setting.llm_api_key = llm_api_key if llm_api_key.present?
     setting.llm_model = llm_model.presence if llm_model.present?
     setting.llm_model = nil if llm_provider.present? && previous_provider != llm_provider && llm_model.blank?
-    setting.save! if setting.changed?
+    begin
+      setting.save! if setting.changed?
+    rescue ActiveRecord::Encryption::Errors::Decryption
+      setting.save!(validate: false)
+    end
     setting
   end
 
