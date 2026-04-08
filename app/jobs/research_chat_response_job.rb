@@ -34,11 +34,13 @@ class ResearchChatResponseJob < ApplicationJob
       llm_chat = chat.to_llm
       llm_chat.on_new_message { nil }
       llm_chat.on_end_message { |_message| nil }
+      streamed_content = +""
 
       response = llm_chat.complete do |chunk|
         next if chunk.content.blank?
 
-        assistant_message.broadcast_append_chunk(chunk.content) if assistant_message.present?
+        streamed_content << chunk.content.to_s
+        assistant_message.broadcast_streaming_content(streamed_content) if assistant_message.present?
       end
 
       assistant_message.update!(
