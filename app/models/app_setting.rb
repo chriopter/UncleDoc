@@ -56,6 +56,8 @@ class AppSetting < ApplicationRecord
 
   def llm_runtime_api_key
     llm_api_key.presence || ENV[llm_env_key]
+  rescue ActiveRecord::Encryption::Errors::Decryption
+    ENV[llm_env_key]
   end
 
   def llm_env_key
