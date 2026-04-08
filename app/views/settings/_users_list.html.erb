@@ -2,6 +2,7 @@
   <% if people.any? %>
     <div class="space-y-2.5">
       <% people.each do |p| %>
+        <% p.build_user if p.user.nil? %>
         <details class="group overflow-hidden rounded-xl border border-slate-200 bg-white">
           <summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3 transition hover:bg-slate-50">
             <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-sm font-black text-amber-800 ring-1 ring-amber-200/80">
@@ -10,12 +11,16 @@
             <div class="flex min-w-0 flex-1 items-center gap-3">
               <div class="min-w-0">
                 <p class="truncate text-sm font-bold text-slate-950"><%= p.name %></p>
-                <p class="text-xs text-slate-500"><%= formatted_birth_date(p.birth_date) %></p>
+                <p class="text-xs text-slate-500"><%= p.user.email_address %></p>
               </div>
               <div class="flex flex-wrap items-center gap-1.5">
                 <% if p.baby_mode? %>
                   <span class="inline-flex items-center rounded-full border border-pink-200 bg-pink-50 px-2.5 py-0.5 text-[11px] font-semibold text-pink-800"><%= t("baby.badge") %></span>
                 <% end %>
+                <% if p.user.admin? %>
+                  <span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800"><%= t("settings.users.admin_badge") %></span>
+                <% end %>
+                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-semibold <%= p.user.password_login_enabled? ? 'text-emerald-700' : 'text-slate-500' %>"><%= t(p.user.password_login_enabled? ? "settings.users.password_set" : "settings.users.password_missing") %></span>
                 <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500"><%= t("settings.users.person_id", id: p.id) %></span>
               </div>
             </div>
@@ -51,6 +56,31 @@
                   <% end %>
                 </div>
               </div>
+
+              <%= form.fields_for :user do |user_form| %>
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <div class="space-y-1.5 sm:col-span-2">
+                    <%= user_form.hidden_field :id %>
+                    <%= user_form.label :email_address, t("settings.users.email_label"), class: "text-sm font-semibold text-slate-700" %>
+                    <%= user_form.email_field :email_address, autocomplete: "username", class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+                  </div>
+                  <div class="space-y-1.5">
+                    <%= user_form.label :password, t("settings.users.password_reset_label"), class: "text-sm font-semibold text-slate-700" %>
+                    <%= user_form.password_field :password, autocomplete: "new-password", maxlength: 72, placeholder: t("settings.users.password_reset_placeholder"), class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+                  </div>
+                  <div class="space-y-1.5">
+                    <%= user_form.label :password_confirmation, t("settings.users.password_confirmation_label"), class: "text-sm font-semibold text-slate-700" %>
+                    <%= user_form.password_field :password_confirmation, autocomplete: "new-password", maxlength: 72, class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+                  </div>
+                </div>
+
+                <div>
+                  <%= user_form.label :admin, class: "inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold text-slate-700" do %>
+                    <%= user_form.check_box :admin, class: "h-3.5 w-3.5 rounded border-slate-300 text-amber-600 focus:ring-amber-500" %>
+                    <span><%= t("settings.users.admin_label") %></span>
+                  <% end %>
+                </div>
+              <% end %>
 
               <div class="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
                   <%= link_to person_path(p), class: "inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600", data: { turbo_method: :delete, turbo_confirm: t("people.person.remove_confirm", name: p.name) } do %>

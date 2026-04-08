@@ -2,11 +2,10 @@ require "test_helper"
 
 class SettingsControllerTest < ActionDispatch::IntegrationTest
   test "shows users settings by default" do
-    Person.delete_all  # Clear fixtures for this test
     get settings_url
 
     assert_response :success
-    assert_select "h2", "All family members"
+    assert_select "h2", "People and access"
     assert_includes @response.body, "Users"
     assert_includes @response.body, "DB View"
     assert_not_includes @response.body, "/settings/healthkit"
@@ -16,7 +15,7 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     get settings_url(section: "healthkit")
 
     assert_response :success
-    assert_select "h2", "All family members"
+    assert_select "h2", "People and access"
     assert_not_includes @response.body, "HealthKit Sync"
   end
 
@@ -24,8 +23,8 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     get settings_url(section: "users")
 
     assert_response :success
-    assert_select "h2", "All family members"
-    assert_select "p", text: "New User"
+    assert_select "h2", "People and access"
+    assert_select "h3", text: "Add person and login"
   end
 
   test "shows first family member name in header when people exist" do

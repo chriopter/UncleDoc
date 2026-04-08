@@ -35,11 +35,10 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows the log tab by default" do
-    Person.delete_all
     get root_url
 
     assert_response :success
-    assert_select "button", text: /Family/
+    assert_includes @response.body, "MyString"
     assert_select "a[aria-label='Settings']", minimum: 1
   end
 

@@ -1,5 +1,4 @@
 class HealthkitController < ApplicationController
-  skip_forgery_protection only: [ :sync, :reset ]
   before_action :set_healthkit_person, only: [ :status, :sync, :reset ]
 
   def people

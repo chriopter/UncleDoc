@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_08_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_08_120003) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -128,11 +128,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_120000) do
     t.index ["uuid"], name: "index_people_on_uuid", unique: true
   end
 
+  create_table "sessions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "ip_address"
+    t.datetime "last_active_at", null: false
+    t.string "token", null: false
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.integer "user_id", null: false
+    t.index ["token"], name: "index_sessions_on_token", unique: true
+    t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
   create_table "user_preferences", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "date_format"
     t.string "locale"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.boolean "admin", default: false, null: false
+    t.datetime "created_at", null: false
+    t.string "email_address", null: false
+    t.datetime "last_signed_in_at"
+    t.string "password_digest"
+    t.datetime "password_set_at"
+    t.integer "person_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email_address"], name: "index_users_on_email_address", unique: true
+    t.index ["person_id"], name: "index_users_on_person_id", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -142,4 +167,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_120000) do
   add_foreign_key "healthkit_syncs", "people"
   add_foreign_key "llm_logs", "entries", on_delete: :cascade
   add_foreign_key "llm_logs", "people", on_delete: :cascade
+  add_foreign_key "sessions", "users"
+  add_foreign_key "users", "people"
 end

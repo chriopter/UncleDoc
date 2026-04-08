@@ -3,6 +3,10 @@ class Person < ApplicationRecord
   has_many :healthkit_records, dependent: :destroy
   has_many :healthkit_syncs, dependent: :destroy
   has_many :llm_logs, dependent: :destroy
+  has_one :person_state, dependent: :destroy, autosave: true
+  has_one :user, dependent: :destroy
+
+  accepts_nested_attributes_for :user, update_only: true
 
   validates :name, presence: true
   validates :locale, inclusion: { in: %w[en de] }, allow_nil: true
@@ -76,6 +80,34 @@ class Person < ApplicationRecord
   end
 
   private
+
+  def baby_feeding_timer_side
+    person_state_record.baby_feeding_timer_side
+  end
+
+  def baby_feeding_timer_side=(value)
+    person_state_record.baby_feeding_timer_side = value
+  end
+
+  def baby_feeding_timer_started_at
+    person_state_record.baby_feeding_timer_started_at
+  end
+
+  def baby_feeding_timer_started_at=(value)
+    person_state_record.baby_feeding_timer_started_at = value
+  end
+
+  def baby_sleep_timer_started_at
+    person_state_record.baby_sleep_timer_started_at
+  end
+
+  def baby_sleep_timer_started_at=(value)
+    person_state_record.baby_sleep_timer_started_at = value
+  end
+
+  def person_state_record
+    person_state || build_person_state
+  end
 
   def ensure_uuid
     self.uuid ||= SecureRandom.uuid

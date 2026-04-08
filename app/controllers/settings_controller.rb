@@ -1,11 +1,16 @@
 class SettingsController < ApplicationController
+  require_admin_access
+
   def show
     save_preferences if params[:locale].present? || params[:llm_provider].present?
 
     @section = params[:section].in?(%w[llm llm_prompt llm_prompt_preview llm_logs db db_table users]) ? params[:section] : "users"
     @database_table = database_table_detail(params[:table], page: params[:page]) if @section == "db_table" && params[:table].present?
-    @people = Person.recent_first if @section == "users"
-    @person = Person.new if @section == "users"
+    if @section == "users"
+      @people = Person.recent_first
+      @person = Person.new
+      @person.build_user(admin: false)
+    end
 
     return unless llm_section?
 
