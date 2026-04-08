@@ -286,9 +286,16 @@ class EntryDataParser
   def self.sanitize_document(value)
     return {} unless value.is_a?(Hash)
 
-    value.deep_stringify_keys.slice("type", "title").transform_values do |item|
+    document = value.deep_stringify_keys.slice("type", "title", "total_amount", "currency").transform_values do |item|
       item.to_s.strip.presence
     end.compact
+
+    if document["total_amount"].present?
+      normalized_amount = normalize_value(document["total_amount"])
+      document["total_amount"] = normalized_amount if normalized_amount.is_a?(Numeric)
+    end
+
+    document
   end
 
   def self.normalize_metric(metric)

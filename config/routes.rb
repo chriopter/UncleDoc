@@ -38,6 +38,8 @@ Rails.application.routes.draw do
     get "log", to: "dashboard#log", as: :person_log
     get "research", to: "dashboard#research", as: :person_research
     get "files", to: "dashboard#files", as: :person_files
+    get "files/:entry_id", to: "dashboard#file", as: :person_file
+    get "files/:entry_id/content", to: "dashboard#file_content", as: :person_file_content
     get "healthkit", to: "dashboard#healthkit", as: :person_healthkit
     post "healthkit/sync_summaries", to: "dashboard#queue_healthkit_summary_sync", as: :person_healthkit_sync_summaries
     post "healthkit/reparse", to: "dashboard#queue_healthkit_reparse", as: :person_healthkit_reparse

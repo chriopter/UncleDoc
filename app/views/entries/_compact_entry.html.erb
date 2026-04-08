@@ -23,6 +23,9 @@
           <span class="inline-flex shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-amber-700"><%= t("entries.source.manual") %></span>
         <% end %>
       </div>
+      <% if entry.invoice_total_label.present? %>
+        <p class="mt-1 text-[11px] font-semibold text-emerald-700"><%= t("entries.document_metadata.invoice_total") %>: <%= entry.invoice_total_label %></p>
+      <% end %>
       <% if entry.fact_items.present? %>
         <p class="mt-1 line-clamp-1 break-words text-[11px] text-slate-500 [overflow-wrap:anywhere]"><%= entry.input %></p>
       <% end %>
@@ -55,6 +58,9 @@
           <section>
             <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"><%= t("entries.document_metadata.title") %></p>
             <p class="text-sm leading-relaxed text-slate-700"><%= [entry.document_title, entry.document_type].compact.join(" • ") %></p>
+            <% if entry.invoice_total_label.present? %>
+              <p class="mt-1 text-sm font-semibold text-emerald-700"><%= t("entries.document_metadata.invoice_total") %>: <%= entry.invoice_total_label %></p>
+            <% end %>
           </section>
         <% end %>
 
