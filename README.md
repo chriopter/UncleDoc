@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/overview-demo-nora.png" alt="UncleDoc overview" width="80%" />
+  <img src="docs/screenshots/overview-demo-nora.png" alt="UncleDoc overview" />
 </p>
 
 > UncleDoc is a self-hosted record-keeping tool, not a medical device. It does not provide medical advice, diagnosis, or treatment, and should support your documentation rather than replace professional care. 
