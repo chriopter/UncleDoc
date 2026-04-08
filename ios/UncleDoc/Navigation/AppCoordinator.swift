@@ -3,36 +3,7 @@ import Foundation
 @preconcurrency import HotwireNative
 import SafariServices
 import UIKit
-import WebKit
-
-extension Notification.Name {
-    static let uncleDocWebViewDidStartLoading = Notification.Name("uncledoc.webview.didStartLoading")
-    static let uncleDocWebViewDidFinishLoading = Notification.Name("uncledoc.webview.didFinishLoading")
-}
-
-final class LaunchAwareWebView: WKWebView {
-    private var loadingObservation: NSKeyValueObservation?
-
-    override init(frame: CGRect, configuration: WKWebViewConfiguration) {
-        super.init(frame: frame, configuration: configuration)
-        observeLoadingState()
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    private func observeLoadingState() {
-        loadingObservation = observe(\.isLoading, options: [.new]) { _, change in
-            guard let isLoading = change.newValue else {
-                return
-            }
-
-            NotificationCenter.default.post(name: isLoading ? .uncleDocWebViewDidStartLoading : .uncleDocWebViewDidFinishLoading, object: nil)
-        }
-    }
-}
+@preconcurrency import WebKit
 
 @MainActor
 final class AppCoordinator: NSObject, ObservableObject {
@@ -84,6 +55,10 @@ final class AppCoordinator: NSObject, ObservableObject {
             NativeAppTokenStore.clear(for: serverURL)
             HealthKitSyncService.shared.handleRemoteAuthenticationChanged(isAuthenticated: false)
         }
+    }
+
+    func handleInitialHTMLReady() {
+        shellViewController?.markInitialHTMLReady()
     }
 
     func makeShellViewController() -> UIViewController {
@@ -153,7 +128,7 @@ final class AppCoordinator: NSObject, ObservableObject {
         Hotwire.config.backButtonDisplayMode = .minimal
         Hotwire.config.makeCustomWebView = { configuration in
             NativeMenuScriptBridge.shared.attach(to: configuration.userContentController)
-            let webView = LaunchAwareWebView(frame: .zero, configuration: configuration)
+            let webView = WKWebView(frame: .zero, configuration: configuration)
             webView.allowsBackForwardNavigationGestures = true
             webView.isOpaque = false
             webView.backgroundColor = UIColor(red: 0.98, green: 0.97, blue: 0.94, alpha: 1)
@@ -274,7 +249,6 @@ enum TrustedCertificateStore {
     }
 }
 
-@MainActor
 final class NativeMenuScriptBridge: NSObject, WKScriptMessageHandler {
     static let shared = NativeMenuScriptBridge()
     static let handlerName = "uncleDocNativeMenu"
@@ -291,19 +265,29 @@ final class NativeMenuScriptBridge: NSObject, WKScriptMessageHandler {
         )
     }
 
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+    nonisolated func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.name == Self.handlerName,
               let body = message.body as? [String: Any],
               let action = body["action"] as? String else {
             return
         }
 
-        if action == "native_auth_state" {
-            AppCoordinator.shared.updateNativeAuthentication(token: body["token"] as? String, email: body["email"] as? String)
-            return
-        }
+        let token = body["token"] as? String
+        let email = body["email"] as? String
 
-        AppCoordinator.shared.handleNativeMenuAction(named: action)
+        Task { @MainActor in
+            if action == "native_page_ready" {
+                AppCoordinator.shared.handleInitialHTMLReady()
+                return
+            }
+
+            if action == "native_auth_state" {
+                AppCoordinator.shared.updateNativeAuthentication(token: token, email: email)
+                return
+            }
+
+            AppCoordinator.shared.handleNativeMenuAction(named: action)
+        }
     }
 
     private static let scriptSource = #"""
@@ -396,6 +380,7 @@ final class NativeMenuScriptBridge: NSObject, WKScriptMessageHandler {
         window.webkit?.messageHandlers?.[handlerName]?.postMessage({ action: "native_auth_state", token, email });
       };
 
+      window.webkit?.messageHandlers?.[handlerName]?.postMessage({ action: "native_page_ready" });
       boot();
       publishAuthState();
       document.addEventListener("turbo:load", () => {
@@ -530,7 +515,6 @@ private final class UncleDocShellViewController: UIViewController {
     private var isSidebarPresented = false
     private var currentURL: URL?
     private var launchState: LaunchState = .connecting
-    private var webViewLoadObservers: [NSObjectProtocol] = []
     private var hasStartedInitialPageLoad = false
 
     init(baseURL: URL, coordinator: AppCoordinator) {
@@ -554,7 +538,6 @@ private final class UncleDocShellViewController: UIViewController {
         setupSidebar()
         setupContentContainer()
         setupLaunchOverlay()
-        observeWebViewLoading()
         setupGestures()
         refreshChrome()
 
@@ -680,6 +663,11 @@ private final class UncleDocShellViewController: UIViewController {
 
         updateNavigationButtons()
         view.layoutIfNeeded()
+    }
+
+    func markInitialHTMLReady() {
+        hasStartedInitialPageLoad = true
+        updateLaunchOverlay(for: .connected)
     }
 
     private var isCompactLayout: Bool {
@@ -826,31 +814,6 @@ private final class UncleDocShellViewController: UIViewController {
         let edgePan = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleEdgePan(_:)))
         edgePan.edges = .left
         view.addGestureRecognizer(edgePan)
-    }
-
-    private func observeWebViewLoading() {
-        let center = NotificationCenter.default
-        webViewLoadObservers = [
-            center.addObserver(forName: .uncleDocWebViewDidStartLoading, object: nil, queue: .main) { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    guard let self else {
-                        return
-                    }
-
-                    self.hasStartedInitialPageLoad = true
-                    self.updateLaunchOverlay(for: .connecting)
-                }
-            },
-            center.addObserver(forName: .uncleDocWebViewDidFinishLoading, object: nil, queue: .main) { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    guard let self, self.hasStartedInitialPageLoad else {
-                        return
-                    }
-
-                    self.updateLaunchOverlay(for: .connected)
-                }
-            }
-        ]
     }
 
     private func updateNavigationButtons() {
@@ -1590,7 +1553,13 @@ extension UncleDocShellViewController: NavigatorDelegate {
 
     nonisolated func requestDidFinish(at url: URL) {
         Task { @MainActor [weak self] in
-            self?.coordinator.handleFinishedRequest(at: url)
+            guard let self else {
+                return
+            }
+
+            self.hasStartedInitialPageLoad = true
+            self.updateLaunchOverlay(for: .connected)
+            self.coordinator.handleFinishedRequest(at: url)
         }
     }
 
@@ -1658,10 +1627,12 @@ private final class SidebarViewController: UIViewController {
         footerStackView.translatesAutoresizingMaskIntoConstraints = false
 
         titleLabel.font = .systemFont(ofSize: 30, weight: .black)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.textColor = .white
         titleLabel.numberOfLines = 2
 
         subtitleLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
         subtitleLabel.textColor = UIColor.white.withAlphaComponent(0.72)
         subtitleLabel.numberOfLines = 0
 
