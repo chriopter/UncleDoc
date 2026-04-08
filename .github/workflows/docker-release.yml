@@ -33,7 +33,6 @@ jobs:
           images: ghcr.io/${{ github.repository_owner }}/uncledoc
           tags: |
             type=raw,value=latest
-            type=raw,value=stable
             type=raw,value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' }}
             type=semver,pattern={{version}},value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' }}
             type=semver,pattern={{major}}.{{minor}},value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' }}
