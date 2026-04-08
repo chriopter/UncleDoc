@@ -349,19 +349,20 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Document details"
     assert_includes @response.body, "Doctor invoice from March 2026"
     assert_includes @response.body, "Open"
-    assert_includes @response.body, "Re-parse"
+    assert_includes @response.body, I18n.t("entries.reparse.trigger")
   end
 
   test "files tab highlights failed documents and shows inline retry" do
     person = Person.create!(name: "Files Retry", birth_date: Date.new(2024, 1, 1))
-    entry = person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 8, 0), input: "", extracted_data: { "facts" => [], "document" => {}, "llm" => {} }, parse_status: "failed")
+    entry = person.entries.build(occurred_at: Time.zone.local(2026, 3, 29, 8, 0), input: "", extracted_data: { "facts" => [], "document" => {}, "llm" => {} }, parse_status: "failed")
     entry.documents.attach(io: StringIO.new(fake_pdf_content("Failed invoice")), filename: "failed-invoice.pdf", content_type: "application/pdf")
+    entry.save!
 
     get person_files_url(person_slug: person.name)
 
     assert_response :success
     assert_includes @response.body, "failed-invoice.pdf"
-    assert_includes @response.body, "Re-parse"
+    assert_includes @response.body, I18n.t("entries.reparse.trigger")
     assert_includes @response.body, I18n.t("entries.tags.parse_error")
   end
 
