@@ -42,6 +42,6 @@ Rails.application.routes.draw do
     post "healthkit/reparse", to: "dashboard#queue_healthkit_reparse", as: :person_healthkit_reparse
     get "healthkit/records", to: "dashboard#healthkit_records_page", as: :person_healthkit_records
     post "log_summary", to: "dashboard#summarize_log", as: :person_log_summary
-    post "chat", to: "dashboard#chat", as: :person_chat
+    post "chat", to: "research_messages#create", as: :person_chat
   end
 end

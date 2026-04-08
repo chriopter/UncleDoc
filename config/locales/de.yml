@@ -195,6 +195,10 @@ de:
     welcome: "Hallo! Ich habe die vollständige Patientenakte für %{name}. Frag mich alles — Zusammenfassungen, Muster, Medikamentenhistorie, anstehende Termine oder alles andere aus dem Protokoll."
     placeholder: "Frage zur Patientenakte stellen…"
     system_prompt_label: "System-Prompt & Patientenakte"
+    context_refreshed: "Patientenakte aktualisiert. Weitere Antworten verwenden die neuesten Daten."
+    empty_record: "Für %{name} sind noch keine Gesundheitseinträge gespeichert."
+    unknown_date: "unbekanntes Datum"
+    request_failed: "Die Chat-Anfrage ist fehlgeschlagen. Prüfen Sie die LLM-Einstellungen und versuchen Sie es erneut."
 
   log_summary:
     label: "KI"
@@ -617,6 +621,7 @@ de:
     groups:
       data: "Benutzerdaten"
       health_data: "Gesundheitsdaten"
+      ruby_llm: "RubyLLM"
       attachments: "Anhange"
       logs: "Protokolle"
       rails: "Rails"

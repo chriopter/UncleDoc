@@ -195,6 +195,10 @@ en:
     welcome: "Hello! I have the complete health record for %{name}. Ask me anything — summaries, patterns, medication history, upcoming appointments, or anything else from the log."
     placeholder: "Ask a question about the health record…"
     system_prompt_label: "System prompt & Patientenakte"
+    context_refreshed: "Health record updated. Future replies use the latest data."
+    empty_record: "No health entries are saved yet for %{name}."
+    unknown_date: "unknown date"
+    request_failed: "The chat request failed. Check your LLM settings and try again."
 
   log_summary:
     label: "AI"
@@ -617,6 +621,7 @@ en:
     groups:
       data: "User data"
       health_data: "Health data"
+      ruby_llm: "RubyLLM"
       attachments: "Attachments"
       logs: "Logs"
       rails: "Rails"
