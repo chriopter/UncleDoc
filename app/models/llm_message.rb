@@ -23,14 +23,18 @@ class LlmMessage < ApplicationRecord
   private
 
   def broadcast_created_message
-    broadcast_append_later_to stream_name,
+    return if Rails.env.development?
+
+    broadcast_append_to stream_name,
       target: "chat_messages",
       partial: to_partial_path,
       locals: { message: self }
   end
 
   def broadcast_updated_message
-    broadcast_replace_later_to stream_name,
+    return if Rails.env.development?
+
+    broadcast_replace_to stream_name,
       target: dom_id,
       partial: to_partial_path,
       locals: { message: self }
