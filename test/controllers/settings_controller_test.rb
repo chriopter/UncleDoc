@@ -128,6 +128,28 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Edit"
   end
 
+  test "llm models endpoint returns ollama models" do
+    fake_response = Struct.new(:code, :body).new("200", { data: [ { id: "llama3" }, { id: "mistral" } ] }.to_json)
+
+    http_singleton = Net::HTTP.singleton_class
+    http_singleton.alias_method :__original_start_for_model_lookup_test, :start
+    http_singleton.define_method(:start) do |*_args, **_kwargs, &block|
+      http = Object.new
+      http.define_singleton_method(:request) { |_request| fake_response }
+      block.call(http)
+    end
+
+    post settings_llm_models_url, params: { llm_provider: "ollama" }, as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal [ "llama3", "mistral" ], body["models"]
+    assert_equal "llama3", body["selected_model"]
+  ensure
+    http_singleton.alias_method :start, :__original_start_for_model_lookup_test if http_singleton.method_defined?(:__original_start_for_model_lookup_test)
+    http_singleton.remove_method :__original_start_for_model_lookup_test if http_singleton.method_defined?(:__original_start_for_model_lookup_test)
+  end
+
   test "updates preview using selected person" do
     selected_person = people(:two)
 

@@ -6,7 +6,7 @@ class LlmModelCatalog
   Result = Struct.new(:models, :error, keyword_init: true)
 
   def self.lookup(provider:, api_key:, api_base:)
-    metadata = UserPreference.provider_metadata(provider)
+    metadata = AppSetting.provider_metadata(provider)
 
     return Result.new(models: [], error: :unsupported_provider) unless metadata[:model_lookup] == :openai_compatible
     return Result.new(models: [], error: :missing_api_key) if api_key.blank? && provider != "ollama"
