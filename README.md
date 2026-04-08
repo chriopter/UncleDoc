@@ -36,7 +36,16 @@ UncleDoc also includes an iOS app so the same household health record feels at h
 It can sync HealthKit data into UncleDoc, so measurements collected on your device can live alongside manual notes and uploaded documents.
 The app stays intentionally thin, with the main product experience and your data remaining on your own UncleDoc server.
 
-## 3. Installation
+## 3. Prompts
+
+UncleDoc keeps the active LLM system prompts in Markdown files under `prompts/`.
+
+| Prompt | Used for | Loaded by |
+| --- | --- | --- |
+| [`prompts/parser.md`](prompts/parser.md) | System prompt for turning one note plus attachments into structured entry data | `EntryDataParser.system_prompt` |
+| [`prompts/uncledoc.md`](prompts/uncledoc.md) | System prompt for summaries and chat against a person's health record | `LogSummaryGenerator.system_prompt` |
+
+## 4. Installation
 
 ### Local dev
 
@@ -53,7 +62,7 @@ kamal setup
 kamal deploy
 ```
 
-## 4. Details
+## 5. Details
 
 <details>
 <summary>Stack</summary>
