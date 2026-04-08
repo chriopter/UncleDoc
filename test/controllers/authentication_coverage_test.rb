@@ -11,7 +11,6 @@ class AuthenticationCoverageTest < ActionDispatch::IntegrationTest
 
     requests = {
       "root" => -> { get root_path },
-      "health check" => -> { get rails_health_check_path },
       "manifest" => -> { get pwa_manifest_path(format: :json) },
       "service worker" => -> { get pwa_service_worker_path(format: :js) },
       "settings" => -> { get settings_path(section: :users) },
@@ -61,6 +60,12 @@ class AuthenticationCoverageTest < ActionDispatch::IntegrationTest
       request.call
       assert_redirected_to new_session_path, "Expected #{name} to redirect to login"
     end
+  end
+
+  test "health check stays public" do
+    get rails_health_check_path
+
+    assert_response :success
   end
 
   test "root redirects to first run when no users exist" do

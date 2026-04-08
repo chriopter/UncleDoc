@@ -1,0 +1,28 @@
+services:
+  app:
+    image: ${UNCLEDOC_IMAGE:?set UNCLEDOC_IMAGE in .env.docker}
+    restart: unless-stopped
+    ports:
+      - "${UNCLEDOC_PORT:-3000}:80"
+    env_file:
+      - .env.docker
+    environment:
+      RAILS_ENV: production
+      FORCE_SSL: ${FORCE_SSL:-false}
+      ASSUME_SSL: ${ASSUME_SSL:-false}
+      APP_PROTOCOL: ${APP_PROTOCOL:-http}
+      APP_HOST: ${APP_HOST:-localhost}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DB_POOL: ${DB_POOL:-10}
+      SOLID_QUEUE_IN_PUMA: ${SOLID_QUEUE_IN_PUMA:-true}
+    volumes:
+      - uncledoc_storage:/rails/storage
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  uncledoc_storage:
