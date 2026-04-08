@@ -111,7 +111,7 @@ class DashboardController < ApplicationController
         types = year_entries
           .group_by { |e| e.document_type.presence || "other" }
           .sort_by { |type, _| type == "other" ? 1 : 0 }
-        [year, types]
+        [ year, types ]
       }
   end
 
@@ -137,45 +137,30 @@ class DashboardController < ApplicationController
   end
 
   def healthkit_records_table(person, page: 1)
-    connection = ActiveRecord::Base.connection
     table_name = "healthkit_records"
-    table = Arel::Table.new(table_name)
-    columns = connection.columns(table_name).map(&:name)
-    primary_key = connection.primary_key(table_name)
+    connection = ActiveRecord::Base.connection
+    columns = HealthkitRecord.column_names
+    primary_key = HealthkitRecord.primary_key
     per_page = 250
     current_page = [ page.to_i, 1 ].max
     truncated_columns = %w[payload]
 
-    person_id = person.id
-    count_sql = table.project(Arel.star.count).where(table[:person_id].eq(person_id))
-    total_count = connection.select_value(count_sql).to_i
+    scope = person.healthkit_records.recent_first
+    total_count = scope.count
     total_pages = [ (total_count.to_f / per_page).ceil, 1 ].max
     current_page = [ current_page, total_pages ].min
     offset = (current_page - 1) * per_page
-
-    select_columns = columns.map do |column|
-      quoted = connection.quote_column_name(column)
-
-      if column == "payload"
-        "CASE WHEN length(#{quoted}) > 400 THEN substr(#{quoted}, 1, 400) || '…' ELSE #{quoted} END AS #{quoted}"
-      else
-        quoted
+    rows = scope.offset(offset).limit(per_page).map do |record|
+      columns.index_with do |column|
+        value = record.public_send(column)
+        column == "payload" && value.to_s.length > 400 ? "#{value.to_s.first(400)}..." : value
       end
-    end.join(", ")
-
-    rows_sql = <<~SQL.squish
-      SELECT #{select_columns}
-      FROM #{connection.quote_table_name(table_name)}
-      WHERE #{connection.quote_column_name("person_id")} = #{connection.quote(person_id)}
-      ORDER BY #{connection.quote_column_name("start_at")} DESC
-      LIMIT #{per_page}
-      OFFSET #{offset}
-    SQL
+    end
 
     {
       name: table_name,
       columns: columns,
-      rows: connection.select_all(rows_sql).to_a,
+      rows: rows,
       count: total_count,
       rendered_count: [ offset + per_page, total_count ].min,
       page: current_page,

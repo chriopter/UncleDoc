@@ -1,5 +1,5 @@
 class EntryDataParseJob < ApplicationJob
-  queue_as :default
+  queue_as :parse
 
   def perform(entry_id)
     entry = Entry.find_by(id: entry_id)
