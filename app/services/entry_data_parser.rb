@@ -6,8 +6,10 @@ class EntryDataParser
 
     def initialize(facts: nil, fact_objects: nil, occurred_at: nil, llm: nil, llm_response: nil, parseable_data: nil, error: nil, **)
       @fact_objects = Array(fact_objects || facts)
-      if parseable_data.present? && @fact_objects.blank?
-        @fact_objects = Entry.build_fact_objects_from_legacy([], parseable_data)
+      if parseable_data.present? && (@fact_objects.blank? || @fact_objects.all? { |item| item.is_a?(String) })
+        @fact_objects = Entry.build_fact_objects_from_legacy(@fact_objects, parseable_data)
+      elsif @fact_objects.all? { |item| item.is_a?(String) }
+        @fact_objects = Entry.build_fact_objects_from_legacy(@fact_objects, [])
       end
       @occurred_at = occurred_at
       @llm = (llm || llm_response || {}).deep_stringify_keys
@@ -15,7 +17,7 @@ class EntryDataParser
     end
 
     def facts
-      fact_objects
+      fact_texts
     end
 
     def fact_texts
@@ -332,12 +334,16 @@ class EntryDataParser
   end
 
   def self.merge_legacy_payload(payload, facts)
-    return facts if facts.present?
-
     legacy_items = payload["parseable_data"]
-    return [] unless legacy_items.is_a?(Array)
+    return facts unless legacy_items.is_a?(Array)
 
-    Entry.build_fact_objects_from_legacy(Array(payload["facts"]), legacy_items)
+    legacy_texts = if facts.present?
+      facts.filter_map { |fact| fact["text"] }
+    else
+      Array(payload["facts"])
+    end
+
+    Entry.build_fact_objects_from_legacy(legacy_texts, legacy_items)
   end
 
   def self.entry_documents(entry)
