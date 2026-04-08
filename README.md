@@ -49,21 +49,15 @@ UncleDoc keeps the active LLM system prompts in Markdown files under `prompts/`.
 
 ### Docker Compose
 
-Quick start:
+You only need `compose.yml` and `.env.docker` next to each other.
 
-```bash
-git clone https://github.com/chriopter/UncleDoc.git
-cd UncleDoc
-cp .env.docker.example .env.docker
-```
-
-Set these values in `.env.docker`:
+Required values in `.env.docker`:
 
 - `UNCLEDOC_IMAGE=ghcr.io/chriopter/uncledoc:latest`
 - `RAILS_MASTER_KEY=...`
 - `SECRET_KEY_BASE=...`
 
-Start the app:
+Then run:
 
 ```bash
 docker compose up -d
@@ -71,10 +65,65 @@ docker compose up -d
 
 Then open `http://127.0.0.1:3000` after the container becomes healthy.
 
-Container tags:
+<details>
+<summary>Example compose.yml</summary>
+
+```yaml
+services:
+  app:
+    image: ${UNCLEDOC_IMAGE}
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    env_file:
+      - .env.docker
+    environment:
+      RAILS_ENV: production
+      FORCE_SSL: ${FORCE_SSL:-false}
+      ASSUME_SSL: ${ASSUME_SSL:-false}
+      APP_PROTOCOL: ${APP_PROTOCOL:-http}
+      APP_HOST: ${APP_HOST:-localhost}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DB_POOL: ${DB_POOL:-10}
+      SOLID_QUEUE_IN_PUMA: ${SOLID_QUEUE_IN_PUMA:-true}
+    volumes:
+      - uncledoc_storage:/rails/storage
+
+volumes:
+  uncledoc_storage:
+```
+
+</details>
+
+<details>
+<summary>Example .env.docker</summary>
+
+```dotenv
+UNCLEDOC_IMAGE=ghcr.io/chriopter/uncledoc:latest
+RAILS_MASTER_KEY=replace_with_config_master_key
+SECRET_KEY_BASE=replace_with_long_random_secret
+APP_HOST=localhost
+APP_PROTOCOL=http
+ALLOWED_HOSTS=localhost,127.0.0.1
+FORCE_SSL=false
+ASSUME_SSL=false
+MAILER_FROM=no-reply@localhost
+DB_POOL=10
+SOLID_QUEUE_IN_PUMA=true
+```
+
+</details>
+
+<details>
+<summary>Container tags</summary>
 
 - `ghcr.io/chriopter/uncledoc:latest` for the newest release
 - `ghcr.io/chriopter/uncledoc:edge` for the newest push to `main`
+
+</details>
+
+<details>
+<summary>Reverse proxy settings</summary>
 
 If you run behind a reverse proxy, also set these in `.env.docker`:
 
@@ -83,6 +132,8 @@ If you run behind a reverse proxy, also set these in `.env.docker`:
 - `APP_PROTOCOL=https`
 - `FORCE_SSL=true`
 - `ASSUME_SSL=true`
+
+</details>
 
 ### Local dev
 
