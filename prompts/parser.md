@@ -34,7 +34,7 @@ Return exactly one JSON object with this shape and nothing else:
 - `llm` must always be present and must be in English.
 - Include `document.type` and `document.title` when the entry contains an attached document and the document kind/title can be identified.
 - If there is no attached document, return `document: {}`.
-- Use `occurred_at` only when the input implies a specific event time. Otherwise return `null`.
+- Use `occurred_at` when the input or attached document implies a specific event date or datetime. For invoices, certificates, medical letters, prescriptions, and vaccination records, prefer the main visible document date instead of the upload time.
 - Prefer concrete facts over generic filler like `document uploaded` or `report attached`.
 - Facts stay in the same language as the input when the input language is clear.
 

@@ -337,7 +337,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
   test "files tab lists uploaded documents" do
     person = Person.create!(name: "Filesy", birth_date: Date.new(2024, 1, 1))
-    entry = person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 8, 0), input: "Doctor invoice", facts: [ "Doctor invoice uploaded" ], parseable_data: [])
+    entry = person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 8, 0), input: "Doctor invoice", extracted_data: { "facts" => [ { "text" => "Doctor invoice uploaded", "kind" => "note" } ], "document" => { "type" => "invoice", "title" => "Doctor invoice from March 2026" }, "llm" => {} }, parse_status: "parsed")
     entry.documents.attach(io: StringIO.new(fake_pdf_content("Doctor invoice")), filename: "doctor-invoice.pdf", content_type: "application/pdf")
 
     get person_files_url(person_slug: person.name)
@@ -346,6 +346,23 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Files for Filesy"
     assert_includes @response.body, "doctor-invoice.pdf"
     assert_includes @response.body, "Doctor invoice uploaded"
+    assert_includes @response.body, "Document details"
+    assert_includes @response.body, "Doctor invoice from March 2026"
+    assert_includes @response.body, "Open"
+    assert_includes @response.body, "Re-parse"
+  end
+
+  test "files tab highlights failed documents and shows inline retry" do
+    person = Person.create!(name: "Files Retry", birth_date: Date.new(2024, 1, 1))
+    entry = person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 8, 0), input: "", extracted_data: { "facts" => [], "document" => {}, "llm" => {} }, parse_status: "failed")
+    entry.documents.attach(io: StringIO.new(fake_pdf_content("Failed invoice")), filename: "failed-invoice.pdf", content_type: "application/pdf")
+
+    get person_files_url(person_slug: person.name)
+
+    assert_response :success
+    assert_includes @response.body, "failed-invoice.pdf"
+    assert_includes @response.body, "Re-parse"
+    assert_includes @response.body, I18n.t("entries.tags.parse_error")
   end
 
   test "healthkit page shows summary entries and sync state" do

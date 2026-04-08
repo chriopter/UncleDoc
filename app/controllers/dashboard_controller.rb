@@ -40,6 +40,7 @@ class DashboardController < ApplicationController
     @document_entries = filtered_file_entries(all_document_entries)
     @document_count = @document_entries.sum(&:document_count)
     @grouped_document_entries = group_document_entries_by_year(@document_entries)
+    @selected_document_entry = selected_document_entry(@document_entries)
   end
 
   def healthkit
@@ -134,6 +135,12 @@ class DashboardController < ApplicationController
     end
 
     scope
+  end
+
+  def selected_document_entry(entries)
+    return entries.first unless params[:entry_id].present?
+
+    entries.find { |entry| entry.id == params[:entry_id].to_i } || entries.first
   end
 
   def healthkit_records_table(person, page: 1)
