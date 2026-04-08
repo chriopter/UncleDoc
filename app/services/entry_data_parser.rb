@@ -69,7 +69,7 @@ class EntryDataParser
 
     Result.new(
       facts: facts,
-      occurred_at: sanitize_occurred_at(payload["occurred_at"]),
+      occurred_at: inferred_occurred_at(payload, entry: entry),
       document: entry_documents(entry).present? ? sanitize_document(payload["document"]) : {},
       llm: sanitize_llm(payload["llm"] || payload["llm_response"])
     )
@@ -250,6 +250,28 @@ class EntryDataParser
 
     parsed&.iso8601.present? ? parsed : nil
   rescue ArgumentError, TypeError
+    nil
+  end
+
+  def self.inferred_occurred_at(payload, entry: nil)
+    explicit = sanitize_occurred_at(payload["occurred_at"])
+    return explicit if explicit.present?
+    return unless entry_documents(entry).present?
+
+    document = sanitize_document(payload["document"])
+    infer_date_from_text(document["title"]) || infer_date_from_text(entry&.source_ref)
+  end
+
+  def self.infer_date_from_text(text)
+    value = text.to_s
+    return if value.blank?
+
+    if (match = value.match(/(?<day>\d{1,2})\.(?<month>\d{1,2})\.(?<year>\d{4})/))
+      Time.zone.local(match[:year].to_i, match[:month].to_i, match[:day].to_i)
+    elsif (match = value.match(/(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})/))
+      Time.zone.local(match[:year].to_i, match[:month].to_i, match[:day].to_i)
+    end
+  rescue ArgumentError
     nil
   end
 

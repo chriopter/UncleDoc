@@ -31,7 +31,7 @@ class ResearchChatResponseJobTest < ActiveJob::TestCase
       end
     end
 
-    assert_equal I18n.t("chat.request_failed"), assistant_message.reload.content
+    assert_equal I18n.t("chat.request_failed", locale: :en), assistant_message.reload.content
   end
 
   test "job also handles non ruby_llm standard errors" do
@@ -64,6 +64,6 @@ class ResearchChatResponseJobTest < ActiveJob::TestCase
       end
     end
 
-    assert_equal I18n.t("chat.request_failed"), assistant_message.reload.content
+    assert_equal I18n.t("chat.request_failed", locale: :en), assistant_message.reload.content
   end
 end

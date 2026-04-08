@@ -633,6 +633,13 @@ de:
       count: "%{count} Datei"
       count_plural: "%{count} Dateien"
       document_only: "Dokument-Upload"
+    viewer:
+      label: "Vorschau"
+      sidebar_label: "Geparste Daten"
+      sidebar_title: "Dokumentdetails"
+      document_meta: "Dokument"
+      open_inline: "Offnen"
+      empty: "Links ein Dokument auswählen, um es direkt in UncleDoc anzusehen."
 
   # DB view
   db:

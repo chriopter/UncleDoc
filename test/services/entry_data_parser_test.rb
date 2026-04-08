@@ -156,6 +156,26 @@ class EntryDataParserTest < ActiveSupport::TestCase
     end
   end
 
+  test "infers occurred_at from document title date when llm omits it" do
+    person = Person.create!(name: "Document Date", birth_date: Date.new(2020, 1, 1))
+    entry = person.entries.build(input: "", occurred_at: Time.current, parse_status: "pending")
+    entry.documents.attach(
+      io: StringIO.new("%PDF fake"),
+      filename: "invoice.pdf",
+      content_type: "application/pdf"
+    )
+    entry.save!
+
+    payload = {
+      "document" => { "type" => "invoice", "title" => "Zahnarztrechnung vom 24.03.2023" },
+      "facts" => [ { "text" => "Zahnarztrechnung vom 24.03.2023", "kind" => "summary" } ],
+      "occurred_at" => nil,
+      "llm" => { "status" => "structured", "confidence" => "high", "note" => "Canonical structured facts extracted successfully." }
+    }
+
+    assert_equal Time.zone.local(2023, 3, 24), EntryDataParser.inferred_occurred_at(payload, entry: entry)
+  end
+
   test "enriches healthkit summaries with lab results and native measurements" do
     person = Person.create!(name: "HealthKit Parse", birth_date: Date.new(2020, 1, 1))
     entry = person.entries.create!(
