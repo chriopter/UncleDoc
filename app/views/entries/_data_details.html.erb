@@ -3,12 +3,15 @@
     <% entry.fact_objects.each_with_index do |fact, index| %>
       <% fields = fact.reject { |k, v| v.nil? || (v.is_a?(String) && v.blank?) } %>
       <% next if fields.empty? %>
+      <% label_key = fact["kind"] == "measurement" ? fact["metric"].to_s.downcase : fact["kind"].to_s.downcase %>
+      <% label = t("entries.data_labels.#{label_key}", default: label_key.humanize) %>
 
       <% primary_keys = %w[text result unit ref value dose] %>
       <% primary = fields.select { |k, _| primary_keys.include?(k) }.sort_by { |k, _| primary_keys.index(k) || 99 } %>
       <% secondary = fields.reject { |k, _| primary_keys.include?(k) } %>
 
       <div class="<%= index.positive? ? 'border-t border-slate-100' : '' %> px-4 py-2">
+        <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700"><%= label %></p>
         <div class="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
           <% primary.each do |key, value| %>
             <span class="inline-flex items-baseline gap-1">
