@@ -269,6 +269,7 @@ de:
       title: "Fakten"
     document_metadata:
       title: "Dokument"
+      invoice_total: "Rechnungssumme"
     edit:
       label: "Bearbeiten"
       title: "Notiz aktualisieren"

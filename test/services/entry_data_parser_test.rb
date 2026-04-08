@@ -107,9 +107,9 @@ class EntryDataParserTest < ActiveSupport::TestCase
   end
 
   test "sanitizes document metadata" do
-    result = EntryDataParser.sanitize_document({ "type" => "lab_report", "title" => "Laborblatt vom 06.04.2018", "extra" => "ignored" })
+    result = EntryDataParser.sanitize_document({ "type" => "invoice", "title" => "Rechnung 24.03.2023", "total_amount" => "20.11", "currency" => "EUR", "extra" => "ignored" })
 
-    assert_equal({ "type" => "lab_report", "title" => "Laborblatt vom 06.04.2018" }, result)
+    assert_equal({ "type" => "invoice", "title" => "Rechnung 24.03.2023", "total_amount" => 20.11, "currency" => "EUR" }, result)
   end
 
   test "drops hallucinated document metadata when entry has no attachments" do

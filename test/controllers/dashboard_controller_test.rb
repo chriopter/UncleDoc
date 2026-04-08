@@ -337,7 +337,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
   test "files tab lists uploaded documents" do
     person = Person.create!(name: "Filesy", birth_date: Date.new(2024, 1, 1))
-    entry = person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 8, 0), input: "Doctor invoice", extracted_data: { "facts" => [ { "text" => "Doctor invoice uploaded", "kind" => "note" } ], "document" => { "type" => "invoice", "title" => "Doctor invoice from March 2026" }, "llm" => {} }, parse_status: "parsed")
+    entry = person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 8, 0), input: "Doctor invoice", extracted_data: { "facts" => [ { "text" => "Doctor invoice uploaded", "kind" => "note" } ], "document" => { "type" => "invoice", "title" => "Doctor invoice from March 2026", "total_amount" => 20.11, "currency" => "EUR" }, "llm" => {} }, parse_status: "parsed")
     entry.documents.attach(io: StringIO.new(fake_pdf_content("Doctor invoice")), filename: "doctor-invoice.pdf", content_type: "application/pdf")
 
     get person_files_url(person_slug: person.name)
@@ -346,13 +346,14 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Files for Filesy"
     assert_includes @response.body, "doctor-invoice.pdf"
     assert_includes @response.body, "Doctor invoice from March 2026"
+    assert_includes @response.body, "20,11 EUR"
     assert_includes @response.body, "iframe"
     assert_includes @response.body, I18n.t("entries.reparse.trigger")
   end
 
   test "file detail page shows in-app viewer and parsed sidebar" do
     person = Person.create!(name: "File Detail", birth_date: Date.new(2024, 1, 1))
-    entry = person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 8, 0), input: "Doctor invoice", extracted_data: { "facts" => [ { "text" => "Doctor invoice uploaded", "kind" => "note" } ], "document" => { "type" => "invoice", "title" => "Doctor invoice from March 2026" }, "llm" => {} }, parse_status: "parsed")
+    entry = person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 8, 0), input: "Doctor invoice", extracted_data: { "facts" => [ { "text" => "Doctor invoice uploaded", "kind" => "note" } ], "document" => { "type" => "invoice", "title" => "Doctor invoice from March 2026", "total_amount" => 20.11, "currency" => "EUR" }, "llm" => {} }, parse_status: "parsed")
     entry.documents.attach(io: StringIO.new(fake_pdf_content("Doctor invoice")), filename: "doctor-invoice.pdf", content_type: "application/pdf")
 
     get person_file_url(person_slug: person.name, entry_id: entry.id)
@@ -360,6 +361,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes @response.body, "Document details"
     assert_includes @response.body, "Doctor invoice from March 2026"
+    assert_includes @response.body, "Invoice total: 20,11 EUR"
     assert_includes @response.body, "Back to files"
     assert_includes @response.body, "iframe"
   end
