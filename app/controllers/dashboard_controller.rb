@@ -29,8 +29,9 @@ class DashboardController < ApplicationController
     @year = (params[:year] || Time.zone.today.year).to_i
     @appointments = @person.entries
       .merge(Entry.by_parseable_data_type("appointment"))
-      .where(occurred_at: Date.new(@year, 1, 1).beginning_of_day..Date.new(@year, 12, 31).end_of_day)
-      .order(occurred_at: :asc)
+      .to_a
+      .select { |entry| entry.appointment_calendar_time&.year == @year }
+      .sort_by { |entry| [ entry.appointment_calendar_time || entry.appointment_logged_at, entry.created_at ] }
   end
 
   def files

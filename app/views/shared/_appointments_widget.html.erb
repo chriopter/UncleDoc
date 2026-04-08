@@ -5,7 +5,10 @@
       <div class="space-y-2">
         <% appointments.each do |entry| %>
           <div class="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
-            <div class="text-xs font-semibold uppercase tracking-[0.14em] text-amber-200"><%= l(entry.display_time, format: :long) %></div>
+            <div class="text-xs font-semibold uppercase tracking-[0.14em] text-amber-200"><%= t("person.overview.appointments.scheduled_for", time: l(entry.appointment_calendar_time, format: :long)) %></div>
+            <% if entry.appointment_logged_at.to_date != entry.appointment_calendar_time.to_date %>
+              <div class="mt-1 text-[11px] text-amber-100/80"><%= t("person.overview.appointments.logged_on", date: l(entry.appointment_logged_at.to_date, format: :long)) %></div>
+            <% end %>
             <div class="mt-1 text-sm font-semibold text-white"><%= entry.fact_summary.presence || entry.appointment_title %></div>
             <% if entry.appointment_data["location"].present? %>
               <div class="mt-1 text-xs text-slate-300"><%= entry.appointment_data["location"] %></div>

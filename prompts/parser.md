@@ -110,6 +110,8 @@ Use canonical metric names such as:
 - `vaccination` is not a measurement.
 - Future reminders or follow-ups are `todo`.
 - Planned visits are `appointment`.
+- For planned visits, store the planned date/time in the appointment fact as `scheduled_for`.
+- Keep top-level `occurred_at` for when the event actually happened or when a document clearly describes a past event. Do not move `occurred_at` into the future just because an appointment is scheduled in the future.
 
 ## Document Metadata
 

@@ -221,6 +221,23 @@ class Entry < ApplicationRecord
     appointment_data["value"].presence
   end
 
+  def appointment_scheduled_for
+    value = appointment_data["scheduled_for"].presence
+    return unless value
+
+    Time.zone.parse(value.to_s)
+  rescue ArgumentError, TypeError
+    nil
+  end
+
+  def appointment_logged_at
+    display_time
+  end
+
+  def appointment_calendar_time
+    appointment_scheduled_for || appointment_logged_at
+  end
+
   def llm_metadata
     llm_value.is_a?(Hash) ? llm_value.deep_stringify_keys : {}
   end

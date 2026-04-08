@@ -331,7 +331,12 @@ module ApplicationHelper
   end
 
   def appointment_entries(person, limit: 6)
-    person.entries.merge(Entry.by_parseable_data_type("appointment")).where("occurred_at >= ?", Time.zone.now.beginning_of_day).order(occurred_at: :asc, created_at: :asc).limit(limit)
+    person.entries
+      .merge(Entry.by_parseable_data_type("appointment"))
+      .to_a
+      .select { |entry| (entry.appointment_calendar_time || entry.appointment_logged_at) >= Time.zone.now.beginning_of_day }
+      .sort_by { |entry| [ entry.appointment_calendar_time || entry.appointment_logged_at, entry.created_at ] }
+      .first(limit)
   end
 
   def appointment_activity_available?(person)

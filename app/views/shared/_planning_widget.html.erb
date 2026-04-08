@@ -8,7 +8,10 @@
         <div class="space-y-2">
           <% appointments.each do |entry| %>
             <div class="rounded-xl border border-amber-100 bg-amber-50/60 px-3 py-2">
-              <p class="text-[10px] font-semibold tabular-nums text-amber-600"><%= l(entry.display_time, format: "%-d.%m %H:%M") %></p>
+              <p class="text-[10px] font-semibold tabular-nums text-amber-600"><%= t("person.overview.appointments.scheduled_for", time: l(entry.appointment_calendar_time, format: "%-d.%m %H:%M")) %></p>
+              <% if entry.appointment_logged_at.to_date != entry.appointment_calendar_time.to_date %>
+                <p class="mt-0.5 text-[10px] text-amber-700/80"><%= t("person.overview.appointments.logged_on", date: l(entry.appointment_logged_at.to_date, format: :long)) %></p>
+              <% end %>
               <p class="text-sm font-semibold text-slate-900"><%= entry.fact_summary.presence || entry.appointment_title %></p>
             </div>
           <% end %>
