@@ -51,6 +51,8 @@ UncleDoc keeps the active LLM system prompts in Markdown files under `prompts/`.
 
 Install with Docker.
 
+Create `compose.yml`:
+
 <details>
 <summary>compose.yml</summary>
 
@@ -67,17 +69,14 @@ services:
       RAILS_ENV: production
       FORCE_SSL: "false"
       ASSUME_SSL: "false"
-      APP_PROTOCOL: http
-      APP_HOST: localhost
-      ALLOWED_HOSTS: localhost,127.0.0.1
       DB_POOL: "10"
       SOLID_QUEUE_IN_PUMA: "true"
       # Image tags:
       # - ghcr.io/chriopter/uncledoc:latest -> newest release
       # - ghcr.io/chriopter/uncledoc:edge -> newest push to main
       # MAILER_FROM: no-reply@localhost
-      # APP_HOST: your.domain
       # APP_PROTOCOL: https
+      # APP_HOST: your.domain
       # ALLOWED_HOSTS: your.domain
       # FORCE_SSL: "true"
       # ASSUME_SSL: "true"
@@ -90,6 +89,7 @@ volumes:
 
 </details>
 
+Create `.env.docker`:
 
 <details>
 <summary>.env.docker</summary>
@@ -101,15 +101,13 @@ SECRET_KEY_BASE=replace_with_long_random_secret
 
 </details>
 
-
-
 Run:
 
 ```bash
 docker compose up -d
 ```
 
-Then open `http://127.0.0.1:3000` after the container becomes healthy.
+Open `http://127.0.0.1:3000` after the container becomes healthy.
 
 
 

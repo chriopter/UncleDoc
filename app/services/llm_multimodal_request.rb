@@ -47,12 +47,19 @@ class LlmMultimodalRequest
     when :image
       [ attachment ]
     when :pdf
-      pdf_image_parts(attachment, tempfiles: tempfiles)
+      pdf_attachment_inputs(attachment, tempfiles: tempfiles)
     when :text
       [ attachment ]
     else
       raise ArgumentError, "Unsupported attachment type: #{llm_attachment.type}"
     end
+  end
+
+  def self.pdf_attachment_inputs(attachment, tempfiles: [])
+    pdf_image_parts(attachment, tempfiles: tempfiles)
+  rescue Errno::ENOENT => error
+    Rails.logger.warn("PDF rasterization unavailable, falling back to native PDF attachment: #{error.message}")
+    [ attachment ]
   end
 
   def self.pdf_image_parts(attachment, tempfiles: [])

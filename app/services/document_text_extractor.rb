@@ -33,6 +33,8 @@ class DocumentTextExtractor
     stdout, status = Open3.capture2("pdftotext", "-layout", tempfile.path, "-")
     extracted = status.success? ? stdout : nil
     extracted.presence || extract_printable_text(pdf_bytes)
+  rescue Errno::ENOENT
+    extract_printable_text(pdf_bytes)
   ensure
     tempfile&.close!
   end
