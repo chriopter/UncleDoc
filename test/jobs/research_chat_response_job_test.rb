@@ -5,11 +5,11 @@ class ResearchChatResponseJobTest < ActiveJob::TestCase
     person = Person.create!(name: "Fail Finn", birth_date: Date.new(2024, 1, 1))
     AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
 
-    chat = person.build_chat
+    chat = person.build_llm_chat
     ResearchChatRuntime.prepare!(chat, setting: AppSetting.current)
     chat.add_message(role: :user, content: "Hello?")
 
-    Chat.class_eval do
+    LlmChat.class_eval do
       alias_method :__original_complete_for_failure_test, :complete
 
       def complete(...)
@@ -19,8 +19,8 @@ class ResearchChatResponseJobTest < ActiveJob::TestCase
 
     ResearchChatResponseJob.perform_now(chat.id, "en")
   ensure
-    if Chat.method_defined?(:__original_complete_for_failure_test)
-      Chat.class_eval do
+    if LlmChat.method_defined?(:__original_complete_for_failure_test)
+      LlmChat.class_eval do
         alias_method :complete, :__original_complete_for_failure_test
         remove_method :__original_complete_for_failure_test
       end
@@ -33,11 +33,11 @@ class ResearchChatResponseJobTest < ActiveJob::TestCase
     person = Person.create!(name: "Crash Cora", birth_date: Date.new(2024, 1, 1))
     AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
 
-    chat = person.build_chat
+    chat = person.build_llm_chat
     ResearchChatRuntime.prepare!(chat, setting: AppSetting.current)
     chat.add_message(role: :user, content: "Hi")
 
-    Chat.class_eval do
+    LlmChat.class_eval do
       alias_method :__original_complete_for_standard_error_test, :complete
 
       def complete(...)
@@ -47,8 +47,8 @@ class ResearchChatResponseJobTest < ActiveJob::TestCase
 
     ResearchChatResponseJob.perform_now(chat.id, "en")
   ensure
-    if Chat.method_defined?(:__original_complete_for_standard_error_test)
-      Chat.class_eval do
+    if LlmChat.method_defined?(:__original_complete_for_standard_error_test)
+      LlmChat.class_eval do
         alias_method :complete, :__original_complete_for_standard_error_test
         remove_method :__original_complete_for_standard_error_test
       end

@@ -36,6 +36,7 @@ class ResearchChatRuntime
       config.perplexity_api_key = ENV["PERPLEXITY_API_KEY"]
       config.xai_api_key = ENV["XAI_API_KEY"]
       config.logger = Rails.logger
+      config.model_registry_class = "LlmModel"
       config.use_new_acts_as = true
 
       case setting.llm_ruby_provider
