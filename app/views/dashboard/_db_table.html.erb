@@ -14,14 +14,14 @@
     </div>
 
     <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+      <table class="w-max min-w-full divide-y divide-slate-200 text-left text-sm">
         <thead class="bg-slate-50 text-slate-600">
           <tr>
             <% table[:columns].each do |column| %>
-              <th class="px-4 py-3 font-semibold"><%= column %></th>
+              <th class="min-w-[10rem] px-4 py-3 font-semibold whitespace-nowrap"><%= column %></th>
             <% end %>
             <% if table[:deletable] %>
-              <th class="px-4 py-3 font-semibold"><%= t("db.table.actions") %></th>
+              <th class="min-w-[8rem] px-4 py-3 font-semibold whitespace-nowrap"><%= t("db.table.actions") %></th>
             <% end %>
           </tr>
         </thead>

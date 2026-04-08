@@ -8,8 +8,6 @@ module DashboardHelper
       { label: t("nav.overview"), path: person_overview_path(person_slug: current_person.name), active: request_path.include?("/overview") }
     ]
 
-    items << { label: t("nav.trends"), path: person_trends_path(person_slug: current_person.name), active: request_path.include?("/trends"), child: true }
-
     if current_person.baby_mode?
       items << { label: t("nav.baby"), path: person_baby_path(person_slug: current_person.name), active: request_path.include?("/baby"), child: true }
     end
@@ -44,9 +42,11 @@ module DashboardHelper
 
   def shell_db_tables
     connection = ActiveRecord::Base.connection
-    data_tables = %w[entries healthkit_records healthkit_syncs people]
+    data_tables = %w[people user_preferences]
+    health_data_tables = %w[entries healthkit_records healthkit_syncs]
+    attachment_tables = %w[active_storage_attachments active_storage_blobs active_storage_variant_records]
     log_tables = %w[llm_logs]
-    system_tables = %w[ar_internal_metadata schema_migrations user_preferences]
+    system_tables = %w[ar_internal_metadata schema_migrations]
 
     all = connection.tables.sort.map do |name|
       { name: name, count: connection.select_value("SELECT COUNT(*) FROM #{connection.quote_table_name(name)}").to_i }
@@ -54,9 +54,11 @@ module DashboardHelper
 
     groups = []
     groups << { label: t("db.groups.data"), tables: all.select { |t| data_tables.include?(t[:name]) } }
+    groups << { label: t("db.groups.health_data"), tables: all.select { |t| health_data_tables.include?(t[:name]) } }
+    groups << { label: t("db.groups.attachments"), tables: all.select { |t| attachment_tables.include?(t[:name]) } }
     groups << { label: t("db.groups.logs"), tables: all.select { |t| log_tables.include?(t[:name]) } }
     groups << { label: t("db.groups.system"), tables: all.select { |t| system_tables.include?(t[:name]) } }
-    others = all.reject { |t| (data_tables + log_tables + system_tables).include?(t[:name]) }
+    others = all.reject { |t| (data_tables + health_data_tables + attachment_tables + log_tables + system_tables).include?(t[:name]) }
     groups << { label: t("db.groups.other"), tables: others } if others.any?
     groups
   end
@@ -83,8 +85,6 @@ module DashboardHelper
       "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
     when t("nav.files")
       "M7 18a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5l2 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2Z"
-    when t("nav.trends")
-      "M3 17l4-4 4 4 4-8 4 4"
     when t("nav.baby")
       "M12 5c1.7 0 3 1.3 3 3s-1.3 3-3 3-3-1.3-3-3 1.3-3 3-3Zm-5 13c0-2.8 2.2-5 5-5s5 2.2 5 5"
     when t("nav.settings")

@@ -37,7 +37,6 @@ de:
     app_settings: "App-Einstellungen"
     home: "Startseite"
     overview: "Übersicht"
-    trends: "Trends"
     baby: "Baby"
     files: "Dokumente"
     timeline: "Zeitlinie"
@@ -176,6 +175,8 @@ de:
       stats_title: "Sync-Statistiken"
       entries_label: "Einträge"
       entries_title: "HealthKit-Einträge im Protokoll"
+      browse_label: "Anzeigen"
+      actions_label: "Aktionen"
       rebuild_button: "Zusammenfassungen neu bauen"
       reparse_button: "HealthKit-Eintrage neu parsen"
       rebuild_confirm: "Alle HealthKit-Zusammenfassungen fur diese Person neu erstellen?"
@@ -217,6 +218,7 @@ de:
     source:
       manual: "Manuell"
       healthkit: "Healthkit"
+      healthkit_short: "HK"
       healthkit_day: "HK Tages"
       healthkit_month: "HK Monats"
     tags:
@@ -493,6 +495,9 @@ de:
       label: "LLM-Logs"
       title: "Rohes LLM-Anfrageprotokoll"
       description: "Prufen Sie die genauen Anfragen und rohe Antworten fur Notiz-Parsing und Zusammenfassungen."
+      http_status: "HTTP %{status}"
+      entry_id: "entry_id=%{id}"
+      person_id: "person_id=%{id}"
       request: "Anfrage"
       response: "Antwort"
       raw_data:
@@ -565,6 +570,8 @@ de:
       delete_unavailable_short: "-"
     groups:
       data: "Benutzerdaten"
+      health_data: "Gesundheitsdaten"
+      attachments: "Anhange"
       logs: "Protokolle"
       system: "System"
       other: "Sonstige"

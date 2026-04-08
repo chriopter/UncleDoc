@@ -16,7 +16,7 @@
                 <% if p.baby_mode? %>
                   <span class="inline-flex items-center rounded-full border border-pink-200 bg-pink-50 px-2.5 py-0.5 text-[11px] font-semibold text-pink-800"><%= t("baby.badge") %></span>
                 <% end %>
-                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">ID: <%= p.id %></span>
+                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500"><%= t("settings.users.person_id", id: p.id) %></span>
               </div>
             </div>
             <span class="shrink-0 text-slate-500 transition group-open:rotate-180">▾</span>

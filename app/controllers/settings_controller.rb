@@ -171,22 +171,23 @@ class SettingsController < ApplicationController
     connection = ActiveRecord::Base.connection
     return nil unless connection.tables.include?(table_name)
 
-    quoted_table = connection.quote_table_name(table_name)
+    table = Arel::Table.new(table_name)
     columns = connection.columns(table_name).map(&:name)
     primary_key = connection.primary_key(table_name)
     per_page = 50
     current_page = [ page.to_i, 1 ].max
-    total_count = connection.select_value("SELECT COUNT(*) FROM #{quoted_table}").to_i
+    total_count = connection.select_value(table.project(Arel.star.count)).to_i
     total_pages = [ (total_count.to_f / per_page).ceil, 1 ].max
     current_page = [ current_page, total_pages ].min
     offset = (current_page - 1) * per_page
     order_column = primary_key.presence || (columns.include?("created_at") ? "created_at" : (columns.include?("updated_at") ? "updated_at" : nil))
-    order_sql = order_column.present? ? " ORDER BY #{connection.quote_column_name(order_column)} DESC" : ""
+    rows_query = table.project(Arel.star).take(per_page).skip(offset)
+    rows_query = rows_query.order(table[order_column].desc) if order_column.present?
 
     {
       name: table_name,
       columns: columns,
-      rows: connection.select_all("SELECT * FROM #{quoted_table}#{order_sql} LIMIT #{per_page} OFFSET #{offset}").to_a,
+      rows: connection.select_all(rows_query).to_a,
       count: total_count,
       rendered_count: [ offset + per_page, total_count ].min,
       page: current_page,

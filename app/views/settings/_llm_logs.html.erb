@@ -19,7 +19,7 @@
               <span class="rounded-full border border-white/15 px-3 py-1 text-slate-300"><%= log.model %></span>
             <% end %>
             <% if log.status_code.present? %>
-              <span class="rounded-full border border-white/15 px-3 py-1 text-slate-300">HTTP <%= log.status_code %></span>
+              <span class="rounded-full border border-white/15 px-3 py-1 text-slate-300"><%= t("settings.llm_logs.http_status", status: log.status_code) %></span>
             <% end %>
           </div>
         </div>
@@ -55,10 +55,10 @@
         <div class="border-t border-slate-100 px-5 py-4 text-xs text-slate-500">
           <span><%= log.endpoint %></span>
           <% if log.entry_id.present? %>
-            <span class="ml-3">entry_id=<%= log.entry_id %></span>
+            <span class="ml-3"><%= t("settings.llm_logs.entry_id", id: log.entry_id) %></span>
           <% end %>
           <% if log.person_id.present? %>
-            <span class="ml-3">person_id=<%= log.person_id %></span>
+            <span class="ml-3"><%= t("settings.llm_logs.person_id", id: log.person_id) %></span>
           <% end %>
         </div>
       </article>

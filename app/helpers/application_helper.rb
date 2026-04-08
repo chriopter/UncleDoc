@@ -73,7 +73,11 @@ module ApplicationHelper
     return t("entries.day_groups.today") if date == Time.zone.today
     return t("entries.day_groups.yesterday") if date == Time.zone.yesterday
 
-    l(date, format: "%-d. %B")
+    if date.year == Time.zone.today.year
+      l(date, format: "%-d. %B")
+    else
+      l(date, format: "%-d. %B %Y")
+    end
   end
 
   def settings_option_class(selected)
@@ -205,7 +209,6 @@ module ApplicationHelper
     path_params = { person_slug: person.name, **overview_widget_params(overrides) }
     case params[:action]
     when "baby" then person_baby_path(**path_params)
-    when "trends" then person_trends_path(**path_params)
     else person_overview_path(**path_params)
     end
   end
