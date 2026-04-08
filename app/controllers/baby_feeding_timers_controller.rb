@@ -44,7 +44,7 @@ class BabyFeedingTimersController < ApplicationController
       @person.entries.create!(
         occurred_at: Time.current,
         input: t("baby.feeding.timer.note", side: t("baby.feeding.sides.#{side}"), duration: duration_minutes),
-        extracted_data: { "facts" => EntryFactListBuilder.fact_objects([ { "type" => "breast_feeding", "value" => duration_minutes, "unit" => "min", "side" => side } ]), "llm" => {} },
+        extracted_data: { "facts" => EntryFactListBuilder.fact_objects([ { "type" => "breast_feeding", "value" => duration_minutes, "unit" => "min", "side" => side } ]), "document" => {}, "llm" => {} },
         parse_status: "parsed",
         source: Entry::SOURCES[:babywidget]
       )

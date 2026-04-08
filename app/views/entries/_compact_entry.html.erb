@@ -1,5 +1,5 @@
 <% display_time = entry.occurred_at || entry.created_at %>
-<% summary_text = entry.fact_summary.presence || entry.input.presence || (entry.documents_attached? ? t("entries.documents.document_only") : nil) %>
+<% summary_text = entry.document_title.presence || entry.fact_summary.presence || entry.input.presence || (entry.documents_attached? ? t("entries.documents.document_only") : nil) %>
 
 <details class="group border-b border-slate-100 last:border-0">
   <summary class="flex cursor-pointer items-start gap-3 rounded-2xl px-3 py-3 transition hover:bg-amber-50/70">
@@ -48,6 +48,13 @@
   <div class="px-3 pb-3 pt-1">
     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 overflow-hidden break-all">
       <div class="grid gap-4 min-w-0">
+        <% if entry.document_type.present? || entry.document_title.present? %>
+          <section>
+            <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"><%= t("entries.document_metadata.title") %></p>
+            <p class="text-sm leading-relaxed text-slate-700"><%= [entry.document_title, entry.document_type].compact.join(" • ") %></p>
+          </section>
+        <% end %>
+
         <section>
           <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"><%= t("activerecord.attributes.entry.occurred_at") %></p>
           <p class="text-sm leading-relaxed text-slate-700"><%= entry.occurred_at.present? ? l(entry.occurred_at, format: :long) : t("chat.unknown_date") %></p>

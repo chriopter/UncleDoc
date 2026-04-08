@@ -267,6 +267,8 @@ de:
       healthkit_summary: "Apple-Health-Zusammenfassung"
     facts:
       title: "Fakten"
+    document_metadata:
+      title: "Dokument"
     edit:
       label: "Bearbeiten"
       title: "Notiz aktualisieren"
@@ -335,6 +337,10 @@ de:
     parsed_data:
       title: "Geparst"
       empty: "Noch keine geparsten Daten"
+      item: "Element"
+    boolean:
+      true: "Ja"
+      false: "Nein"
     raw_input:
       title: "Eingabe"
       label: "Roh"

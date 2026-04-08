@@ -79,6 +79,30 @@ class EntryDataParserTest < ActiveSupport::TestCase
     assert_includes prompt, "Entry reference: healthkit:month:2026-03"
   end
 
+  test "multimodal parsing uses configured model without mini fallback" do
+    preference = AppSetting.current
+    preference.llm_provider = "openrouter"
+    preference.llm_model = "openai/gpt-5.4"
+
+    assert_equal [ "openai/gpt-5.4" ], EntryDataParser.multimodal_models_for(preference)
+  end
+
+  test "attachment retry prompt tells model not to return empty facts for readable scans" do
+    person = Person.create!(name: "OCR Prompt", birth_date: Date.new(2020, 1, 1))
+    entry = person.entries.create!(input: "scan", occurred_at: Time.current, parse_status: "pending")
+
+    prompt = EntryDataParser.attachment_ocr_retry_prompt(entry.input, entry: entry)
+
+    assert_includes prompt, "OCR the rendered pages carefully"
+    assert_includes prompt, "Do not return an empty facts array"
+  end
+
+  test "sanitizes document metadata" do
+    result = EntryDataParser.sanitize_document({ "type" => "lab_report", "title" => "Laborblatt vom 06.04.2018", "extra" => "ignored" })
+
+    assert_equal({ "type" => "lab_report", "title" => "Laborblatt vom 06.04.2018" }, result)
+  end
+
   test "enriches healthkit summaries with lab results and native measurements" do
     person = Person.create!(name: "HealthKit Parse", birth_date: Date.new(2020, 1, 1))
     entry = person.entries.create!(

@@ -14,6 +14,7 @@ class Entry < ApplicationRecord
   validates :source, inclusion: { in: SOURCES.values }
   validate :extracted_data_must_be_hash
   validate :fact_objects_must_be_valid
+  validate :document_metadata_must_be_hash
   validate :llm_metadata_must_be_hash
   validate :input_or_documents_present
   validate :documents_are_supported
@@ -223,6 +224,18 @@ class Entry < ApplicationRecord
     llm_value.is_a?(Hash) ? llm_value.deep_stringify_keys : {}
   end
 
+  def document_metadata
+    document_value.is_a?(Hash) ? document_value.deep_stringify_keys : {}
+  end
+
+  def document_type
+    document_metadata["type"].presence
+  end
+
+  def document_title
+    document_metadata["title"].presence
+  end
+
   def time_since
     return nil unless display_time
 
@@ -261,6 +274,10 @@ class Entry < ApplicationRecord
 
   def llm_metadata_must_be_hash
     errors.add(:extracted_data, :invalid) unless llm_metadata.is_a?(Hash)
+  end
+
+  def document_metadata_must_be_hash
+    errors.add(:extracted_data, :invalid) unless document_metadata.is_a?(Hash)
   end
 
   def input_or_documents_present
@@ -303,6 +320,10 @@ class Entry < ApplicationRecord
     extracted_data.is_a?(Hash) ? extracted_data["llm"] || extracted_data[:llm] : {}
   end
 
+  def document_value
+    extracted_data.is_a?(Hash) ? extracted_data["document"] || extracted_data[:document] : {}
+  end
+
   def update_extracted_data(key, value)
     base = extracted_data.is_a?(Hash) ? extracted_data.deep_stringify_keys : default_extracted_data
     base[key] = value
@@ -310,7 +331,7 @@ class Entry < ApplicationRecord
   end
 
   def default_extracted_data
-    { "facts" => [], "llm" => {} }
+    { "facts" => [], "document" => {}, "llm" => {} }
   end
 
   def normalize_hash(value)

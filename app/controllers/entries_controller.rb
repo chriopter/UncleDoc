@@ -165,7 +165,7 @@ class EntriesController < ApplicationController
   end
 
   def force_reparse(entry)
-    entry.extracted_data = { "facts" => [], "llm" => {} }
+    entry.extracted_data = { "facts" => [], "document" => {}, "llm" => {} }
     entry.todo_done = false if entry.has_attribute?(:todo_done)
     entry.todo_done_at = nil if entry.has_attribute?(:todo_done_at)
 

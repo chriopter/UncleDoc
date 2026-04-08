@@ -7,7 +7,7 @@ class BabyQuickActionsController < ApplicationController
     @person.entries.create!(
       occurred_at: Time.current,
       input: diaper_note,
-      extracted_data: { "facts" => EntryFactListBuilder.fact_objects([ payload ]), "llm" => {} },
+      extracted_data: { "facts" => EntryFactListBuilder.fact_objects([ payload ]), "document" => {}, "llm" => {} },
       parse_status: "parsed",
       source: Entry::SOURCES[:babywidget]
     )
@@ -28,7 +28,7 @@ class BabyQuickActionsController < ApplicationController
     @person.entries.create!(
       occurred_at: Time.current,
       input: t("baby.bottle.note", amount: amount),
-      extracted_data: { "facts" => EntryFactListBuilder.fact_objects([ { "type" => "bottle_feeding", "value" => amount, "unit" => "ml" } ]), "llm" => {} },
+      extracted_data: { "facts" => EntryFactListBuilder.fact_objects([ { "type" => "bottle_feeding", "value" => amount, "unit" => "ml" } ]), "document" => {}, "llm" => {} },
       parse_status: "parsed",
       source: Entry::SOURCES[:babywidget]
     )

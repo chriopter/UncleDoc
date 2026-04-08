@@ -10,8 +10,13 @@ class LlmMultimodalRequest
     chat = ResearchChatRuntime.build_chat(setting: preference, model:, temperature:)
     chat.with_instructions(instructions)
 
-    response = chat.ask(prompt, with: build_attachments(attachments))
-    raw = response.raw
+    response = nil
+    raw = nil
+
+    with_built_attachments(attachments) do |built_attachments|
+      response = chat.ask(prompt, with: built_attachments)
+      raw = response.raw
+    end
 
     Response.new(
       content: response.content.to_s,
@@ -20,20 +25,29 @@ class LlmMultimodalRequest
     )
   end
 
-  def self.build_attachments(attachments)
-    Array(attachments).flat_map do |attachment|
-      attachment_inputs(attachment)
+  def self.with_built_attachments(attachments)
+    tempfiles = []
+    built_attachments = Array(attachments).flat_map do |attachment|
+      attachment_inputs(attachment, tempfiles: tempfiles)
+    end
+
+    yield built_attachments
+  ensure
+    tempfiles.each do |tempfile|
+      tempfile.close!
+    rescue StandardError
+      nil
     end
   end
 
-  def self.attachment_inputs(attachment)
+  def self.attachment_inputs(attachment, tempfiles: [])
     llm_attachment = RubyLLM::Attachment.new(attachment)
 
     case llm_attachment.type
     when :image
       [ attachment ]
     when :pdf
-      pdf_image_parts(attachment)
+      pdf_image_parts(attachment, tempfiles: tempfiles)
     when :text
       [ attachment ]
     else
@@ -41,18 +55,19 @@ class LlmMultimodalRequest
     end
   end
 
-  def self.pdf_image_parts(attachment)
+  def self.pdf_image_parts(attachment, tempfiles: [])
     blob = attachment.respond_to?(:download) ? attachment : attachment.blob
     png_images = rasterize_pdf(blob.download)
 
     raise ArgumentError, "Could not rasterize PDF attachment" if png_images.empty?
 
     png_images.each_with_index.map do |png_bytes, index|
-      {
-        io: StringIO.new(png_bytes),
-        filename: "document-page-#{index + 1}.png",
-        content_type: "image/png"
-      }
+      tempfile = Tempfile.new([ "uncledoc-document-page-#{index + 1}", ".png" ])
+      tempfile.binmode
+      tempfile.write(png_bytes)
+      tempfile.flush
+      tempfiles << tempfile
+      tempfile.path
     end
   end
 

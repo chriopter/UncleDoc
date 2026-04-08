@@ -1,6 +1,6 @@
 <% display_time = entry.occurred_at || entry.created_at %>
 <% raw_text = entry.input.presence || (entry.documents_attached? ? t("entries.documents.document_only") : nil) %>
-<% fact_preview = entry.fact_summary.presence %>
+<% fact_preview = entry.document_title.presence || entry.fact_summary.presence %>
 <% show_date = local_assigns[:show_date] %>
 <% date = local_assigns[:date] %>
 
@@ -69,34 +69,24 @@
       </div>
     <% end %>
 
-    <div class="mt-3 grid gap-4 lg:grid-cols-3">
+    <div class="mt-3 space-y-4">
       <div class="min-w-0">
+        <% if entry.document_type.present? || entry.document_title.present? %>
+          <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("entries.document_metadata.title") %></p>
+          <p class="mb-3 text-sm leading-relaxed text-slate-700 break-words"><%= [entry.document_title, entry.document_type].compact.join(" • ") %></p>
+        <% end %>
         <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("entries.raw_input.title") %></p>
         <p class="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap break-words"><%= raw_text %></p>
-        <%= render "entries/documents", entry: entry, compact: false %>
       </div>
 
-      <div class="min-w-0 border-t border-slate-100 pt-3 lg:border-t-0 lg:border-l lg:border-slate-100 lg:pl-4 lg:pt-0">
-        <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("entries.facts.title") %></p>
-        <% if entry.fact_items.present? %>
-          <ul class="space-y-1 text-sm leading-relaxed text-slate-700">
-            <% entry.fact_items.each do |fact| %>
-              <li class="break-words">- <%= fact %></li>
-            <% end %>
-          </ul>
-        <% else %>
-          <p class="text-sm text-slate-400"><%= t("entries.parsed_data.empty") %></p>
-        <% end %>
-      </div>
-
-      <div class="min-w-0 border-t border-slate-100 pt-3 lg:border-t-0 lg:border-l lg:border-slate-100 lg:pl-4 lg:pt-0">
+      <div class="min-w-0">
         <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("entries.parsed_data.title") %></p>
-        <% if entry.parseable_data.present? %>
-          <%= render "entries/data_details", entry: entry %>
-        <% else %>
-          <p class="text-sm text-slate-400"><%= t("entries.parsed_data.empty") %></p>
-        <% end %>
+        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+          <%= render_extracted_data(entry.extracted_data) %>
+        </div>
       </div>
+
+      <%= render "entries/documents", entry: entry, compact: false %>
     </div>
   </div>
 </details>

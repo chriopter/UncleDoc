@@ -2,9 +2,9 @@ require "json"
 
 class EntryDataParser
   class Result
-    attr_reader :fact_objects, :occurred_at, :llm, :error
+    attr_reader :fact_objects, :occurred_at, :document, :llm, :error
 
-    def initialize(facts: nil, fact_objects: nil, occurred_at: nil, llm: nil, llm_response: nil, parseable_data: nil, error: nil, **)
+    def initialize(facts: nil, fact_objects: nil, occurred_at: nil, document: nil, llm: nil, llm_response: nil, parseable_data: nil, error: nil, **)
       @fact_objects = Array(fact_objects || facts)
       if parseable_data.present? && (@fact_objects.blank? || @fact_objects.all? { |item| item.is_a?(String) })
         @fact_objects = Entry.build_fact_objects_from_legacy(@fact_objects, parseable_data)
@@ -12,6 +12,7 @@ class EntryDataParser
         @fact_objects = Entry.build_fact_objects_from_legacy(@fact_objects, [])
       end
       @occurred_at = occurred_at
+      @document = (document || {}).deep_stringify_keys
       @llm = (llm || llm_response || {}).deep_stringify_keys
       @error = error
     end
@@ -56,10 +57,10 @@ class EntryDataParser
   ].freeze
 
   def self.call(input:, preference: AppSetting.current, entry: nil)
-    return Result.new(facts: [], occurred_at: nil, llm: {}, error: :blank_input) if input.blank? && entry_documents(entry).blank?
+    return Result.new(facts: [], occurred_at: nil, document: {}, llm: {}, error: :blank_input) if input.blank? && entry_documents(entry).blank?
 
     configuration_error = configuration_error_for(preference)
-    return Result.new(facts: [], occurred_at: nil, llm: {}, error: configuration_error) if configuration_error.present?
+    return Result.new(facts: [], occurred_at: nil, document: {}, llm: {}, error: configuration_error) if configuration_error.present?
 
     payload = request_payload_with_retry(input, preference, entry: entry)
     facts = sanitize_facts(payload["facts"])
@@ -69,11 +70,12 @@ class EntryDataParser
     Result.new(
       facts: facts,
       occurred_at: sanitize_occurred_at(payload["occurred_at"]),
+      document: sanitize_document(payload["document"]),
       llm: sanitize_llm(payload["llm"] || payload["llm_response"])
     )
   rescue StandardError => error
     Rails.logger.warn("Entry parsing failed: #{error.class}: #{error.message}")
-    Result.new(facts: [], occurred_at: nil, llm: {}, error: :request_failed)
+    Result.new(facts: [], occurred_at: nil, document: {}, llm: {}, error: :request_failed)
   end
 
   def self.ready?(preference = AppSetting.current)
@@ -120,23 +122,26 @@ class EntryDataParser
   def self.request_multimodal_completion(input, preference, entry: nil)
     last_response = nil
     last_error = nil
+    prompts = [ user_prompt(input, entry: entry), attachment_ocr_retry_prompt(input, entry: entry) ]
 
     multimodal_models_for(preference).each do |model|
-      content = LlmMultimodalRequest.call(
-        request_kind: "entry_parse",
-        preference: preference,
-        instructions: system_prompt,
-        prompt: user_prompt(input, entry: entry),
-        attachments: entry_documents(entry),
-        person: entry&.person,
-        entry: entry,
-        temperature: 0,
-        model: model
-      ).content
+      prompts.each do |prompt|
+        content = LlmMultimodalRequest.call(
+          request_kind: "entry_parse",
+          preference: preference,
+          instructions: system_prompt,
+          prompt: prompt,
+          attachments: entry_documents(entry),
+          person: entry&.person,
+          entry: entry,
+          temperature: 0,
+          model: model
+        ).content
 
-      last_response = content
-      payload = parse_json_object(content)
-      return content if document_payload_useful?(payload)
+        last_response = content
+        payload = parse_json_object(content)
+        return content if document_payload_useful?(payload)
+      end
     rescue StandardError => error
       last_error = error
     end
@@ -256,6 +261,14 @@ class EntryDataParser
     end.compact
   end
 
+  def self.sanitize_document(value)
+    return {} unless value.is_a?(Hash)
+
+    value.deep_stringify_keys.slice("type", "title").transform_values do |item|
+      item.to_s.strip.presence
+    end.compact
+  end
+
   def self.normalize_metric(metric)
     metric.to_s.strip.downcase.gsub(/[^a-z0-9]+/, "_").gsub(/\A_|_\z/, "")
   end
@@ -332,14 +345,21 @@ class EntryDataParser
     names.any? ? names.join(", ") : "none"
   end
 
+  def self.attachment_ocr_retry_prompt(input, entry: nil)
+    <<~PROMPT.strip
+      #{user_prompt(input, entry: entry)}
+
+      Important attachment handling:
+      - The attachment may be a scanned or photographed medical document.
+      - OCR the rendered pages carefully.
+      - If a lab table, medical letter, invoice, or report is visible, extract the readable facts from it.
+      - Do not return an empty facts array when the attachment clearly contains readable medical content.
+      - Return empty facts only if the rendered pages truly contain no readable medically useful information.
+    PROMPT
+  end
+
   def self.multimodal_models_for(preference)
-    models = [ preference.llm_model ]
-
-    if preference.llm_provider == "openrouter" && preference.llm_model == "openai/gpt-5.4"
-      models.unshift("openai/gpt-4.1-mini")
-    end
-
-    models.compact.uniq
+    [ preference.llm_model ].compact.uniq
   end
 
   def self.document_payload_useful?(payload)

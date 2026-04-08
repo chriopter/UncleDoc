@@ -267,6 +267,8 @@ en:
       healthkit_summary: "Apple Health Summary"
     facts:
       title: "Facts"
+    document_metadata:
+      title: "Document"
     edit:
       label: "Edit"
       title: "Update note"
@@ -335,6 +337,10 @@ en:
     parsed_data:
       title: "Parsed"
       empty: "No parsed data yet"
+      item: "Item"
+    boolean:
+      true: "Yes"
+      false: "No"
     raw_input:
       title: "Input"
       label: "Raw"

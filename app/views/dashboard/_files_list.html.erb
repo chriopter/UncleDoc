@@ -4,7 +4,7 @@
       <% document_entries.each do |entry| %>
         <details class="group overflow-hidden rounded-xl border border-slate-200">
           <summary class="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto_1rem] items-center gap-4 px-4 py-3 transition hover:bg-amber-50/40 [&::-webkit-details-marker]:hidden">
-            <p class="min-w-0 truncate text-sm text-slate-800"><%= entry.fact_summary.presence || entry.input.presence || t("files.list.document_only") %></p>
+            <p class="min-w-0 truncate text-sm text-slate-800"><%= entry.document_title.presence || entry.fact_summary.presence || entry.input.presence || t("files.list.document_only") %></p>
             <span class="shrink-0 text-xs text-slate-400"><%= l(entry.display_time, format: :long) %></span>
             <svg class="h-3.5 w-3.5 shrink-0 text-slate-300 transition group-open:rotate-180 group-open:text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
@@ -12,6 +12,9 @@
           </summary>
 
           <div class="border-t border-slate-100 px-4 py-3">
+            <% if entry.document_type.present? || entry.document_title.present? %>
+              <p class="mb-3 text-sm leading-relaxed text-slate-600 break-words"><%= [entry.document_title, entry.document_type].compact.join(" • ") %></p>
+            <% end %>
             <% if entry.input.present? %>
               <p class="mb-3 text-sm leading-relaxed text-slate-600 whitespace-pre-wrap break-words"><%= entry.input %></p>
             <% end %>

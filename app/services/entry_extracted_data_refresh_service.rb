@@ -21,7 +21,7 @@ class EntryExtractedDataRefreshService
       facts = babywidget_facts_for(entry)
       next if facts.blank?
 
-      entry.update!(extracted_data: { "facts" => facts, "llm" => {} }, parse_status: "parsed")
+      entry.update!(extracted_data: { "facts" => facts, "document" => {}, "llm" => {} }, parse_status: "parsed")
       rebuilt_count += 1
     end
 
@@ -32,7 +32,7 @@ class EntryExtractedDataRefreshService
     queued_count = 0
 
     Entry.where.not(source: Entry::SOURCES[:babywidget]).find_each do |entry|
-      entry.update!(extracted_data: { "facts" => [], "llm" => {} }, parse_status: EntryDataParser.ready? ? "pending" : "skipped")
+      entry.update!(extracted_data: { "facts" => [], "document" => {}, "llm" => {} }, parse_status: EntryDataParser.ready? ? "pending" : "skipped")
       if entry.pending_parse?
         EntryDataParseJob.perform_later(entry.id)
         queued_count += 1

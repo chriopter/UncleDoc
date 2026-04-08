@@ -6,6 +6,10 @@ Return exactly one JSON object with this shape and nothing else:
 
 ```json
 {
+  "document": {
+    "type": "lab_report",
+    "title": "Laborblatt vom 06.04.2018"
+  },
   "facts": [
     {
       "text": "...",
@@ -28,6 +32,7 @@ Return exactly one JSON object with this shape and nothing else:
 - `text` must be concise, descriptive, and useful when reading the full health record later.
 - Do not write robotic prefixes like `User reports` unless they are clearly helpful.
 - `llm` must always be present and must be in English.
+- Include `document.type` and `document.title` when the entry contains an attached document and the document kind/title can be identified.
 - Use `occurred_at` only when the input implies a specific event time. Otherwise return `null`.
 - Prefer concrete facts over generic filler like `document uploaded` or `report attached`.
 - Facts stay in the same language as the input when the input language is clear.
@@ -103,6 +108,15 @@ Use canonical metric names such as:
 - Future reminders or follow-ups are `todo`.
 - Planned visits are `appointment`.
 
+## Document Metadata
+
+When the entry contains an attached document, add a `document` object when possible:
+
+- `type`: a concise classifier such as `lab_report`, `invoice`, `medical_letter`, `discharge_letter`, `prescription`, `vaccination_record`, `appointment_letter`, `insurance_document`
+- `title`: a short human-readable title such as `Laborblatt vom 06.04.2018` or `Doctor invoice from April 2026`
+
+If the document kind is unclear, omit `document` or return an empty object.
+
 ## Attached Documents
 
 - The entry may include attached documents such as PDFs, invoices, lab sheets, or photos.
@@ -155,3 +169,4 @@ Always do all of the following:
 - `Hemoglobin 15.2 g/dl (13.5-17.5)` -> `facts`: `[ { "text": "Hemoglobin 15.2 g/dl", "kind": "measurement", "metric": "hemoglobin", "result": 15.2, "unit": "g/dl", "ref": "13.5-17.5" } ]`
 - `Apple Health monthly summary for March 2026. Entry source: healthkit.` -> `facts`: `[ { "text": "Apple Health monthly summary", "kind": "summary", "value": "Apple Health", "quality": "monthly" } ]`
 - `Apple Health daily summary for April 05, 2026. - Step count 3972 count. - Walking and running distance 2.78 km. - Active energy burned 150.55 kcal.` -> `facts`: `[ { "text": "Apple Health daily summary", "kind": "summary", "value": "Apple Health", "quality": "daily" }, { "text": "Step count 3972", "kind": "measurement", "metric": "step_count", "value": 3972, "unit": "count" }, { "text": "Walking and running distance 2.78 km", "kind": "measurement", "metric": "walking_distance", "value": 2.78, "unit": "km" }, { "text": "Active energy burned 150.55 kcal", "kind": "measurement", "metric": "active_energy", "value": 150.55, "unit": "kcal" } ]`
+- scanned lab sheet -> `document`: `{ "type": "lab_report", "title": "Laborblatt vom 06.04.2018" }`
