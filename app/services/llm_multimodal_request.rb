@@ -61,7 +61,7 @@ class LlmMultimodalRequest
       pdf_path = File.join(dir, "document.pdf")
       File.binwrite(pdf_path, pdf_bytes)
 
-      stdout, stderr, status = Open3.capture3("pdftoppm", "-png", "-f", "1", "-l", "3", pdf_path, File.join(dir, "page"))
+      stdout, stderr, status = Open3.capture3("pdftoppm", "-r", "300", "-png", "-f", "1", "-l", "5", pdf_path, File.join(dir, "page"))
       raise "pdftoppm failed: #{stderr.presence || stdout}" unless status.success?
 
       Dir[File.join(dir, "page-*.png")].sort.map { |path| File.binread(path) }

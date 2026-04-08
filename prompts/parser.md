@@ -108,6 +108,8 @@ Use canonical metric names such as:
 - The entry may include attached documents such as PDFs, invoices, lab sheets, or photos.
 - Read attachments directly when present and treat them like primary source input.
 - When a document contains useful health or admin details, extract them even if the typed note is short or empty.
+- OCR image-based PDFs and photos carefully. A scanned page or photographed document may still contain extractable medical facts even when embedded text is missing.
+- Do not claim that a PDF contains only image data unless you truly cannot read any medically useful text from the rendered pages.
 
 ## Apple Health / HealthKit Handling
 
