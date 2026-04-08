@@ -579,9 +579,17 @@ module ApplicationHelper
       lines = block.split("\n").map(&:rstrip)
       next if lines.empty?
 
-      if lines.all? { |line| line.lstrip.start_with?("- ", "* ") }
+      if code_block?(lines)
+        code = lines[1..-2].join("\n")
+        content_tag(:pre, class: "overflow-x-auto rounded-2xl bg-slate-950 px-4 py-3 text-xs leading-6 text-slate-100") do
+          content_tag(:code, code)
+        end
+      elsif lines.all? { |line| line.lstrip.start_with?("- ", "* ") }
         items = lines.map { |line| content_tag(:li, markdown_inline(line.lstrip[2..])) }
         content_tag(:ul, safe_join(items), class: "list-disc space-y-1 pl-5")
+      elsif lines.all? { |line| line.lstrip.match?(/\A\d+\.\s+/) }
+        items = lines.map { |line| content_tag(:li, markdown_inline(line.lstrip.sub(/\A\d+\.\s+/, ""))) }
+        content_tag(:ol, safe_join(items), class: "list-decimal space-y-1 pl-5")
       elsif lines.first.start_with?("### ")
         content_tag(:h3, markdown_inline(lines.first.delete_prefix("### ")), class: "mt-3 text-sm font-bold text-slate-900")
       elsif lines.first.start_with?("## ")
@@ -603,6 +611,10 @@ module ApplicationHelper
     escaped = escaped.gsub(/`([^`]+)`/, '<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.9em] text-slate-900">\1</code>')
     escaped = escaped.gsub(/\*\*([^*]+)\*\*/, '<strong class="font-semibold text-slate-900">\1</strong>')
     escaped.gsub(/\*([^*]+)\*/, '<em>\1</em>').html_safe
+  end
+
+  def code_block?(lines)
+    lines.length >= 2 && lines.first.start_with?("```") && lines.last == "```"
   end
 
   def local_git_sha

@@ -6,15 +6,15 @@ class LlmChatRequestTest < ActiveSupport::TestCase
     preference.update!(llm_provider: "ollama", llm_model: "llama3")
     person = Person.create!(name: "Peter", birth_date: Date.new(2020, 1, 1))
 
-    fake_response = Struct.new(:code, :body).new("200", { choices: [ { message: { content: "[]" } } ] }.to_json)
-
-    http_singleton = Net::HTTP.singleton_class
-    http_singleton.alias_method :__original_start_for_test, :start
-    http_singleton.define_method(:start) do |*_args, **_kwargs, &block|
-      http = Object.new
-      http.define_singleton_method(:request) { |_request| fake_response }
-      block.call(http)
+    fake_chat = Object.new
+    fake_chat.define_singleton_method(:add_message) { |_attrs| true }
+    fake_chat.define_singleton_method(:complete) do
+      Struct.new(:content, :raw).new("[]", Struct.new(:status, :body).new(200, '{"ok":true}'))
     end
+
+    runtime_singleton = ResearchChatRuntime.singleton_class
+    runtime_singleton.alias_method :__original_build_chat_for_test, :build_chat
+    runtime_singleton.define_method(:build_chat) { |**| fake_chat }
 
     begin
       response = LlmChatRequest.call(
@@ -25,29 +25,28 @@ class LlmChatRequestTest < ActiveSupport::TestCase
         temperature: 0
       )
     ensure
-      http_singleton.alias_method :start, :__original_start_for_test
-      http_singleton.remove_method :__original_start_for_test
+      runtime_singleton.alias_method :build_chat, :__original_build_chat_for_test
+      runtime_singleton.remove_method :__original_build_chat_for_test
     end
 
     assert_equal "[]", response.content
+    assert_equal 200, response.status_code
   end
 
   test "raises on failed response" do
     preference = AppSetting.current
     preference.update!(llm_provider: "ollama", llm_model: "llama3")
 
-    fake_response = Struct.new(:code, :body).new("500", '{"error":"boom"}')
+    fake_chat = Object.new
+    fake_chat.define_singleton_method(:add_message) { |_attrs| true }
+    fake_chat.define_singleton_method(:complete) { raise StandardError, "boom" }
 
-    http_singleton = Net::HTTP.singleton_class
-    http_singleton.alias_method :__original_start_for_test, :start
-    http_singleton.define_method(:start) do |*_args, **_kwargs, &block|
-      http = Object.new
-      http.define_singleton_method(:request) { |_request| fake_response }
-      block.call(http)
-    end
+    runtime_singleton = ResearchChatRuntime.singleton_class
+    runtime_singleton.alias_method :__original_build_chat_for_error_test, :build_chat
+    runtime_singleton.define_method(:build_chat) { |**| fake_chat }
 
     begin
-      assert_raises(RuntimeError) do
+      assert_raises(StandardError) do
         LlmChatRequest.call(
           request_kind: "log_summary",
           preference: preference,
@@ -55,8 +54,8 @@ class LlmChatRequestTest < ActiveSupport::TestCase
         )
       end
     ensure
-      http_singleton.alias_method :start, :__original_start_for_test
-      http_singleton.remove_method :__original_start_for_test
+      runtime_singleton.alias_method :build_chat, :__original_build_chat_for_error_test
+      runtime_singleton.remove_method :__original_build_chat_for_error_test
     end
   end
 end

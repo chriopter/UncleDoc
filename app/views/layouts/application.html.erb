@@ -264,7 +264,7 @@
                 <% end %>
 
                 <% if current_user.present? %>
-                  <details class="group mt-2" data-controller="dropdown">
+                  <details class="group mt-2">
                     <summary class="flex cursor-pointer items-center gap-3 rounded-[1.15rem] px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-white/80 [&::-webkit-details-marker]:hidden">
                       <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-xs font-black text-amber-800"><%= current_user.person&.name&.first&.upcase || "?" %></span>
                       <span class="min-w-0 truncate"><%= current_user.person&.name || current_user.email_address %></span>

@@ -113,6 +113,19 @@ For local development, start the app with:
 bin/dev
 ```
 
+`bin/dev` now starts:
+
+- the Rails web app
+- a Solid Queue worker via `bin/jobs`
+- the Tailwind watcher
+
+Development also uses the Rails default split SQLite setup:
+
+- primary DB: `storage/development.sqlite3`
+- queue DB: `storage/development_queue.sqlite3`
+- cable DB: `storage/development_cable.sqlite3`
+- cache DB: `storage/development_cache.sqlite3`
+
 If you want seeded demo content first, run:
 
 ```bash
@@ -140,7 +153,7 @@ This repo is also used in a LAN-only self-hosted setup:
 - command: `bin/dev`
 - environment: `development`
 - bind: `0.0.0.0:3000`
-- persistent DB: `storage/development.sqlite3`
+- persistent DBs: `storage/development*.sqlite3`
 
 Useful commands:
 
