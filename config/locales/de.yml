@@ -609,6 +609,12 @@ de:
       appointment_letter: "Terminbriefe"
       insurance_document: "Versicherungsdokumente"
       other: "Sonstige Dokumente"
+    details: "Details"
+    filters:
+      year: "Jahr"
+      doc_type: "Typ"
+      all_years: "Alle Jahre"
+      all_types: "Alle Typen"
     list:
       label: "Archiv"
       title: "Hochgeladene Dokumente"
