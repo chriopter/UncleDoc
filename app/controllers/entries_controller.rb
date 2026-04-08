@@ -15,21 +15,11 @@ class EntriesController < ApplicationController
   end
 
   def create
-    @entry = @person.entries.build(model_entry_params)
-    attach_uploaded_documents(@entry)
-    assign_document_source_ref(@entry) if uploaded_documents_present?
-    should_enqueue_parse = @entry.fact_objects.blank? && entry_has_parseable_source?(@entry, documents_added: uploaded_documents_present?) && EntryDataParser.ready? && !@entry.babywidget_generated?
+    created_entries = build_create_entries
+    @entry = created_entries.first || @person.entries.build(model_entry_params)
 
-    @entry.parse_status = if @entry.fact_objects.present?
-      "parsed"
-    elsif should_enqueue_parse
-      "pending"
-    else
-      "skipped"
-    end
-
-    if @entry.save
-      EntryDataParseJob.perform_later(@entry.id) if should_enqueue_parse
+    if save_created_entries(created_entries)
+      enqueue_parse_jobs(created_entries)
 
       respond_to do |format|
         format.html { redirect_to root_path(person_slug: @person.name, tab: "log"), notice: t("entries.flash.created") }
@@ -184,6 +174,54 @@ class EntriesController < ApplicationController
     uploaded_document_files.any?
   end
 
+  def build_create_entries
+    return [ build_entry_for_documents ] if uploaded_document_files.size <= 1
+
+    uploaded_document_files.each_with_index.map do |document, index|
+      build_entry_for_documents(document:, input: index.zero? ? model_entry_params[:input] : "")
+    end
+  end
+
+  def build_entry_for_documents(document: nil, input: model_entry_params[:input])
+    entry = @person.entries.build(model_entry_params)
+    entry.input = input
+
+    if document
+      attach_uploaded_document(entry, document)
+      assign_document_source_ref(entry, document)
+    else
+      attach_uploaded_documents(entry)
+      assign_document_source_ref(entry) if uploaded_documents_present?
+    end
+
+    should_enqueue_parse = entry.fact_objects.blank? && entry_has_parseable_source?(entry, documents_added: document.present? || uploaded_documents_present?) && EntryDataParser.ready? && !entry.babywidget_generated?
+
+    entry.parse_status = if entry.fact_objects.present?
+      "parsed"
+    elsif should_enqueue_parse
+      "pending"
+    else
+      "skipped"
+    end
+
+    entry
+  end
+
+  def save_created_entries(entries)
+    Entry.transaction do
+      entries.each(&:save!)
+    end
+    true
+  rescue ActiveRecord::RecordInvalid
+    false
+  end
+
+  def enqueue_parse_jobs(entries)
+    entries.each do |entry|
+      EntryDataParseJob.perform_later(entry.id) if entry.pending_parse?
+    end
+  end
+
   def uploaded_document_files
     Array(params.dig(:entry, :documents)).select do |document|
       document.respond_to?(:original_filename) && document.original_filename.present?
@@ -192,23 +230,27 @@ class EntriesController < ApplicationController
 
   def attach_uploaded_documents(entry)
     uploaded_document_files.each do |document|
-      document.tempfile.rewind
-      entry.documents.attach(
-        io: document.tempfile,
-        filename: document.original_filename,
-        content_type: document.content_type
-      )
+      attach_uploaded_document(entry, document)
     end
+  end
+
+  def attach_uploaded_document(entry, document)
+    document.tempfile.rewind
+    entry.documents.attach(
+      io: document.tempfile,
+      filename: document.original_filename,
+      content_type: document.content_type
+    )
   end
 
   def entry_has_parseable_source?(entry, documents_added: false)
     entry.input.to_s.strip.present? || entry.documents_attached? || documents_added
   end
 
-  def assign_document_source_ref(entry)
+  def assign_document_source_ref(entry, document = uploaded_document_files.first)
     return if entry.source_ref.present?
 
-    primary_name = uploaded_document_files.first&.original_filename.to_s.parameterize.presence || "document"
+    primary_name = document&.original_filename.to_s.parameterize.presence || "document"
     entry.source_ref = "upload:#{primary_name}:#{SecureRandom.hex(6)}"
   end
 end

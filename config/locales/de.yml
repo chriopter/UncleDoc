@@ -289,7 +289,7 @@ de:
       document_only: "Dokument-Upload"
       upload_title: "Dokumente anhängen"
       upload_hint: "PDFs, JPGs, PNGs oder TXT-Dateien hochladen. Das LLM liest sie direkt und macht daraus Fakten."
-      drop_hint: "Dateien ins Eingabefeld ziehen oder die Klammer nutzen"
+      drop_hint: "Dateien oder ganze Ordner ins Eingabefeld ziehen oder die Klammer nutzen"
       errors:
         invalid_type: "Nicht unterstützter Dateityp: %{content_type}"
         too_large: "Datei ist zu groß. Maximal %{size}."

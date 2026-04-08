@@ -111,6 +111,33 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_match(/\Aupload:invoice-pdf:[0-9a-f]{12}\z/, entry.source_ref)
   end
 
+  test "creates one entry per uploaded document and keeps typed text only on first entry" do
+    AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
+
+    assert_enqueued_jobs 2, only: EntryDataParseJob do
+      assert_difference("Entry.count", 2) do
+        post person_entries_url(@person), params: {
+          entry: {
+            input: "Documents from pediatrician visit",
+            occurred_at: "2026-03-29T10:15",
+            documents: [
+              fake_pdf_upload(name: "invoice.pdf"),
+              fake_pdf_upload(name: "lab-sheet.pdf")
+            ]
+          }
+        }
+      end
+    end
+
+    created_entries = Entry.order(:created_at).last(2)
+
+    assert_equal [ "Documents from pediatrician visit", "" ], created_entries.map(&:input)
+    assert_equal [ [ "invoice.pdf" ], [ "lab-sheet.pdf" ] ], created_entries.map(&:document_names)
+    assert created_entries.all? { |entry| entry.parse_status == "pending" }
+    assert_match(/\Aupload:invoice-pdf:[0-9a-f]{12}\z/, created_entries.first.source_ref)
+    assert_match(/\Aupload:lab-sheet-pdf:[0-9a-f]{12}\z/, created_entries.second.source_ref)
+  end
+
   test "defaults occurred_at to current time when omitted" do
     travel_to Time.zone.local(2026, 3, 29, 11, 45) do
       assert_difference("Entry.count", 1) do
