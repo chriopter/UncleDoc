@@ -63,12 +63,10 @@ class HealthkitSummarySyncService
 
     return false unless changed || entry.new_record?
 
-    entry.facts = [] if entry.has_attribute?(:facts)
-    entry.parseable_data = []
-    entry.llm_response = {} if entry.has_attribute?(:llm_response)
+    entry.extracted_data = { "facts" => [], "llm" => {} }
     entry.todo_done = false if entry.has_attribute?(:todo_done)
     entry.todo_done_at = nil if entry.has_attribute?(:todo_done_at)
-    entry.parse_status = EntryDataParser.ready? ? "pending" : "skipped" if entry.has_attribute?(:parse_status)
+    entry.parse_status = EntryDataParser.ready? ? "pending" : "skipped"
     true
   end
 

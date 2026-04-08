@@ -6,15 +6,17 @@ Return exactly one JSON object with this shape and nothing else:
 
 ```json
 {
-  "facts": ["..."],
-  "parseable_data": [
-    { "type": "..." }
+  "facts": [
+    {
+      "text": "...",
+      "kind": "measurement"
+    }
   ],
   "occurred_at": null,
-  "llm_response": {
+  "llm": {
     "status": "structured",
     "confidence": "high",
-    "note": "Canonical structured data extracted successfully."
+    "note": "Canonical structured facts extracted successfully."
   }
 }
 ```
@@ -22,23 +24,47 @@ Return exactly one JSON object with this shape and nothing else:
 ## Hard Rules
 
 - No prose, no Markdown, no code fences outside the JSON object.
-- Always use English canonical schema names inside `parseable_data`.
-- Facts stay in the same language as the input when the input language is clear.
-- `llm_response` must always be present and must be in English.
-- Always try to return the most useful `facts` and `parseable_data` you can.
-- If the note is clearly machine-usable, do not leave `parseable_data` empty.
+- Every fact must include `text` as the first field and `kind` as the second field.
+- `text` must be concise, descriptive, and useful when reading the full health record later.
+- Do not write robotic prefixes like `User reports` unless they are clearly helpful.
+- `llm` must always be present and must be in English.
 - Use `occurred_at` only when the input implies a specific event time. Otherwise return `null`.
-- Prefer concrete facts over generic filler like "document uploaded" or "report attached".
+- Prefer concrete facts over generic filler like `document uploaded` or `report attached`.
+- Facts stay in the same language as the input when the input language is clear.
 
-## Attached Documents
+## Fact Kinds
 
-- The entry may include attached documents such as PDFs, invoices, lab sheets, or photos.
-- Read attachments directly when present and treat them like primary source input.
-- When a document contains useful health or admin details, extract them even if the typed note is short or empty.
+Use these exact `kind` values:
 
-## Preferred Widget Types
+- `measurement`
+- `appointment`
+- `todo`
+- `medication`
+- `vaccination`
+- `symptom`
+- `summary`
+- `note`
 
-When the note clearly fits one of these app-critical widget types, prefer these exact canonical types:
+## Measurement Facts
+
+When a fact is a measurement, include:
+
+- `text`
+- `kind: "measurement"`
+- `metric`
+
+Then include the structured keys that fit the measurement, for example:
+
+- `value`, `unit`
+- `systolic`, `diastolic`, `unit`
+- `side`
+- `wet`, `solid`, `rash`
+- `flag`
+- `ref`
+- `result`
+- `quality`
+
+Use canonical metric names such as:
 
 - `temperature`
 - `pulse`
@@ -47,17 +73,41 @@ When the note clearly fits one of these app-critical widget types, prefer these 
 - `bottle_feeding`
 - `breast_feeding`
 - `diaper`
+- `sleep`
+- `blood_pressure`
+- `step_count`
+- `walking_distance`
+- `cycling_distance`
+- `active_energy`
+- `basal_energy`
+- `flights_climbed`
+- `walking_speed`
+- `walking_step_length`
+- `heart_rate_variability`
+- `respiratory_rate`
+- `oxygen_saturation`
+- `vo2_max`
+- `dietary_energy`
+- `dietary_carbohydrates`
+- `dietary_protein`
+- `dietary_fat`
+- `dietary_sugar`
+- `dietary_water`
+- `workouts`
+- `audio_exposure_events`
 
-For clear measurements, feedings, diapers, medication, vaccination, appointments, todos, symptoms, or lab values, return at least one `parseable_data` item.
+## Medication / Vaccination / Planning
 
-## Limits And Safety
+- `medication` is not a measurement.
+- `vaccination` is not a measurement.
+- Future reminders or follow-ups are `todo`.
+- Planned visits are `appointment`.
 
-- Return at most one `todo` item per entry.
-- Return at most one `healthkit_summary` item per entry.
-- `todo` completion state is app-managed. Never encode checked or done state into `parseable_data`.
-- `todo` is only for actionable reminders, checks, or follow-ups.
-- Medical findings, measurements, symptoms, vaccinations, medication, vitals, and similar health data are never `todo` or `appointment`.
-- Individual lab markers from bloodwork, urine tests, chemistry panels, thyroid panels, vitamin checks, and similar reports are not `medication`. Use `lab_result`.
+## Attached Documents
+
+- The entry may include attached documents such as PDFs, invoices, lab sheets, or photos.
+- Read attachments directly when present and treat them like primary source input.
+- When a document contains useful health or admin details, extract them even if the typed note is short or empty.
 
 ## Apple Health / HealthKit Handling
 
@@ -67,83 +117,39 @@ Treat it as a distinctive machine-generated health summary, not as a free-form d
 
 Always do all of the following:
 
-1. Return exactly one `healthkit_summary` item with:
-   - `type: "healthkit_summary"`
-   - `value: "Apple Health"`
-   - `quality: "daily"` or `"monthly"`
-2. Extract obvious canonical measurements when they are clearly present:
-   - `weight`
-   - `pulse`
-   - `sleep`
-   - `blood_pressure`
-   - `temperature`
-   - `height`
-3. Convert other quantified Apple Health bullets into `lab_result` items.
+1. Return one summary fact:
+   - `text`: `Apple Health daily summary` or `Apple Health monthly summary`
+   - `kind`: `summary`
+   - `value`: `Apple Health`
+   - `quality`: `daily` or `monthly`
+2. Extract obvious measurements when they are clearly present.
+3. Keep the Apple Health summary fact because the record-reading LLM needs that context.
 
-Use `lab_result` for Apple Health metrics such as:
+## Limits And Safety
 
-- step count
-- walking distance
-- cycling distance
-- active energy
-- basal energy
-- flights climbed
-- walking speed
-- walking step length
-- heart rate variability
-- respiratory rate
-- oxygen saturation
-- VO2 max
-- workouts and workout duration
-- dietary totals
-- audio exposure totals
-- other clear numeric Apple Health metrics
-
-For Apple Health `lab_result` items:
-
-- use the metric name as `value`
-- use the measured number as `result`
-- keep the provided unit when sensible
-
-Apple Health summary entries are generated health data. They are not todos, appointments, medication, or vaccination.
-
-## Canonical Types
-
-- `temperature`: `type`, `value`, `unit`, optional `flag`
-- `pulse`: `type`, `value`, `unit`
-- `weight`: `type`, `value`, `unit`
-- `height`: `type`, `value`, `unit`
-- `bottle_feeding`: `type`, `value`, `unit`
-- `breast_feeding`: `type`, optional `value`, optional `unit`, optional `side`, optional `quality`
-- `diaper`: `type`, `wet`, `solid`, optional `rash`
-- `medication`: `type`, `value`, optional `dose`
-- `vaccination`: `type`, `value`, optional `dose`
-- `appointment`: `type`, `value`, optional `scheduled_for`, optional `location`, optional `quality`
-- `todo`: `type`, `value`, optional `due_at`, optional `location`, optional `quality`
-- `sleep`: `type`, `value`, `unit`
-- `symptom`: `type`, `value`, optional `location`, optional `quality`
-- `blood_pressure`: `type`, `systolic`, `diastolic`, optional `unit`
-- `lab_result`: `type`, `value`, `result`, optional `unit`, optional `ref`, optional `flag`
-- `healthkit_summary`: `type`, `value`, optional `quality`
+- Return at most one `todo` fact per entry.
+- Return at most one HealthKit summary fact per entry.
+- `todo` completion state is app-managed. Never encode checked or done state in the facts.
+- Medical findings, measurements, symptoms, vaccinations, medication, and vitals are never `todo` or `appointment`.
 
 ## Mapping Hints
 
-- Map `Trinken`, `Stillen`, or `Fütterung` to `breast_feeding` unless the note clearly indicates a bottle.
-- Map `Windel` to `diaper`.
+- Map `Trinken`, `Stillen`, or `Fütterung` to `measurement` with `metric: "breast_feeding"` unless the note clearly indicates a bottle.
+- Map `Windel` to `measurement` with `metric: "diaper"`.
 - Map `Impfung` to `vaccination`.
 - Map `Termin`, `doctor appointment`, or similar visit planning to `appointment`.
 - Map actionable reminders, checks, and pinned follow-ups to `todo`.
-- Map lab sheet rows like `Hemoglobin 15.2 g/dl`, `TSH 1.35 µIU/ml`, or `Vitamin D 81.9 ng/ml` to `lab_result`, where `value` is the marker name and `result` is the measured number or text.
+- Map symptoms and feelings to `symptom`.
+- Map lab sheet rows like `Hemoglobin 15.2 g/dl` to `measurement` facts with a useful `metric`, `result`, and optional `ref`.
 
 ## Examples
 
-- `53cm Körpergröße` -> `facts`: `["Körpergröße 53 cm"]`; `parseable_data`: `[ { "type": "height", "value": 53, "unit": "cm" } ]`
-- `sonntag RSV Impfung` -> `facts`: `["RSV-Impfung am Sonntag"]`; `parseable_data`: `[ { "type": "vaccination", "value": "RSV" } ]`
-- `Doctor appointment on 5.4. at 10:30 in the hospital` -> `parseable_data`: `[ { "type": "appointment", "value": "doctor appointment", "scheduled_for": "2026-04-05T10:30:00Z", "location": "hospital" } ]`
-- `todo bring vaccination card` -> `parseable_data`: `[ { "type": "todo", "value": "bring vaccination card" } ]`
-- `ask about feeding amount` -> `parseable_data`: `[ { "type": "todo", "value": "ask about feeding amount", "quality": "pinned" } ]`
-- `Blood pressure 120/80` -> `parseable_data`: `[ { "type": "blood_pressure", "systolic": 120, "diastolic": 80, "unit": "mmHg" } ]`
-- `Hemoglobin 15.2 g/dl (13.5-17.5)` -> `parseable_data`: `[ { "type": "lab_result", "value": "Hemoglobin", "result": 15.2, "unit": "g/dl", "ref": "13.5-17.5" } ]`
-- `Apple Health monthly summary for March 2026. Entry source: healthkit.` -> `parseable_data`: `[ { "type": "healthkit_summary", "value": "Apple Health", "quality": "monthly" } ]`
-- `Apple Health daily summary for April 05, 2026. - Step count 3972 count. - Walking and running distance 2.78 km. - Active energy burned 150.55 kcal.` -> `parseable_data`: `[ { "type": "healthkit_summary", "value": "Apple Health", "quality": "daily" }, { "type": "lab_result", "value": "Step count", "result": 3972, "unit": "count" }, { "type": "lab_result", "value": "Walking and running distance", "result": 2.78, "unit": "km" }, { "type": "lab_result", "value": "Active energy burned", "result": 150.55, "unit": "kcal" } ]`
-- `Apple Health monthly summary for March 2026. - Weight avg 97 kg; min 96.4; max 97.8. - Resting pulse avg 58 bpm; min 54; max 63.` -> `parseable_data`: `[ { "type": "healthkit_summary", "value": "Apple Health", "quality": "monthly" }, { "type": "weight", "value": 97, "unit": "kg" }, { "type": "pulse", "value": 58, "unit": "bpm" } ]`
+- `53cm Körpergröße` -> `facts`: `[ { "text": "Körpergröße 53 cm", "kind": "measurement", "metric": "height", "value": 53, "unit": "cm" } ]`
+- `sonntag RSV Impfung` -> `facts`: `[ { "text": "RSV-Impfung am Sonntag", "kind": "vaccination", "value": "RSV" } ]`
+- `Doctor appointment on 5.4. at 10:30 in the hospital` -> `facts`: `[ { "text": "Doctor appointment on 5.4. at 10:30 in the hospital", "kind": "appointment", "value": "doctor appointment", "scheduled_for": "2026-04-05T10:30:00Z", "location": "hospital" } ]`
+- `todo bring vaccination card` -> `facts`: `[ { "text": "Bring vaccination card", "kind": "todo", "value": "bring vaccination card" } ]`
+- `ask about feeding amount` -> `facts`: `[ { "text": "Ask about feeding amount", "kind": "todo", "value": "ask about feeding amount", "quality": "pinned" } ]`
+- `Blood pressure 120/80` -> `facts`: `[ { "text": "Blood pressure 120/80 mmHg", "kind": "measurement", "metric": "blood_pressure", "systolic": 120, "diastolic": 80, "unit": "mmHg" } ]`
+- `Hemoglobin 15.2 g/dl (13.5-17.5)` -> `facts`: `[ { "text": "Hemoglobin 15.2 g/dl", "kind": "measurement", "metric": "hemoglobin", "result": 15.2, "unit": "g/dl", "ref": "13.5-17.5" } ]`
+- `Apple Health monthly summary for March 2026. Entry source: healthkit.` -> `facts`: `[ { "text": "Apple Health monthly summary", "kind": "summary", "value": "Apple Health", "quality": "monthly" } ]`
+- `Apple Health daily summary for April 05, 2026. - Step count 3972 count. - Walking and running distance 2.78 km. - Active energy burned 150.55 kcal.` -> `facts`: `[ { "text": "Apple Health daily summary", "kind": "summary", "value": "Apple Health", "quality": "daily" }, { "text": "Step count 3972", "kind": "measurement", "metric": "step_count", "value": 3972, "unit": "count" }, { "text": "Walking and running distance 2.78 km", "kind": "measurement", "metric": "walking_distance", "value": 2.78, "unit": "km" }, { "text": "Active energy burned 150.55 kcal", "kind": "measurement", "metric": "active_energy", "value": 150.55, "unit": "kcal" } ]`

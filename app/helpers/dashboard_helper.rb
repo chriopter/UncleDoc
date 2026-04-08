@@ -86,7 +86,7 @@ module DashboardHelper
       "min-w-[7rem] max-w-[8rem] w-[7rem]"
     when "device_id", "source_ref"
       "min-w-[11rem] max-w-[13rem] w-[11rem]"
-    when "details", "payload", "response_body", "request_body", "parseable_data", "facts", "input"
+    when "details", "payload", "response_body", "request_body", "extracted_data", "input"
       "min-w-[16rem] max-w-[24rem] w-[16rem]"
     else
       "min-w-[9rem] max-w-[12rem] w-[9rem]"

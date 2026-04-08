@@ -48,18 +48,18 @@ class LogSummaryGenerator
 
   def self.entry_summary(entry)
     parts = []
-    parts << entry.fact_summary if entry.facts.present?
+    parts << entry.fact_summary if entry.fact_items.present?
     parts << entry.input if entry.input.present?
-    parts << parseable_data_summary(entry) if entry.parseable_data.present?
+    parts << fact_object_summary(entry) if entry.fact_objects.present?
     parts.compact_blank.join(" - ")
   end
 
-  def self.parseable_data_summary(entry)
-    Array(entry.parseable_data).filter_map do |item|
+  def self.fact_object_summary(entry)
+    Array(entry.fact_objects).filter_map do |item|
       next unless item.is_a?(Hash)
 
-      parts = [ item["type"] ]
-      value = item["value"]
+      parts = [ item["kind"], item["metric"] ].compact
+      value = item["value"] || item["result"]
       unit = item["unit"]
       parts << [ value, unit ].compact.join(" ") if value.present?
       parts << item["dose"] if item["dose"].present?

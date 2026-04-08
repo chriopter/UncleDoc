@@ -43,8 +43,8 @@ class BabySleepTimersController < ApplicationController
       @person.entries.create!(
         occurred_at: Time.current,
         input: t("baby.sleep.timer.note", duration: duration_minutes),
-        facts: EntryFactListBuilder.call([ { "type" => "sleep", "value" => duration_minutes, "unit" => "min" } ]),
-        parseable_data: [ { "type" => "sleep", "value" => duration_minutes, "unit" => "min" } ],
+        extracted_data: { "facts" => EntryFactListBuilder.fact_objects([ { "type" => "sleep", "value" => duration_minutes, "unit" => "min" } ]), "llm" => {} },
+        parse_status: "parsed",
         source: Entry::SOURCES[:babywidget]
       )
 

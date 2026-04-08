@@ -44,14 +44,14 @@ class ResearchChatContext
     lines = entries.map do |entry|
       date = entry.occurred_at ? I18n.l(entry.occurred_at, format: :long) : I18n.t("chat.unknown_date")
       parts = []
-      parts << entry.fact_summary if entry.respond_to?(:fact_summary) && entry.facts.present?
+      parts << entry.fact_summary if entry.fact_items.present?
       parts << entry.input if entry.input.present?
 
-      if entry.parseable_data.present?
-        data_parts = Array(entry.parseable_data).filter_map do |item|
+      if entry.fact_objects.present?
+        data_parts = entry.fact_objects.filter_map do |item|
           next unless item.is_a?(Hash)
 
-          item.map { |key, value| "#{key}: #{value}" }.join(", ")
+          item.except("text").map { |key, value| "#{key}: #{value}" }.join(", ")
         end
         parts << data_parts.join("; ") if data_parts.any?
       end

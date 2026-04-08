@@ -1,105 +1,80 @@
 require "json"
+
 class EntryDataParser
-  Result = Struct.new(:facts, :parseable_data, :occurred_at, :llm_response, :error, keyword_init: true)
+  class Result
+    attr_reader :fact_objects, :occurred_at, :llm, :error
+
+    def initialize(facts: nil, fact_objects: nil, occurred_at: nil, llm: nil, llm_response: nil, parseable_data: nil, error: nil, **)
+      @fact_objects = Array(fact_objects || facts)
+      if parseable_data.present? && @fact_objects.blank?
+        @fact_objects = Entry.build_fact_objects_from_legacy([], parseable_data)
+      end
+      @occurred_at = occurred_at
+      @llm = (llm || llm_response || {}).deep_stringify_keys
+      @error = error
+    end
+
+    def facts
+      fact_objects
+    end
+
+    def fact_texts
+      fact_objects.filter_map { |fact| fact["text"].presence }
+    end
+
+    def parseable_data
+      fact_objects.filter_map { |fact| Entry.new.send(:legacy_parseable_item_for, fact) }
+    end
+
+    def llm_response
+      llm
+    end
+  end
   MAX_ATTEMPTS = 2
 
-  TEMPERATURE_FLAG_ALIASES = {
-    "fever" => "high",
-    "fieber" => "high"
-  }.freeze
-
-  TYPE_ALIASES = {
-    "temp" => "temperature",
-    "temperature_c" => "temperature",
-    "fever" => "temperature",
-    "bottle" => "bottle_feeding",
-    "bottlefeeding" => "bottle_feeding",
-    "bottle_feeding" => "bottle_feeding",
-    "breastfeeding" => "breast_feeding",
-    "breast_fed" => "breast_feeding",
-    "breast_feed" => "breast_feeding",
-    "nursing" => "breast_feeding",
-    "heart_rate" => "pulse",
-    "body_length" => "height",
-    "length" => "height",
-    "size" => "height",
-    "vaccine" => "vaccination",
-    "vaccination" => "vaccination",
-    "impfung" => "vaccination",
-    "lab" => "lab_result",
-    "lab_result" => "lab_result",
-    "blood_test" => "lab_result",
-    "bloodwork" => "lab_result",
-    "blood_pressure" => "blood_pressure",
-    "blood pressure" => "blood_pressure",
-    "bp" => "blood_pressure",
-    "healthkit" => "healthkit_summary",
-    "health_summary" => "healthkit_summary",
-    "apple_health" => "healthkit_summary",
-    "apple_health_summary" => "healthkit_summary",
-    "task" => "todo",
-    "to_do" => "todo",
-    "appointment" => "appointment",
-    "termin" => "appointment",
-    "note" => "todo",
-    "memo" => "todo"
-  }.freeze
-
-  UNIT_ALIASES = {
-    "°c" => "C",
-    "celsius" => "C",
-    "mls" => "ml",
-    "milliliters" => "ml",
-    "mins" => "min",
-    "minutes" => "min",
-    "minute" => "min",
-    "beats/min" => "bpm",
-    "count/min" => "bpm"
-  }.freeze
-
-  HEALTHKIT_METRIC_PATTERNS = [
-    [ /\AStep count (?<value>-?\d+(?:\.\d+)?) (?<unit>count)\.?\z/i, "Step count" ],
-    [ /\AWalking and running distance (?<value>-?\d+(?:\.\d+)?) (?<unit>km|m)\.?\z/i, "Walking and running distance" ],
-    [ /\ACycling distance (?<value>-?\d+(?:\.\d+)?) (?<unit>km|m)\.?\z/i, "Cycling distance" ],
-    [ /\AActive energy burned (?<value>-?\d+(?:\.\d+)?) (?<unit>kcal)\.?\z/i, "Active energy burned" ],
-    [ /\ABasal energy burned (?<value>-?\d+(?:\.\d+)?) (?<unit>kcal)\.?\z/i, "Basal energy burned" ],
-    [ /\AFlights climbed (?<value>-?\d+(?:\.\d+)?) (?<unit>count)\.?\z/i, "Flights climbed" ],
-    [ /\AWalking speed avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "Walking speed" ],
-    [ /\AWalking step length avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "Walking step length" ],
-    [ /\AHeart rate variability avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "Heart rate variability" ],
-    [ /\ARespiratory rate avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "Respiratory rate" ],
-    [ /\AOxygen saturation avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "Oxygen saturation" ],
-    [ /\AVO2 max avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "VO2 max" ],
-    [ /\ADietary energy consumed (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "Dietary energy consumed" ],
-    [ /\ADietary carbohydrates (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "Dietary carbohydrates" ],
-    [ /\ADietary protein (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "Dietary protein" ],
-    [ /\ADietary fat (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "Dietary fat" ],
-    [ /\ADietary sugar (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "Dietary sugar" ],
-    [ /\ADietary water (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "Dietary water" ]
+  HEALTHKIT_FACT_PATTERNS = [
+    [ /\AStep count (?<value>-?\d+(?:\.\d+)?) (?<unit>count)\.?\z/i, "step_count", "Step count" ],
+    [ /\AWalking and running distance (?<value>-?\d+(?:\.\d+)?) (?<unit>km|m)\.?\z/i, "walking_distance", "Walking and running distance" ],
+    [ /\ACycling distance (?<value>-?\d+(?:\.\d+)?) (?<unit>km|m)\.?\z/i, "cycling_distance", "Cycling distance" ],
+    [ /\AActive energy burned (?<value>-?\d+(?:\.\d+)?) (?<unit>kcal)\.?\z/i, "active_energy", "Active energy burned" ],
+    [ /\ABasal energy burned (?<value>-?\d+(?:\.\d+)?) (?<unit>kcal)\.?\z/i, "basal_energy", "Basal energy burned" ],
+    [ /\AFlights climbed (?<value>-?\d+(?:\.\d+)?) (?<unit>count)\.?\z/i, "flights_climbed", "Flights climbed" ],
+    [ /\AWalking speed avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "walking_speed", "Walking speed avg" ],
+    [ /\AWalking step length avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "walking_step_length", "Walking step length avg" ],
+    [ /\AHeart rate variability avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "heart_rate_variability", "Heart rate variability avg" ],
+    [ /\ARespiratory rate avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "respiratory_rate", "Respiratory rate avg" ],
+    [ /\AOxygen saturation avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "oxygen_saturation", "Oxygen saturation avg" ],
+    [ /\AVO2 max avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\.?\z/i, "vo2_max", "VO2 max avg" ],
+    [ /\ADietary energy consumed (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "dietary_energy", "Dietary energy consumed" ],
+    [ /\ADietary carbohydrates (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "dietary_carbohydrates", "Dietary carbohydrates" ],
+    [ /\ADietary protein (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "dietary_protein", "Dietary protein" ],
+    [ /\ADietary fat (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "dietary_fat", "Dietary fat" ],
+    [ /\ADietary sugar (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "dietary_sugar", "Dietary sugar" ],
+    [ /\ADietary water (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "dietary_water", "Dietary water" ]
   ].freeze
 
   def self.call(input:, preference: AppSetting.current, entry: nil)
-    return Result.new(facts: [], parseable_data: [], occurred_at: nil, llm_response: {}, error: :blank_input) if input.blank? && entry_documents(entry).blank?
+    return Result.new(facts: [], occurred_at: nil, llm: {}, error: :blank_input) if input.blank? && entry_documents(entry).blank?
 
     configuration_error = configuration_error_for(preference)
-    return Result.new(facts: [], parseable_data: [], occurred_at: nil, llm_response: {}, error: configuration_error) if configuration_error.present?
+    return Result.new(facts: [], occurred_at: nil, llm: {}, error: configuration_error) if configuration_error.present?
 
     payload = request_payload_with_retry(input, preference, entry: entry)
-    parseable_data = sanitize_parseable_data(payload["parseable_data"])
-    parseable_data = enrich_healthkit_parseable_data(parseable_data, input, entry: entry)
+    facts = sanitize_facts(payload["facts"])
+    facts = merge_legacy_payload(payload, facts)
+    facts = enrich_healthkit_facts(facts, input, entry: entry)
 
     Result.new(
-      facts: sanitize_facts(payload["facts"]),
-      parseable_data: parseable_data,
+      facts: facts,
       occurred_at: sanitize_occurred_at(payload["occurred_at"]),
-      llm_response: sanitize_llm_response(payload["llm_response"])
+      llm: sanitize_llm(payload["llm"] || payload["llm_response"])
     )
   rescue StandardError => error
     Rails.logger.warn("Entry parsing failed: #{error.class}: #{error.message}")
     fallback = fallback_result_for(input)
     return fallback if fallback
 
-    Result.new(facts: [], parseable_data: [], occurred_at: nil, llm_response: {}, error: :request_failed)
+    Result.new(facts: [], occurred_at: nil, llm: {}, error: :request_failed)
   end
 
   def self.ready?(preference = AppSetting.current)
@@ -157,7 +132,7 @@ class EntryDataParser
         person: entry&.person,
         entry: entry,
         temperature: 0,
-        model:
+        model: model
       ).content
 
       last_response = content
@@ -222,27 +197,40 @@ class EntryDataParser
     return [] unless value.is_a?(Array)
 
     value.filter_map do |item|
-      item.to_s.strip.presence
+      sanitize_fact(item)
     end
   end
 
-  def self.sanitize_parseable_data(value)
-    return [] unless value.is_a?(Array)
+  def self.sanitize_fact(item)
+    return sanitize_string_fact(item) if item.is_a?(String)
+    return unless item.is_a?(Hash)
 
-    value.filter_map do |item|
-      next unless item.is_a?(Hash)
+    source = item.deep_stringify_keys
+    text = source["text"].to_s.strip
+    kind = source["kind"].to_s.strip.downcase
+    return if text.blank? || kind.blank?
 
-      sanitized = item.deep_stringify_keys.slice("type", "value", "result", "unit", "side", "dose", "wet", "solid", "rash", "ref", "flag", "location", "quality", "systolic", "diastolic", "scheduled_for", "due_at")
-      type = normalize_type(sanitized["type"])
-      next if type.blank?
+    fact = { "text" => text, "kind" => kind }
+    %w[metric value unit result ref flag side dose wet solid rash location quality systolic diastolic scheduled_for due_at].each do |key|
+      next unless source.key?(key)
 
-      sanitized["type"] = type
-      sanitized["unit"] = normalize_unit(sanitized["unit"]) if sanitized["unit"].present?
-      sanitized["flag"] = normalize_flag(type, sanitized["flag"]) if sanitized["flag"].present?
-      sanitized.transform_values! { |entry| normalize_value(entry) }
-      normalize_measurement!(sanitized)
-      sanitized.reject { |_key, entry| entry.blank? && entry != false }
+      normalized_value = normalize_value(source[key])
+      next if normalized_value.blank? && normalized_value != false
+
+      fact[key] = normalized_value
     end
+
+    fact["metric"] = normalize_metric(fact["metric"]) if fact["metric"].present?
+    fact["unit"] = normalize_unit(fact["unit"]) if fact["unit"].present?
+    normalize_measurement_fact!(fact)
+    fact
+  end
+
+  def self.sanitize_string_fact(item)
+    text = item.to_s.strip
+    return if text.blank?
+
+    { "text" => text, "kind" => "note" }
   end
 
   def self.sanitize_occurred_at(value)
@@ -261,7 +249,7 @@ class EntryDataParser
     nil
   end
 
-  def self.sanitize_llm_response(value)
+  def self.sanitize_llm(value)
     return {} unless value.is_a?(Hash)
 
     value.deep_stringify_keys.slice("status", "confidence", "note").transform_values do |entry|
@@ -277,13 +265,12 @@ class EntryDataParser
 
     if todo_like?(normalized_input)
       Result.new(
-        facts: [ normalized_input ],
-        parseable_data: [ { "type" => "todo", "value" => normalized_input } ],
+        facts: [ { "text" => normalized_input, "kind" => "todo", "value" => normalized_input } ],
         occurred_at: nil,
-        llm_response: {
+        llm: {
           "status" => "structured",
           "confidence" => "low",
-          "note" => "Fallback parser mapped an actionable reminder to canonical todo after the LLM returned no usable response."
+          "note" => "Fallback parser mapped an actionable reminder to a todo fact after the LLM returned no usable response."
         }
       )
     end
@@ -293,29 +280,25 @@ class EntryDataParser
     input.match?(/\A\s*(check|bring|call|ask|remember|book|schedule|buy|organize|todo|to do|pru?fe|checke|mitbringen|anrufen|fragen|merken|besorgen)\b/i)
   end
 
-  def self.normalize_type(type)
-    raw = type.to_s.strip
-    return if raw.blank?
-    return raw.upcase if raw.match?(/\A[A-Z]{2,}[A-Za-z0-9]*\z/)
-
-    normalized = raw.downcase.strip.gsub(/[^a-z0-9]+/, "_").gsub(/\A_|_\z/, "")
-    TYPE_ALIASES.fetch(normalized, normalized)
+  def self.normalize_metric(metric)
+    metric.to_s.strip.downcase.gsub(/[^a-z0-9]+/, "_").gsub(/\A_|_\z/, "")
   end
 
   def self.normalize_unit(unit)
     normalized = unit.to_s.strip
     return if normalized.blank?
 
-    UNIT_ALIASES.fetch(normalized.downcase, normalized)
-  end
-
-  def self.normalize_flag(type, flag)
-    normalized = flag.to_s.strip.downcase
-    return if normalized.blank?
-
-    return TEMPERATURE_FLAG_ALIASES.fetch(normalized, normalized) if type == "temperature"
-
-    normalized
+    {
+      "°c" => "C",
+      "celsius" => "C",
+      "mls" => "ml",
+      "milliliters" => "ml",
+      "mins" => "min",
+      "minutes" => "min",
+      "minute" => "min",
+      "beats/min" => "bpm",
+      "count/min" => "bpm"
+    }.fetch(normalized.downcase, normalized)
   end
 
   def self.normalize_value(value)
@@ -333,18 +316,28 @@ class EntryDataParser
     end
   end
 
-  def self.normalize_measurement!(item)
-    return item unless item["type"] == "pulse"
+  def self.normalize_measurement_fact!(fact)
+    return fact unless fact["kind"] == "measurement"
+    return fact unless fact["metric"] == "pulse"
 
-    case item["unit"]
+    case fact["unit"]
     when "count/s"
-      item["value"] = (item["value"].to_f * 60.0).round(2) if item["value"].present?
-      item["unit"] = "bpm"
+      fact["value"] = (fact["value"].to_f * 60.0).round(2) if fact["value"].present?
+      fact["unit"] = "bpm"
     when "count/min"
-      item["unit"] = "bpm"
+      fact["unit"] = "bpm"
     end
 
-    item
+    fact
+  end
+
+  def self.merge_legacy_payload(payload, facts)
+    return facts if facts.present?
+
+    legacy_items = payload["parseable_data"]
+    return [] unless legacy_items.is_a?(Array)
+
+    Entry.build_fact_objects_from_legacy(Array(payload["facts"]), legacy_items)
   end
 
   def self.entry_documents(entry)
@@ -370,37 +363,40 @@ class EntryDataParser
   end
 
   def self.document_payload_useful?(payload)
-    facts = sanitize_facts(payload["facts"])
-    data = sanitize_parseable_data(payload["parseable_data"])
-    facts.present? || data.present?
+    sanitize_facts(payload["facts"]).present? || Array(payload["parseable_data"]).present?
   end
 
-  def self.enrich_healthkit_parseable_data(parseable_data, input, entry: nil)
-    return parseable_data unless entry&.respond_to?(:source) && entry.source == Entry::SOURCES[:healthkit]
+  def self.sanitize_parseable_data(value)
+    Entry.build_fact_objects_from_legacy([], value).filter_map do |fact|
+      Entry.new.send(:legacy_parseable_item_for, fact)
+    end
+  end
 
-    enriched = parseable_data.deep_dup
+  def self.enrich_healthkit_facts(facts, input, entry: nil)
+    return facts unless entry&.respond_to?(:source) && entry.source == Entry::SOURCES[:healthkit]
+
+    enriched = facts.deep_dup
     summary_quality = entry.source_ref.to_s.start_with?("healthkit:month:") || input.to_s.downcase.include?("monthly summary") ? "monthly" : "daily"
 
-    unless enriched.any? { |item| item["type"] == "healthkit_summary" }
-      enriched << { "type" => "healthkit_summary", "value" => "Apple Health", "quality" => summary_quality }
+    unless enriched.any? { |fact| fact["kind"] == "summary" && fact["value"] == "Apple Health" }
+      enriched.unshift({ "text" => "Apple Health #{summary_quality} summary", "kind" => "summary", "value" => "Apple Health", "quality" => summary_quality })
     end
 
     lines = input.to_s.split("\n").map { |line| line.strip.sub(/\A-\s*/, "").sub(/\.$/, "") }.reject(&:blank?)
-
     blood_pressure = {}
 
     lines.each do |line|
       case line
       when /\AWeight (?<value>-?\d+(?:\.\d+)?) (?<unit>kg|lb)\z/i
-        append_unique_measurement(enriched, "weight", Regexp.last_match[:value], Regexp.last_match[:unit])
+        append_unique_measurement(enriched, "weight", "Weight", Regexp.last_match[:value], Regexp.last_match[:unit])
       when /\AHeight (?<value>-?\d+(?:\.\d+)?) (?<unit>cm|m)\z/i
-        append_unique_measurement(enriched, "height", Regexp.last_match[:value], Regexp.last_match[:unit])
+        append_unique_measurement(enriched, "height", "Height", Regexp.last_match[:value], Regexp.last_match[:unit])
       when /\ABody temperature(?: avg)? (?<value>-?\d+(?:\.\d+)?) (?<unit>C|F)\z/i
-        append_unique_measurement(enriched, "temperature", Regexp.last_match[:value], Regexp.last_match[:unit])
+        append_unique_measurement(enriched, "temperature", "Body temperature", Regexp.last_match[:value], Regexp.last_match[:unit])
       when /\A(?:Resting pulse|Walking pulse|Pulse) avg (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)(?:;.*)?\z/i
-        append_unique_measurement(enriched, "pulse", Regexp.last_match[:value], Regexp.last_match[:unit])
+        append_unique_measurement(enriched, "pulse", "Pulse", Regexp.last_match[:value], Regexp.last_match[:unit])
       when /\ASleep (?<value>-?\d+(?:\.\d+)?) hours(?: across .*?)?\z/i
-        append_unique_measurement(enriched, "sleep", Regexp.last_match[:value], "h")
+        append_unique_measurement(enriched, "sleep", "Sleep", Regexp.last_match[:value], "h")
       when /\ABlood pressure systolic avg (?<value>-?\d+(?:\.\d+)?) (?<unit>mmHg)\z/i
         blood_pressure["systolic"] = normalize_value(Regexp.last_match[:value])
         blood_pressure["unit"] = Regexp.last_match[:unit]
@@ -408,56 +404,60 @@ class EntryDataParser
         blood_pressure["diastolic"] = normalize_value(Regexp.last_match[:value])
         blood_pressure["unit"] = Regexp.last_match[:unit]
       else
-        metric_name, metric_value, metric_unit = healthkit_metric_from_line(line)
-        next unless metric_name
-
-        append_unique_lab_result(enriched, metric_name, metric_value, metric_unit)
+        append_healthkit_pattern_fact(enriched, line)
       end
     end
 
-    if blood_pressure["systolic"].present? && blood_pressure["diastolic"].present? && enriched.none? { |item| item["type"] == "blood_pressure" }
+    if blood_pressure["systolic"].present? && blood_pressure["diastolic"].present? && enriched.none? { |fact| fact["kind"] == "measurement" && fact["metric"] == "blood_pressure" }
       enriched << {
-        "type" => "blood_pressure",
+        "text" => "Blood pressure #{blood_pressure['systolic']}/#{blood_pressure['diastolic']} #{blood_pressure['unit'] || 'mmHg'}",
+        "kind" => "measurement",
+        "metric" => "blood_pressure",
         "systolic" => blood_pressure["systolic"],
         "diastolic" => blood_pressure["diastolic"],
         "unit" => blood_pressure["unit"] || "mmHg"
       }
     end
 
-    sanitize_parseable_data(enriched)
+    enriched
   end
 
-  def self.healthkit_metric_from_line(line)
-    HEALTHKIT_METRIC_PATTERNS.each do |pattern, label|
+  def self.enrich_healthkit_parseable_data(parseable_data, input, entry: nil)
+    enrich_healthkit_facts(Entry.build_fact_objects_from_legacy([], parseable_data), input, entry: entry).filter_map do |fact|
+      Entry.new.send(:legacy_parseable_item_for, fact)
+    end
+  end
+
+  def self.append_healthkit_pattern_fact(enriched, line)
+    HEALTHKIT_FACT_PATTERNS.each do |pattern, metric, label|
       match = line.match(pattern)
       next unless match
 
-      return [ label, match[:value], match[:unit] ]
+      append_unique_measurement(enriched, metric, label, match[:value], match[:unit])
+      return
     end
 
     if (match = line.match(/\AWorkouts (?<count>-?\d+(?:\.\d+)?) with (?<minutes>-?\d+(?:\.\d+)?) total minutes\z/i))
-      return [ "Workouts", match[:count], "count" ]
+      append_unique_measurement(enriched, "workouts", "Workouts", match[:count], "count")
     end
 
     if (match = line.match(/\AAudio exposure events (?<count>-?\d+(?:\.\d+)?) with (?<minutes>-?\d+(?:\.\d+)?) total minutes\z/i))
-      return [ "Audio exposure events", match[:count], "count" ]
+      append_unique_measurement(enriched, "audio_exposure_events", "Audio exposure events", match[:count], "count")
     end
-
-    nil
   end
 
-  def self.append_unique_measurement(items, type, value, unit)
-    return if items.any? { |item| item["type"] == type }
+  def self.append_unique_measurement(items, metric, label, value, unit)
+    return if items.any? { |fact| fact["kind"] == "measurement" && fact["metric"] == metric }
 
-    item = { "type" => type, "value" => value, "unit" => unit }
-    normalize_measurement!(item)
-    items << item
-  end
-
-  def self.append_unique_lab_result(items, name, value, unit)
-    return if items.any? { |item| item["type"] == "lab_result" && item["value"] == name }
-
-    items << { "type" => "lab_result", "value" => name, "result" => value, "unit" => unit }
+    fact = {
+      "text" => [ label, value, unit ].compact.join(" "),
+      "kind" => "measurement",
+      "metric" => metric,
+      "value" => normalize_value(value),
+      "unit" => normalize_unit(unit)
+    }
+    normalize_measurement_fact!(fact)
+    items << fact
   end
 
   def self.fallback_document_input(input, entry)
