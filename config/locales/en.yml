@@ -269,6 +269,7 @@ en:
       title: "Facts"
     document_metadata:
       title: "Document"
+      invoice_total: "Invoice total"
     edit:
       label: "Edit"
       title: "Update note"
