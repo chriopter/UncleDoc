@@ -172,6 +172,8 @@ class DashboardController < ApplicationController
     case params[:source]
     when "manual"
       scope = scope.where(source: Entry::SOURCES[:manual])
+    when "babywidget"
+      scope = scope.where(source: Entry::SOURCES[:babywidget])
     when "healthkit"
       scope = scope.where(source: Entry::SOURCES[:healthkit])
     when "healthkit_day"
@@ -191,6 +193,7 @@ class DashboardController < ApplicationController
 
     source_options = []
     source_options << [ I18n.t("entries.source.manual"), "manual" ] if person.entries.where(source: Entry::SOURCES[:manual]).exists?
+    source_options << [ I18n.t("entries.source.babywidget"), "babywidget" ] if person.entries.where(source: Entry::SOURCES[:babywidget]).exists?
     source_options << [ I18n.t("entries.source.healthkit"), "healthkit" ] if person.entries.where(source: Entry::SOURCES[:healthkit]).exists?
     source_options << [ I18n.t("entries.source.healthkit_day"), "healthkit_day" ] if person.entries.where("source_ref LIKE ?", "healthkit:day:%").exists?
     source_options << [ I18n.t("entries.source.healthkit_month"), "healthkit_month" ] if person.entries.where("source_ref LIKE ?", "healthkit:month:%").exists?

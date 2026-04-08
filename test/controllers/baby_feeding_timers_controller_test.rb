@@ -27,6 +27,7 @@ class BabyFeedingTimersControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Breastfeeding Left, 95 minutes", entry.input
     assert_equal [ "Breast feeding Left 95 min" ], entry.facts
     assert_equal({ "type" => "breast_feeding", "value" => 95, "unit" => "min", "side" => "left" }, entry.parseable_data.first)
+    assert_equal Entry::SOURCES[:babywidget], entry.source
   end
 
   test "feeding timer responds with turbo stream" do

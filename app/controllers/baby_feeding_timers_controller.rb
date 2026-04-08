@@ -45,7 +45,8 @@ class BabyFeedingTimersController < ApplicationController
         occurred_at: Time.current,
         input: t("baby.feeding.timer.note", side: t("baby.feeding.sides.#{side}"), duration: duration_minutes),
         facts: EntryFactListBuilder.call([ { "type" => "breast_feeding", "value" => duration_minutes, "unit" => "min", "side" => side } ]),
-        parseable_data: [ { "type" => "breast_feeding", "value" => duration_minutes, "unit" => "min", "side" => side } ]
+        parseable_data: [ { "type" => "breast_feeding", "value" => duration_minutes, "unit" => "min", "side" => side } ],
+        source: Entry::SOURCES[:babywidget]
       )
 
       @person.update!(baby_feeding_timer_started_at: nil, baby_feeding_timer_side: nil)

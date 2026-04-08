@@ -7,7 +7,8 @@ class BabyQuickActionsController < ApplicationController
       occurred_at: Time.current,
       input: diaper_note,
       facts: EntryFactListBuilder.call([ diaper_payload ]),
-      parseable_data: [ diaper_payload ]
+      parseable_data: [ diaper_payload ],
+      source: Entry::SOURCES[:babywidget]
     )
 
     respond_to do |format|
@@ -27,7 +28,8 @@ class BabyQuickActionsController < ApplicationController
       occurred_at: Time.current,
       input: t("baby.bottle.note", amount: amount),
       facts: EntryFactListBuilder.call([ { "type" => "bottle_feeding", "value" => amount, "unit" => "ml" } ]),
-      parseable_data: [ { "type" => "bottle_feeding", "value" => amount, "unit" => "ml" } ]
+      parseable_data: [ { "type" => "bottle_feeding", "value" => amount, "unit" => "ml" } ],
+      source: Entry::SOURCES[:babywidget]
     )
 
     respond_to do |format|
