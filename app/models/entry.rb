@@ -360,6 +360,7 @@ class Entry < ApplicationRecord
 
     def build_fact_object_from_legacy_item(item, text = nil)
       type = item["type"].to_s
+      text = "Apple Health #{item['quality'].presence || 'daily'} summary" if type == "healthkit_summary"
       text ||= EntryFactListBuilder.call([ item ]).first
       return unless text.present?
 
@@ -383,11 +384,21 @@ class Entry < ApplicationRecord
     def fact_hash(text, kind, attributes)
       normalized = { "text" => text.to_s.strip, "kind" => kind.to_s }
       attributes.each do |key, value|
+        value = normalize_legacy_attribute_value(value)
         next if value.blank? && value != false
 
         normalized[key.to_s] = value
       end
       normalized
+    end
+
+    def normalize_legacy_attribute_value(value)
+      return true if value == "true"
+      return false if value == "false"
+      return value.to_i if value.is_a?(String) && value.match?(/\A-?\d+\z/)
+      return value.to_f if value.is_a?(String) && value.match?(/\A-?\d+\.\d+\z/)
+
+      value
     end
   end
 end

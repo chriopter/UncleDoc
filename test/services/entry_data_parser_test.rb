@@ -34,7 +34,7 @@ class EntryDataParserTest < ActiveSupport::TestCase
     result = EntryDataParser.call(input: "", preference:, entry: entry)
 
     assert_includes captured_message, "Ibuprofen 400mg invoice"
-    assert_equal [ "Medication ibuprofen 400 mg" ], result.facts
+    assert_equal [ "Medication ibuprofen 400 mg" ], result.fact_texts
     assert_equal "medication", result.parseable_data.first["type"]
   ensure
     if multimodal_singleton.method_defined?(:__original_multimodal_call_for_fallback_test)
@@ -114,11 +114,11 @@ class EntryDataParserTest < ActiveSupport::TestCase
 
     result = EntryDataParser.call(input: entry.input, preference:, entry: entry)
 
-    assert_includes result.parseable_data, { "type" => "healthkit_summary", "value" => "Apple Health", "quality" => "daily" }
-    assert_includes result.parseable_data, { "type" => "weight", "value" => 97, "unit" => "kg" }
-    assert_includes result.parseable_data, { "type" => "lab_result", "value" => "Step count", "result" => 3972, "unit" => "count" }
-    assert_includes result.parseable_data, { "type" => "lab_result", "value" => "Walking and running distance", "result" => 2.78, "unit" => "km" }
-    assert_includes result.parseable_data, { "type" => "lab_result", "value" => "Active energy burned", "result" => 150.55, "unit" => "kcal" }
+    assert_includes result.fact_objects, { "text" => "Apple Health daily summary", "kind" => "summary", "value" => "Apple Health", "quality" => "daily" }
+    assert_includes result.fact_objects, { "text" => "Weight 97 kg", "kind" => "measurement", "metric" => "weight", "value" => 97, "unit" => "kg" }
+    assert_includes result.fact_objects, { "text" => "Step count 3972 count", "kind" => "measurement", "metric" => "step_count", "value" => 3972, "unit" => "count" }
+    assert_includes result.fact_objects, { "text" => "Walking and running distance 2.78 km", "kind" => "measurement", "metric" => "walking_distance", "value" => 2.78, "unit" => "km" }
+    assert_includes result.fact_objects, { "text" => "Active energy burned 150.55 kcal", "kind" => "measurement", "metric" => "active_energy", "value" => 150.55, "unit" => "kcal" }
   ensure
     if chat_singleton.method_defined?(:__original_chat_call_for_healthkit_test)
       chat_singleton.alias_method :call, :__original_chat_call_for_healthkit_test

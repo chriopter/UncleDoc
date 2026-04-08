@@ -15,7 +15,7 @@ class EntryDataParseJob < ApplicationJob
     end
 
     if entry.reload.pending_parse?
-      attributes = { extracted_data: { "facts" => result.facts, "llm" => result.llm }, parse_status: "parsed" }
+      attributes = { extracted_data: { "facts" => result.fact_objects, "llm" => result.llm }, parse_status: "parsed" }
       attributes[:occurred_at] = result.occurred_at if result.occurred_at.present?
       entry.update!(attributes)
       broadcast_entries(entry.person)
