@@ -81,7 +81,7 @@ class ResearchMessagesControllerTest < ActionDispatch::IntegrationTest
     if defined?(chat) && chat.present?
       chat.reload
       assert_includes chat.context_message.content, "Fever 38.4 C"
-      assert_equal I18n.t("chat.context_refreshed"), chat.messages.visible.where(message_kind: "context_notice").last&.content
+      assert_equal I18n.t("chat.context_refreshed", locale: :en), chat.messages.visible.where(message_kind: "context_notice").last&.content
       assert_equal "Latest data used.", chat.messages.visible.where(role: "assistant").last&.content
     end
   end

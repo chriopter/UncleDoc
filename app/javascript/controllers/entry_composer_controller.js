@@ -36,11 +36,11 @@ export default class extends Controller {
     this.inputTarget.classList.remove("border-amber-400", "bg-amber-50")
   }
 
-  drop(event) {
+  async drop(event) {
     event.preventDefault()
     this.dragLeave()
 
-    const files = Array.from(event.dataTransfer.files)
+    const files = await this.extractDroppedFiles(event.dataTransfer)
     if (files.length === 0) return
 
     const transfer = new DataTransfer()
@@ -64,5 +64,79 @@ export default class extends Controller {
     this.filesTarget.innerHTML = files.map((file) => (
       `<span class="inline-flex items-center rounded-full border border-amber-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">${file.name}</span>`
     )).join("")
+  }
+
+  async extractDroppedFiles(dataTransfer) {
+    const items = Array.from(dataTransfer?.items || [])
+    if (items.length === 0) return Array.from(dataTransfer?.files || [])
+
+    const files = []
+
+    for (const item of items) {
+      if (item.kind !== "file") continue
+
+      if (typeof item.getAsFileSystemHandle === "function") {
+        const handle = await item.getAsFileSystemHandle()
+        if (handle) {
+          await this.collectHandleFiles(handle, files)
+          continue
+        }
+      }
+
+      if (typeof item.webkitGetAsEntry === "function") {
+        const entry = item.webkitGetAsEntry()
+        if (entry) {
+          await this.collectEntryFiles(entry, files)
+          continue
+        }
+      }
+
+      const file = item.getAsFile()
+      if (file) files.push(file)
+    }
+
+    return files
+  }
+
+  async collectHandleFiles(handle, files) {
+    if (handle.kind === "file") {
+      files.push(await handle.getFile())
+      return
+    }
+
+    for await (const child of handle.values()) {
+      await this.collectHandleFiles(child, files)
+    }
+  }
+
+  async collectEntryFiles(entry, files) {
+    if (entry.isFile) {
+      await new Promise((resolve) => {
+        entry.file((file) => {
+          files.push(file)
+          resolve()
+        }, () => resolve())
+      })
+      return
+    }
+
+    const reader = entry.createReader()
+    const entries = await this.readAllDirectoryEntries(reader)
+
+    for (const child of entries) {
+      await this.collectEntryFiles(child, files)
+    }
+  }
+
+  async readAllDirectoryEntries(reader) {
+    const entries = []
+
+    while (true) {
+      const batch = await new Promise((resolve) => reader.readEntries(resolve, () => resolve([])))
+      if (!batch.length) break
+      entries.push(...batch)
+    }
+
+    return entries
   }
 }
