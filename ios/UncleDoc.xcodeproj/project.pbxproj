@@ -16,6 +16,7 @@
 		A1000006 /* HealthKitSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006 /* HealthKitSyncService.swift */; };
 		A1000007 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007 /* APIClient.swift */; };
 		A1000008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000008 /* Assets.xcassets */; };
+		A1000009 /* NativeAppTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000C /* NativeAppTokenStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -44,6 +45,7 @@
 		A2000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A200000A /* UncleDoc.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = UncleDoc.entitlements; sourceTree = "<group>"; };
 		A200000B /* UncleDoc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = UncleDoc.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A200000C /* NativeAppTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeAppTokenStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +88,7 @@
 				A2000001 /* UncleDocApp.swift */,
 				A2000002 /* AppDelegate.swift */,
 				A2000003 /* ContentView.swift */,
+				A200000C /* NativeAppTokenStore.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -200,6 +203,7 @@
 				A1000001 /* UncleDocApp.swift in Sources */,
 				A1000002 /* AppDelegate.swift in Sources */,
 				A1000003 /* ContentView.swift in Sources */,
+				A1000009 /* NativeAppTokenStore.swift in Sources */,
 				A1000004 /* AppCoordinator.swift in Sources */,
 				A1000005 /* HealthKitManager.swift in Sources */,
 				A1000006 /* HealthKitSyncService.swift in Sources */,
