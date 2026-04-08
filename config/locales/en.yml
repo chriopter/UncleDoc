@@ -639,6 +639,7 @@ en:
       sidebar_title: "Document details"
       document_meta: "Document"
       open_inline: "Open"
+      back_to_files: "Back to files"
       empty: "Select a document on the left to view it inside UncleDoc."
 
   # DB view

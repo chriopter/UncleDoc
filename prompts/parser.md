@@ -8,7 +8,9 @@ Return exactly one JSON object with this shape and nothing else:
 {
   "document": {
     "type": "lab_report",
-    "title": "Laborblatt vom 06.04.2018"
+    "title": "Laborblatt vom 06.04.2018",
+    "total_amount": 20.11,
+    "currency": "EUR"
   },
   "facts": [
     {
@@ -115,10 +117,12 @@ When the entry contains an attached document, add a `document` object when possi
 
 - `type`: a concise classifier such as `lab_report`, `invoice`, `medical_letter`, `discharge_letter`, `prescription`, `vaccination_record`, `appointment_letter`, `insurance_document`
 - `title`: a short human-readable title such as `Laborblatt vom 06.04.2018` or `Doctor invoice from April 2026`
+- For invoices, add `total_amount` and `currency` when the invoice total can be identified clearly.
 
 If the document kind is unclear, omit `document` or return an empty object.
 
 Never invent document metadata for plain text notes or HealthKit summaries that have no attached file.
+For invoices, prefer the final invoice total (`Rechnungsbetrag`, `Gesamtbetrag`, `Total`, `Summe`) over line items.
 
 ## Attached Documents
 
@@ -177,3 +181,4 @@ Always do all of the following:
 - `Apple Health daily summary for April 05, 2026. - Step count 3972 count. - Walking and running distance 2.78 km. - Active energy burned 150.55 kcal.` -> `facts`: `[ { "text": "Apple Health daily summary", "kind": "summary", "value": "Apple Health", "quality": "daily" }, { "text": "Step count 3972", "kind": "measurement", "metric": "step_count", "value": 3972, "unit": "count" }, { "text": "Walking and running distance 2.78 km", "kind": "measurement", "metric": "walking_distance", "value": 2.78, "unit": "km" }, { "text": "Active energy burned 150.55 kcal", "kind": "measurement", "metric": "active_energy", "value": 150.55, "unit": "kcal" } ]`
 - scanned lab sheet -> `document`: `{ "type": "lab_report", "title": "Laborblatt vom 06.04.2018" }`
 - `2022-01 Erkältung AU.pdf` with an Arbeitsunfähigkeitsbescheinigung for a cold -> include a symptom fact such as `{ "text": "Erkältung", "kind": "symptom", "value": "Erkältung" }` in addition to document metadata or summary facts.
+- dental invoice totaling 20,11 EUR -> `document`: `{ "type": "invoice", "title": "Zahnarztrechnung vom 24.03.2023", "total_amount": 20.11, "currency": "EUR" }`

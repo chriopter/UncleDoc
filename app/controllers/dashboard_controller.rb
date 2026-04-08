@@ -40,7 +40,29 @@ class DashboardController < ApplicationController
     @document_entries = filtered_file_entries(all_document_entries)
     @document_count = @document_entries.sum(&:document_count)
     @grouped_document_entries = group_document_entries_by_year(@document_entries)
+  end
+
+  def file
+    @person = Person.find_by!(name: params[:person_slug])
+    all_document_entries = @person.entries.with_documents.recent_first
+    @available_file_filters = available_file_filters(all_document_entries)
+    @document_entries = filtered_file_entries(all_document_entries)
+    @document_count = @document_entries.sum(&:document_count)
+    @grouped_document_entries = group_document_entries_by_year(@document_entries)
     @selected_document_entry = selected_document_entry(@document_entries)
+    raise ActiveRecord::RecordNotFound unless @selected_document_entry
+  end
+
+  def file_content
+    @person = Person.find_by!(name: params[:person_slug])
+    entry = @person.entries.with_documents.find(params[:entry_id])
+    document = entry.documents.first
+    raise ActiveRecord::RecordNotFound unless document
+
+    send_data document.download,
+      filename: document.filename.to_s,
+      type: document.content_type,
+      disposition: "inline"
   end
 
   def healthkit
@@ -138,9 +160,9 @@ class DashboardController < ApplicationController
   end
 
   def selected_document_entry(entries)
-    return entries.first unless params[:entry_id].present?
+    return unless params[:entry_id].present?
 
-    entries.find { |entry| entry.id == params[:entry_id].to_i } || entries.first
+    entries.find { |entry| entry.id == params[:entry_id].to_i }
   end
 
   def healthkit_records_table(person, page: 1)

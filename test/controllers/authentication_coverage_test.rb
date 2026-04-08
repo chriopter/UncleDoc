@@ -47,6 +47,8 @@ class AuthenticationCoverageTest < ActionDispatch::IntegrationTest
       "person log" => -> { get person_log_path(person_slug: person.name) },
       "person research" => -> { get person_research_path(person_slug: person.name) },
       "person files" => -> { get person_files_path(person_slug: person.name) },
+      "person file" => -> { get person_file_path(person_slug: person.name, entry_id: entry.id) },
+      "person file content" => -> { get person_file_content_path(person_slug: person.name, entry_id: entry.id) },
       "person healthkit" => -> { get person_healthkit_path(person_slug: person.name) },
       "person healthkit sync summaries" => -> { post person_healthkit_sync_summaries_path(person_slug: person.name) },
       "person healthkit reparse" => -> { post person_healthkit_reparse_path(person_slug: person.name) },

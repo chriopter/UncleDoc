@@ -237,6 +237,24 @@ class Entry < ApplicationRecord
     document_metadata["title"].presence
   end
 
+  def invoice_total_amount
+    value = document_metadata["total_amount"]
+    return unless value.present?
+
+    value.is_a?(Numeric) ? value : value.to_f
+  end
+
+  def invoice_total_currency
+    document_metadata["currency"].presence
+  end
+
+  def invoice_total_label
+    return unless invoice_total_amount.present?
+
+    amount = format("%.2f", invoice_total_amount).tr(".", ",")
+    [ amount, invoice_total_currency.presence || "EUR" ].join(" ")
+  end
+
   def time_since
     return nil unless display_time
 
