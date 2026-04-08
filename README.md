@@ -49,24 +49,23 @@ UncleDoc keeps the active LLM system prompts in Markdown files under `prompts/`.
 
 ### Docker Compose
 
-You only need `compose.yml` and `.env.docker` next to each other.
+For most users, this is the easiest way to run UncleDoc.
 
-Required values in `.env.docker`:
-
-- `UNCLEDOC_IMAGE=ghcr.io/chriopter/uncledoc:latest`
-- `RAILS_MASTER_KEY=...`
-- `SECRET_KEY_BASE=...`
-
-Then run:
+1. Create a new folder.
+2. Put `compose.yml` and `.env.docker` into it.
+3. Run:
 
 ```bash
 docker compose up -d
 ```
 
-Then open `http://127.0.0.1:3000` after the container becomes healthy.
+4. Open `http://127.0.0.1:3000` after the container becomes healthy.
+
+Use `ghcr.io/chriopter/uncledoc:latest` for the newest release.
+Use `ghcr.io/chriopter/uncledoc:edge` if you want the newest push to `main`.
 
 <details>
-<summary>Example compose.yml</summary>
+<summary>1) compose.yml</summary>
 
 ```yaml
 services:
@@ -96,7 +95,7 @@ volumes:
 </details>
 
 <details>
-<summary>Example .env.docker</summary>
+<summary>2) .env.docker</summary>
 
 ```dotenv
 UNCLEDOC_IMAGE=ghcr.io/chriopter/uncledoc:latest
@@ -115,15 +114,7 @@ SOLID_QUEUE_IN_PUMA=true
 </details>
 
 <details>
-<summary>Container tags</summary>
-
-- `ghcr.io/chriopter/uncledoc:latest` for the newest release
-- `ghcr.io/chriopter/uncledoc:edge` for the newest push to `main`
-
-</details>
-
-<details>
-<summary>Reverse proxy settings</summary>
+<summary>Optional: reverse proxy settings</summary>
 
 If you run behind a reverse proxy, also set these in `.env.docker`:
 
@@ -134,14 +125,6 @@ If you run behind a reverse proxy, also set these in `.env.docker`:
 - `ASSUME_SSL=true`
 
 </details>
-
-### Local dev
-
-```bash
-bin/dev
-```
-
-If you want demo content, run `bundle exec bin/rails db:prepare db:seed` first.
 
 ## 5. Details
 
