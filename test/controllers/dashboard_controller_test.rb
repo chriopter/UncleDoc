@@ -95,7 +95,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
   test "research page shows persisted chat history when present" do
     person = Person.create!(name: "History Hanna", birth_date: Date.new(2024, 1, 1))
-    chat = person.build_llm_chat
+    chat = person.build_chat
     AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
     ResearchChatRuntime.prepare!(chat, setting: AppSetting.current)
     chat.add_message(role: :user, content: "Old question")

@@ -202,6 +202,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_153000) do
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
+  create_table "user_devices", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "last_used_at"
+    t.string "name", null: false
+    t.string "platform", null: false
+    t.datetime "revoked_at"
+    t.text "token"
+    t.string "token_digest"
+    t.datetime "token_generated_at"
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["token_digest"], name: "index_user_devices_on_token_digest", unique: true
+    t.index ["user_id"], name: "index_user_devices_on_user_id"
+  end
+
   create_table "user_preferences", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "date_format"
@@ -240,5 +255,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_153000) do
   add_foreign_key "llm_tool_calls", "llm_messages"
   add_foreign_key "person_states", "people"
   add_foreign_key "sessions", "users"
+  add_foreign_key "user_devices", "users"
   add_foreign_key "users", "people"
 end

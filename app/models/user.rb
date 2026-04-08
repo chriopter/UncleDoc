@@ -2,8 +2,7 @@ class User < ApplicationRecord
   belongs_to :person
   has_secure_password validations: false
   has_many :sessions, dependent: :destroy
-
-  encrypts :native_app_token
+  has_many :user_devices, dependent: :destroy
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 
@@ -22,29 +21,23 @@ class User < ApplicationRecord
   end
 
   def ensure_native_app_token!
-    return native_app_token if native_app_token.present? && native_app_token_digest.present?
-
-    token = SecureRandom.urlsafe_base64(48)
-    update!(
-      native_app_token: token,
-      native_app_token_digest: self.class.digest_native_app_token(token),
-      native_app_token_generated_at: Time.current
-    )
-    token
+    default_native_app_device.ensure_token!
   end
 
   def touch_native_app_token_usage!
-    update_column(:native_app_token_last_used_at, Time.current)
+    default_native_app_device.touch_token_usage!
   end
 
   def self.authenticate_native_app_token(token)
-    return if token.blank?
+    authenticate_native_app_device(token)&.user
+  end
 
-    find_by(native_app_token_digest: digest_native_app_token(token))
+  def self.authenticate_native_app_device(token)
+    UserDevice.authenticate_token(token)
   end
 
   def self.digest_native_app_token(token)
-    Digest::SHA256.hexdigest(token)
+    UserDevice.digest_token(token)
   end
 
   def password_login_enabled?
@@ -52,6 +45,10 @@ class User < ApplicationRecord
   end
 
   private
+
+  def default_native_app_device
+    user_devices.active.find_or_create_by!(platform: UserDevice::IOS_PLATFORM, name: UserDevice::DEFAULT_NAME)
+  end
 
   def password_present?
     password.present?

@@ -15,7 +15,7 @@ class ResearchMessagesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_equal Mime[:turbo_stream].to_s, response.media_type
-    assert_equal [ "How is she doing?" ], @person.llm_chat.llm_messages.visible.where(role: "user").pluck(:content)
+    assert_equal [ "How is she doing?" ], @person.chat.messages.visible.where(role: "user").pluck(:content)
     assert_includes response.body, "research_chat_form"
     assert_includes response.body, "chat_welcome"
   end
@@ -27,7 +27,7 @@ class ResearchMessagesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_entity
     assert_includes response.body, I18n.t("log_summary.states.missing_model")
-    assert_nil @person.llm_chat
+    assert_nil @person.chat
   end
 
   test "blank message does not create a chat or enqueue a job" do
@@ -36,13 +36,13 @@ class ResearchMessagesControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :unprocessable_entity
-    assert_nil @person.llm_chat
+    assert_nil @person.chat
   end
 
   test "response job refreshes stale context before generating the assistant turn" do
     @person.entries.create!(occurred_at: Time.zone.local(2026, 4, 8, 9, 0), input: "No fever", facts: [ "No fever" ], parseable_data: [])
 
-    chat = @person.build_llm_chat
+    chat = @person.build_chat
     ResearchChatRuntime.prepare!(chat, setting: AppSetting.current)
     ResearchChatContext.refresh!(chat, locale: :en)
     chat.add_message(role: :user, content: "Give me a summary")
@@ -51,7 +51,7 @@ class ResearchMessagesControllerTest < ActionDispatch::IntegrationTest
       @person.entries.create!(occurred_at: Time.zone.local(2026, 4, 8, 10, 0), input: "Fever 38.4", facts: [ "Fever 38.4 C" ], parseable_data: [ { "type" => "temperature", "value" => 38.4, "unit" => "C" } ])
     end
 
-    LlmChat.class_eval do
+    Chat.class_eval do
       alias_method :__original_complete_for_research_test, :complete
 
       def complete(...)
@@ -63,8 +63,8 @@ class ResearchMessagesControllerTest < ActionDispatch::IntegrationTest
       ResearchChatResponseJob.perform_later(chat.id, "en")
     end
   ensure
-    if LlmChat.method_defined?(:__original_complete_for_research_test)
-      LlmChat.class_eval do
+    if Chat.method_defined?(:__original_complete_for_research_test)
+      Chat.class_eval do
         alias_method :complete, :__original_complete_for_research_test
         remove_method :__original_complete_for_research_test
       end
@@ -73,8 +73,8 @@ class ResearchMessagesControllerTest < ActionDispatch::IntegrationTest
     if defined?(chat) && chat.present?
       chat.reload
       assert_includes chat.context_message.content, "Fever 38.4 C"
-      assert_equal I18n.t("chat.context_refreshed"), chat.llm_messages.visible.where(message_kind: "context_notice").last&.content
-      assert_equal "Latest data used.", chat.llm_messages.visible.where(role: "assistant").last&.content
+      assert_equal I18n.t("chat.context_refreshed"), chat.messages.visible.where(message_kind: "context_notice").last&.content
+      assert_equal "Latest data used.", chat.messages.visible.where(role: "assistant").last&.content
     end
-end
+  end
 end

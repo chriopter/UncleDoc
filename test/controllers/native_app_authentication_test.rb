@@ -13,7 +13,7 @@ class NativeAppAuthenticationTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "meta[name='uncledoc-native-app-token']", 1
     assert_select "meta[name='uncledoc-native-app-email'][content='one@example.com']", 1
-    assert users(:one).reload.native_app_token_digest.present?
+    assert users(:one).reload.user_devices.active.first&.token_digest.present?
   end
 
   test "healthkit endpoints accept bearer token auth without a web session" do

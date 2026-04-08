@@ -1,68 +1,41 @@
 require "json"
-require "net/http"
-require "uri"
-require "base64"
 require "open3"
-require "tempfile"
 require "tmpdir"
+require "stringio"
 
 class LlmMultimodalRequest
   Response = Struct.new(:content, :status_code, :body, keyword_init: true)
-  RETRIABLE_ERRORS = [ Errno::ECONNRESET, EOFError, Net::ReadTimeout, Net::OpenTimeout, IOError ].freeze
 
   def self.call(request_kind:, preference:, instructions:, prompt:, attachments:, person: nil, entry: nil, temperature: nil, model: nil)
-    endpoint = "#{preference.llm_api_base.chomp('/')}/chat/completions"
-    payload = build_payload(preference:, instructions:, prompt:, attachments:, temperature:, model:)
+    chat = ResearchChatRuntime.build_chat(setting: preference, model:, temperature:)
+    chat.with_instructions(instructions)
 
-    response = perform_request(endpoint:, payload:, preference:)
-
-    normalized_body = normalize_body(response.body)
-
-    raise "LLM request failed with status #{response.code}" unless response.code.to_i.between?(200, 299)
+    response = chat.ask(prompt, with: build_attachments(attachments))
+    raw = response.raw
 
     Response.new(
-      content: JSON.parse(normalized_body).dig("choices", 0, "message", "content").to_s,
-      status_code: response.code.to_i,
-      body: normalized_body
+      content: response.content.to_s,
+      status_code: LlmChatRequest.raw_status(raw),
+      body: LlmChatRequest.raw_body(raw)
     )
-  rescue StandardError
-    raise
   end
 
-  def self.build_payload(preference:, instructions:, prompt:, attachments:, temperature: nil, model: nil)
-    payload = {
-      model: model || preference.llm_model,
-      messages: [
-        { role: "system", content: instructions },
-        { role: "user", content: build_content(prompt:, attachments:) }
-      ]
-    }
-    payload[:temperature] = temperature unless temperature.nil?
-    payload
+  def self.build_attachments(attachments)
+    Array(attachments).flat_map do |attachment|
+      attachment_inputs(attachment)
+    end
   end
 
-  def self.build_content(prompt:, attachments:)
-    [ { type: "text", text: prompt } ] + Array(attachments).flat_map { |attachment| attachment_parts(attachment) }
-  end
-
-  def self.attachment_parts(attachment)
+  def self.attachment_inputs(attachment)
     llm_attachment = RubyLLM::Attachment.new(attachment)
 
     case llm_attachment.type
     when :image
-      [ {
-        type: "image_url",
-        image_url: {
-          url: llm_attachment.for_llm
-        }
-      } ]
+      [ attachment ]
     when :pdf
       pdf_image_parts(attachment)
     when :text
-      [ {
-        type: "text",
-        text: llm_attachment.for_llm
-      } ]
+      [ attachment ]
     else
       raise ArgumentError, "Unsupported attachment type: #{llm_attachment.type}"
     end
@@ -74,12 +47,11 @@ class LlmMultimodalRequest
 
     raise ArgumentError, "Could not rasterize PDF attachment" if png_images.empty?
 
-    png_images.map do |png_bytes|
+    png_images.each_with_index.map do |png_bytes, index|
       {
-        type: "image_url",
-        image_url: {
-          url: "data:image/png;base64,#{Base64.strict_encode64(png_bytes)}"
-        }
+        io: StringIO.new(png_bytes),
+        filename: "document-page-#{index + 1}.png",
+        content_type: "image/png"
       }
     end
   end
@@ -94,37 +66,5 @@ class LlmMultimodalRequest
 
       Dir[File.join(dir, "page-*.png")].sort.map { |path| File.binread(path) }
     end
-  end
-
-  def self.perform_request(endpoint:, payload:, preference:)
-    uri = URI.parse(endpoint)
-    request = Net::HTTP::Post.new(uri)
-    request["Content-Type"] = "application/json"
-    request["Authorization"] = "Bearer #{preference.llm_runtime_api_key}" if preference.llm_runtime_api_key.present?
-
-    if preference.llm_provider == "openrouter"
-      request["HTTP-Referer"] = "http://localhost:3000"
-      request["X-Title"] = "UncleDoc"
-    end
-
-    request.body = payload.to_json
-
-    attempts = 0
-
-    begin
-      attempts += 1
-
-      Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https") do |http|
-        http.request(request)
-      end
-    rescue *RETRIABLE_ERRORS
-      raise if attempts >= 3
-
-      retry
-    end
-  end
-
-  def self.normalize_body(body)
-    body.to_s.dup.force_encoding("UTF-8").scrub
   end
 end

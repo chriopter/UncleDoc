@@ -123,10 +123,10 @@ class SettingsController < ApplicationController
 
   def llm_stats
     {
-      total_requests: LlmChat.count,
-      parse_requests: LlmMessage.where(role: "user").count,
-      summary_requests: LlmMessage.where(role: "assistant").count,
-      latest_request_at: LlmMessage.maximum(:created_at)
+      total_requests: Chat.count,
+      parse_requests: Message.where(role: "user").count,
+      summary_requests: Message.where(role: "assistant").count,
+      latest_request_at: Message.maximum(:created_at)
     }
   end
 

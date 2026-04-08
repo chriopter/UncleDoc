@@ -22,6 +22,30 @@ class ResearchChatRuntime
     chat
   end
 
+  def self.build_chat(setting: AppSetting.current, model: nil, temperature: nil)
+    chat = context_for(setting).chat(
+      model: model || setting.llm_model,
+      provider: setting.llm_ruby_provider,
+      assume_model_exists: true
+    )
+    chat.with_temperature(temperature) unless temperature.nil?
+
+    headers_for(setting).then do |headers|
+      chat.with_headers(**headers) if headers.present?
+    end
+
+    chat
+  end
+
+  def self.headers_for(setting)
+    return {} unless setting.llm_provider == "openrouter"
+
+    {
+      "HTTP-Referer" => "http://localhost:3000",
+      "X-Title" => "UncleDoc"
+    }
+  end
+
   def self.context_for(setting)
     RubyLLM.context do |config|
       config.anthropic_api_key = ENV["ANTHROPIC_API_KEY"]
@@ -36,7 +60,6 @@ class ResearchChatRuntime
       config.perplexity_api_key = ENV["PERPLEXITY_API_KEY"]
       config.xai_api_key = ENV["XAI_API_KEY"]
       config.logger = Rails.logger
-      config.model_registry_class = "LlmModel"
       config.use_new_acts_as = true
 
       case setting.llm_ruby_provider
