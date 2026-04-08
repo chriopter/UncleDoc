@@ -1,5 +1,6 @@
 class HealthkitController < ApplicationController
   skip_before_action :require_authentication, only: %i[people status sync reset]
+  skip_forgery_protection if: :native_healthkit_request?
   before_action :require_healthkit_authentication
   before_action :set_healthkit_person, only: [ :status, :sync, :reset ]
 
@@ -93,6 +94,10 @@ class HealthkitController < ApplicationController
 
   def native_app_bearer_token
     request.authorization.to_s.delete_prefix("Bearer ").presence
+  end
+
+  def native_healthkit_request?
+    request.format.json? || native_app_bearer_token.present?
   end
 
   def set_healthkit_person
