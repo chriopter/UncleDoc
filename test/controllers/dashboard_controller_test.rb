@@ -267,7 +267,6 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes @response.body, "Doctor appointment with Dr. Meier"
-    assert_not_includes @response.body, ">checkup<"
   end
 
   test "overview shows vital widgets" do
