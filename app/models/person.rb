@@ -9,9 +9,6 @@ class Person < ApplicationRecord
   accepts_nested_attributes_for :user, update_only: true
 
   validates :name, presence: true
-  validates :locale, inclusion: { in: %w[en de] }, allow_nil: true
-  validates :date_format, inclusion: { in: %w[long compact] }, allow_nil: true
-
   before_validation :ensure_uuid, on: :create
 
   scope :recent_first, -> { order(created_at: :desc) }
@@ -79,8 +76,6 @@ class Person < ApplicationRecord
     entries.by_parseable_data_type("diaper").recent_first.first(limit)
   end
 
-  private
-
   def baby_feeding_timer_side
     person_state_record.baby_feeding_timer_side
   end
@@ -108,6 +103,8 @@ class Person < ApplicationRecord
   def person_state_record
     person_state || build_person_state
   end
+
+  private
 
   def ensure_uuid
     self.uuid ||= SecureRandom.uuid

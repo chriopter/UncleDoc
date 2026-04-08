@@ -12,7 +12,7 @@ class ApplicationController < ActionController::Base
   before_action :set_current_person
   before_action :initialize_entry_for_current_person
 
-  helper_method :app_setting, :current_date_format, :current_locale, :current_llm_provider, :current_person, :family_members, :person_root_path_for, :settings_path_for, :user_preference, :baby_feeding_timer_started_at_for, :baby_feeding_timer_side_for, :baby_sleep_timer_started_at_for
+  helper_method :app_setting, :current_date_format, :current_locale, :current_llm_provider, :current_native_app_token, :current_person, :family_members, :person_root_path_for, :settings_path_for, :user_preference, :baby_feeding_timer_started_at_for, :baby_feeding_timer_side_for, :baby_sleep_timer_started_at_for
 
   def default_url_options
     {}
@@ -64,8 +64,6 @@ class ApplicationController < ActionController::Base
   def current_locale
     if params[:locale].present? && %w[en de].include?(params[:locale])
       params[:locale]
-    elsif controller_name != "settings" && person_display_preference&.locale.present?
-      person_display_preference.locale
     else
       user_preference.locale
     end
@@ -74,8 +72,6 @@ class ApplicationController < ActionController::Base
   def current_date_format
     if params[:date_format].present? && %w[long compact].include?(params[:date_format])
       params[:date_format]
-    elsif controller_name != "settings" && person_display_preference&.date_format.present?
-      person_display_preference.date_format
     else
       user_preference.date_format
     end
@@ -93,18 +89,14 @@ class ApplicationController < ActionController::Base
     @app_setting ||= AppSetting.current
   end
 
-  def user_preference
-    @user_preference ||= UserPreference.current
+  def current_native_app_token
+    return unless request.user_agent.to_s.include?("UncleDoc iOS") && current_user.present?
+
+    @current_native_app_token ||= current_user.ensure_native_app_token!
   end
 
-  def person_display_preference
-    return @person_display_preference if defined?(@person_display_preference)
-
-    @person_display_preference = if params[:person_slug].present?
-      Person.find_by(name: params[:person_slug])
-    else
-      current_person
-    end
+  def user_preference
+    @user_preference ||= UserPreference.current
   end
 
   def baby_feeding_timer_started_at_for(person)

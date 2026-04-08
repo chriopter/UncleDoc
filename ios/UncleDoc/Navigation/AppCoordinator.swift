@@ -56,6 +56,10 @@ final class AppCoordinator: NSObject, ObservableObject {
             return
         }
 
+        if serverURL != url {
+            NativeAppTokenStore.clear(for: serverURL)
+        }
+
         validationMessage = nil
         ServerURLStore.save(url)
         serverURL = url
@@ -64,9 +68,22 @@ final class AppCoordinator: NSObject, ObservableObject {
 
     func resetServerURL() {
         validationMessage = nil
+        NativeAppTokenStore.clear(for: serverURL)
         ServerURLStore.clear()
         serverURL = nil
         shellViewController = nil
+    }
+
+    func updateNativeAuthentication(token: String?, email: String?) {
+        guard let serverURL else { return }
+
+        if let token, !token.isEmpty {
+            NativeAppTokenStore.save(token: token, email: email, for: serverURL)
+            HealthKitSyncService.shared.handleRemoteAuthenticationChanged(isAuthenticated: true)
+        } else {
+            NativeAppTokenStore.clear(for: serverURL)
+            HealthKitSyncService.shared.handleRemoteAuthenticationChanged(isAuthenticated: false)
+        }
     }
 
     func makeShellViewController() -> UIViewController {
@@ -281,6 +298,11 @@ final class NativeMenuScriptBridge: NSObject, WKScriptMessageHandler {
             return
         }
 
+        if action == "native_auth_state" {
+            AppCoordinator.shared.updateNativeAuthentication(token: body["token"] as? String, email: body["email"] as? String)
+            return
+        }
+
         AppCoordinator.shared.handleNativeMenuAction(named: action)
     }
 
@@ -368,9 +390,22 @@ final class NativeMenuScriptBridge: NSObject, WKScriptMessageHandler {
         document.querySelectorAll("[data-native-menu-slot]").forEach(renderSlot);
       };
 
+      const publishAuthState = () => {
+        const token = document.querySelector('meta[name="uncledoc-native-app-token"]')?.content || null;
+        const email = document.querySelector('meta[name="uncledoc-native-app-email"]')?.content || null;
+        window.webkit?.messageHandlers?.[handlerName]?.postMessage({ action: "native_auth_state", token, email });
+      };
+
       boot();
-      document.addEventListener("turbo:load", boot);
-      document.addEventListener("turbo:render", boot);
+      publishAuthState();
+      document.addEventListener("turbo:load", () => {
+        boot();
+        publishAuthState();
+      });
+      document.addEventListener("turbo:render", () => {
+        boot();
+        publishAuthState();
+      });
     })();
     """#.replacingOccurrences(of: "__HEALTH_SYNC_COMPLETE__", with: HealthKitSyncService.shared.configuration.lastSuccessfulSyncAt != nil ? "true" : "false")
 }

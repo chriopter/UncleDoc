@@ -1,4 +1,6 @@
 class HealthkitController < ApplicationController
+  skip_before_action :require_authentication, only: %i[people status sync reset]
+  before_action :require_healthkit_authentication
   before_action :set_healthkit_person, only: [ :status, :sync, :reset ]
 
   def people
@@ -72,6 +74,26 @@ class HealthkitController < ApplicationController
   end
 
   private
+
+  def require_healthkit_authentication
+    return if resume_session.present?
+
+    user = User.authenticate_native_app_token(native_app_bearer_token)
+    if user.present?
+      user.touch_native_app_token_usage!
+      Current.session = Session.new(user: user)
+      return
+    end
+
+    respond_to do |format|
+      format.html { redirect_to new_session_path, alert: t("auth.login.required") }
+      format.any { render json: { error: t("auth.login.required") }, status: :unauthorized }
+    end
+  end
+
+  def native_app_bearer_token
+    request.authorization.to_s.delete_prefix("Bearer ").presence
+  end
 
   def set_healthkit_person
     uuid = params[:person_uuid].presence || params.dig(:healthkit, :person_uuid).presence

@@ -3,6 +3,8 @@ class User < ApplicationRecord
   has_secure_password validations: false
   has_many :sessions, dependent: :destroy
 
+  encrypts :native_app_token
+
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 
   scope :with_password, -> { where.not(password_digest: [ nil, "" ]) }
@@ -17,6 +19,32 @@ class User < ApplicationRecord
 
   def can_administer?
     admin?
+  end
+
+  def ensure_native_app_token!
+    return native_app_token if native_app_token.present? && native_app_token_digest.present?
+
+    token = SecureRandom.urlsafe_base64(48)
+    update!(
+      native_app_token: token,
+      native_app_token_digest: self.class.digest_native_app_token(token),
+      native_app_token_generated_at: Time.current
+    )
+    token
+  end
+
+  def touch_native_app_token_usage!
+    update_column(:native_app_token_last_used_at, Time.current)
+  end
+
+  def self.authenticate_native_app_token(token)
+    return if token.blank?
+
+    find_by(native_app_token_digest: digest_native_app_token(token))
+  end
+
+  def self.digest_native_app_token(token)
+    Digest::SHA256.hexdigest(token)
   end
 
   def password_login_enabled?

@@ -104,8 +104,6 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
         name: "Mila Rose",
         birth_date: "2024-03-11T08:30",
         baby_mode: "1",
-        locale: "de",
-        date_format: "compact",
         user_attributes: {
           id: person.user.id,
           email_address: "mila.rose@example.com",
@@ -121,24 +119,8 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Mila Rose", person.name
     assert_equal Time.zone.parse("2024-03-11T08:30"), person.birth_date
     assert person.baby_mode?
-    assert_equal "de", person.locale
-    assert_equal "compact", person.date_format
     assert_equal "mila.rose@example.com", person.user.email_address
     assert person.user.admin?
-  end
-
-  test "person scoped pages use personal locale and date format" do
-    person = Person.create!(name: "Locale Mila", birth_date: Time.zone.local(2024, 3, 10, 12, 0), locale: "de", date_format: "compact")
-    UserPreference.update_locale("en")
-    UserPreference.update_date_format("long")
-
-    get person_overview_url(person_slug: person.name)
-
-    assert_response :success
-    assert_equal :de, I18n.locale
-  ensure
-    UserPreference.update_locale("en")
-    UserPreference.update_date_format("long")
   end
 
   test "shows newborn age in days on overview" do
