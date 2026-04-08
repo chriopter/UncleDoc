@@ -47,34 +47,36 @@ UncleDoc keeps the active LLM system prompts in Markdown files under `prompts/`.
 
 ## 4. Installation
 
-### Local dev
+### Docker Compose
+
+Quick start:
 
 ```bash
-bin/dev
+git clone https://github.com/chriopter/UncleDoc.git
+cd UncleDoc
+cp .env.docker.example .env.docker
 ```
 
-If you want demo content, run `bundle exec bin/rails db:prepare db:seed` first.
+Set these values in `.env.docker`:
 
-### Docker run
+- `UNCLEDOC_IMAGE=ghcr.io/chriopter/uncledoc:latest`
+- `RAILS_MASTER_KEY=...`
+- `SECRET_KEY_BASE=...`
+
+Start the app:
 
 ```bash
-docker run -d \
-  --name uncledoc \
-  -p 3000:80 \
-  -e RAILS_MASTER_KEY=... \
-  -e SECRET_KEY_BASE=... \
-  -v uncledoc_storage:/rails/storage \
-  ghcr.io/<repo-owner>/uncledoc:latest
+docker compose up -d
 ```
 
 Then open `http://127.0.0.1:3000` after the container becomes healthy.
 
-Image channels:
+Container tags:
 
-- `ghcr.io/<repo-owner>/uncledoc:latest` for the newest release
-- `ghcr.io/<repo-owner>/uncledoc:edge` for the newest push to `main`
+- `ghcr.io/chriopter/uncledoc:latest` for the newest release
+- `ghcr.io/chriopter/uncledoc:edge` for the newest push to `main`
 
-If you run behind a reverse proxy, also pass:
+If you run behind a reverse proxy, also set these in `.env.docker`:
 
 - `APP_HOST=your.domain`
 - `ALLOWED_HOSTS=your.domain`
@@ -82,27 +84,13 @@ If you run behind a reverse proxy, also pass:
 - `FORCE_SSL=true`
 - `ASSUME_SSL=true`
 
-### Docker Compose
-
-If you want a repo-based setup with `compose.yml`:
+### Local dev
 
 ```bash
-git clone https://github.com/<repo-owner>/UncleDoc.git
-cd UncleDoc
-cp .env.docker.example .env.docker
+bin/dev
 ```
 
-Then set at least these values in `.env.docker`:
-
-- `UNCLEDOC_IMAGE=ghcr.io/<repo-owner>/uncledoc:latest`
-- `RAILS_MASTER_KEY=...`
-- `SECRET_KEY_BASE=...`
-
-Then start the app:
-
-```bash
-docker compose up -d
-```
+If you want demo content, run `bundle exec bin/rails db:prepare db:seed` first.
 
 ## 5. Details
 
