@@ -97,6 +97,15 @@ class EntryDataParserTest < ActiveSupport::TestCase
     assert_includes prompt, "Do not return an empty facts array"
   end
 
+  test "parser prompt tells document parser to extract diagnosis or symptom from medical admin documents" do
+    prompt = EntryDataParser.system_prompt
+
+    assert_includes prompt, "extract the medically relevant content too, not just the document purpose"
+    assert_includes prompt, "If a document mentions a diagnosis, symptom, reason for visit, or reason for work incapacity"
+    assert_includes prompt, "2022-01 Erkältung AU.pdf"
+    assert_includes prompt, '"kind": "symptom"'
+  end
+
   test "sanitizes document metadata" do
     result = EntryDataParser.sanitize_document({ "type" => "lab_report", "title" => "Laborblatt vom 06.04.2018", "extra" => "ignored" })
 
