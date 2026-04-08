@@ -55,13 +55,44 @@ bin/dev
 
 If you want demo content, run `bundle exec bin/rails db:prepare db:seed` first.
 
-### Docker deploy
+### Docker run
 
 ```bash
+docker run -d \
+  --name uncledoc \
+  -p 3000:80 \
+  -e RAILS_MASTER_KEY=... \
+  -e SECRET_KEY_BASE=... \
+  -v uncledoc_storage:/rails/storage \
+  ghcr.io/<repo-owner>/uncledoc:latest
+```
+
+Then open `http://127.0.0.1:3000` after the container becomes healthy.
+
+Image channels:
+
+- `ghcr.io/<repo-owner>/uncledoc:latest` for the newest release
+- `ghcr.io/<repo-owner>/uncledoc:edge` for the newest push to `main`
+
+If you run behind a reverse proxy, also pass:
+
+- `APP_HOST=your.domain`
+- `ALLOWED_HOSTS=your.domain`
+- `APP_PROTOCOL=https`
+- `FORCE_SSL=true`
+- `ASSUME_SSL=true`
+
+### Docker Compose
+
+If you want a repo-based setup with `compose.yml`:
+
+```bash
+git clone https://github.com/<repo-owner>/UncleDoc.git
+cd UncleDoc
 cp .env.docker.example .env.docker
 ```
 
-Then edit `.env.docker` and set at least:
+Then set at least these values in `.env.docker`:
 
 - `UNCLEDOC_IMAGE=ghcr.io/<repo-owner>/uncledoc:latest`
 - `RAILS_MASTER_KEY=...`
@@ -72,21 +103,6 @@ Then start the app:
 ```bash
 docker compose up -d
 ```
-
-Open `http://127.0.0.1:3000` after the container becomes healthy.
-
-Release image channels:
-
-- `ghcr.io/<repo-owner>/uncledoc:edge` updates from every push to `main`
-- `ghcr.io/<repo-owner>/uncledoc:latest` updates on published GitHub releases
-
-If you run behind a reverse proxy, also set these in `.env.docker`:
-
-- `APP_HOST=your.domain`
-- `ALLOWED_HOSTS=your.domain`
-- `APP_PROTOCOL=https`
-- `FORCE_SSL=true`
-- `ASSUME_SSL=true`
 
 ## 5. Details
 
