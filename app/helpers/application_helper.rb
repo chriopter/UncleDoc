@@ -648,6 +648,15 @@ module ApplicationHelper
     end
   end
 
+  def file_thumbnail_path_for(entry)
+    return unless entry.present?
+
+    document = entry.documents.first
+    return unless document&.representable?
+
+    person_file_thumbnail_path(person_slug: entry.person.name, entry_id: entry.id)
+  end
+
   private
 
   def render_markdown_block(lines)
