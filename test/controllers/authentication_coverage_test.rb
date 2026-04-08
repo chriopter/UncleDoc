@@ -19,6 +19,7 @@ class AuthenticationCoverageTest < ActionDispatch::IntegrationTest
       "settings delete row" => -> { delete settings_db_row_path(table: "entries", row_id: entry.id) },
       "settings llm models" => -> { post settings_llm_models_path, params: { llm_provider: "ollama" } },
       "settings llm test" => -> { post settings_llm_test_path },
+      "settings llm reparse all" => -> { post settings_llm_reparse_all_path },
       "settings prompt preview" => -> { get settings_prompt_preview_path(kind: "summary", person_id: person.id) },
       "healthkit people" => -> { get "/ios/healthkit/people" },
       "healthkit status" => -> { get "/ios/healthkit/status", params: { person_uuid: person.uuid } },

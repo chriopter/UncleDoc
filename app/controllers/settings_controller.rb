@@ -15,6 +15,8 @@ class SettingsController < ApplicationController
     return unless llm_section?
 
     @llm_stats = llm_stats
+    @unparsed_entries = unparsed_entries
+    @unparsed_entry_count = @unparsed_entries.size
     load_prompt_preview
   end
 
@@ -97,6 +99,17 @@ class SettingsController < ApplicationController
       status: llm_model_status(provider, result),
       empty_label: t("settings.llm.model_empty")
     }
+  end
+
+  def llm_reparse_all
+    unless EntryDataParser.ready?
+      redirect_to settings_path(section: :llm), alert: t("settings.llm.reparse.not_ready")
+      return
+    end
+
+    result = EntryExtractedDataRefreshService.call
+
+    redirect_to settings_path(section: :llm), notice: t("settings.llm.reparse.started", queued: result.queued_count, rebuilt: result.rebuilt_count)
   end
 
   private
@@ -203,6 +216,10 @@ class SettingsController < ApplicationController
         user: @preview_person ? LogSummaryGenerator.summary_prompt(@preview_person, entries) : t("settings.llm.prompt_preview_empty")
       }
     }
+  end
+
+  def unparsed_entries
+    Entry.includes(:person, documents_attachments: :blob).where.not(parse_status: "parsed").recent_first.to_a
   end
 
   def database_table_detail(table_name, page: 1)

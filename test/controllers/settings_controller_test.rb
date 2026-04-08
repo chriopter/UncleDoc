@@ -104,7 +104,39 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Affected user"
     assert_includes @response.body, "Workspace usage"
     assert_includes @response.body, "Price"
+    assert_includes @response.body, "Global entry reparse"
     assert_not_includes @response.body, "href=\"/settings/llm_prompt\""
+  end
+
+  test "llm settings shows current unparsed entries" do
+    person = Person.create!(name: "Unparsed Person", birth_date: Date.new(2024, 1, 1))
+    person.entries.create!(input: "stuck note", occurred_at: Time.zone.local(2026, 4, 8, 10, 0), parse_status: "failed", extracted_data: { "facts" => [], "document" => {}, "llm" => {} })
+    person.entries.create!(input: "done note", occurred_at: Time.zone.local(2026, 4, 8, 11, 0), parse_status: "parsed", extracted_data: { "facts" => [ { "text" => "Done", "kind" => "note" } ], "document" => {}, "llm" => {} })
+
+    get settings_url(section: "llm")
+
+    assert_response :success
+    assert_includes @response.body, "Unparsed entries"
+    assert_includes @response.body, "Unparsed Person"
+    assert_includes @response.body, "stuck note"
+    assert_not_includes @response.body, "done note"
+  end
+
+  test "llm settings can kick off full reparse" do
+    AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
+    person = Person.create!(name: "Reparse Person", birth_date: Date.new(2024, 1, 1))
+    manual_entry = person.entries.create!(input: "reparse me", occurred_at: Time.zone.local(2026, 4, 8, 10, 0), parse_status: "parsed", extracted_data: { "facts" => [ { "text" => "Old", "kind" => "note" } ], "document" => {}, "llm" => { "status" => "structured" } })
+    baby_entry = person.entries.create!(input: "Bottle 120ml", occurred_at: Time.zone.local(2026, 4, 8, 9, 0), source: Entry::SOURCES[:babywidget], parse_status: "parsed", extracted_data: { "facts" => [], "document" => {}, "llm" => {} })
+
+    assert_enqueued_with(job: EntryReparseBatchJob) do
+      post settings_llm_reparse_all_url
+    end
+
+    assert_redirected_to settings_path(section: "llm")
+    assert_equal "pending", manual_entry.reload.parse_status
+    assert_equal [], manual_entry.fact_objects
+    assert_equal "parsed", baby_entry.reload.parse_status
+    assert_equal "measurement", baby_entry.fact_objects.first["kind"]
   end
 
   test "shows dedicated llm prompt page" do
