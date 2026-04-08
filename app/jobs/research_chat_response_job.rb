@@ -2,7 +2,7 @@ class ResearchChatResponseJob < ApplicationJob
   queue_as :default
 
   def perform(chat_id, locale)
-    chat = Chat.includes(:person).find_by(id: chat_id)
+    chat = LlmChat.includes(:person).find_by(id: chat_id)
     return unless chat
 
     I18n.with_locale(locale.presence || I18n.default_locale) do
