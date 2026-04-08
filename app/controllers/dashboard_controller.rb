@@ -6,7 +6,7 @@ class DashboardController < ApplicationController
     if current_person
       @entry = Entry.new
       @entry_sort = entry_sort_mode(params)
-      @entries = current_person.entries.merge(Entry.sorted_by(@entry_sort))
+      @entries = current_person.entries.includes(documents_attachments: :blob).merge(Entry.sorted_by(@entry_sort))
     end
   end
 
@@ -179,7 +179,7 @@ class DashboardController < ApplicationController
   end
 
   def filtered_entries(person, sort_mode)
-    scope = person.entries.merge(Entry.sorted_by(sort_mode))
+    scope = person.entries.includes(documents_attachments: :blob).merge(Entry.sorted_by(sort_mode))
 
     if params[:date].present?
       date = Date.iso8601(params[:date]) rescue nil
