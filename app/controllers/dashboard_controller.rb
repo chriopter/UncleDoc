@@ -167,19 +167,18 @@ class DashboardController < ApplicationController
 
   def healthkit_records_table(person, page: 1)
     table_name = "healthkit_records"
-    connection = ActiveRecord::Base.connection
     columns = HealthkitRecord.column_names
     primary_key = HealthkitRecord.primary_key
     per_page = 250
     current_page = [ page.to_i, 1 ].max
     truncated_columns = %w[payload]
 
-    scope = person.healthkit_records.recent_first
-    total_count = scope.count
-    total_pages = [ (total_count.to_f / per_page).ceil, 1 ].max
-    current_page = [ current_page, total_pages ].min
+    scope = person.healthkit_records.import_recent_first
     offset = (current_page - 1) * per_page
-    rows = scope.offset(offset).limit(per_page).map do |record|
+    records = scope.offset(offset).limit(per_page + 1).to_a
+    next_page = current_page + 1 if records.length > per_page
+
+    rows = records.first(per_page).map do |record|
       columns.index_with do |column|
         value = record.public_send(column)
         column == "payload" && value.to_s.length > 400 ? "#{value.to_s.first(400)}..." : value
@@ -190,15 +189,15 @@ class DashboardController < ApplicationController
       name: table_name,
       columns: columns,
       rows: rows,
-      count: total_count,
-      rendered_count: [ offset + per_page, total_count ].min,
+      count: nil,
+      rendered_count: offset + rows.length,
       page: current_page,
       per_page: per_page,
-      total_pages: total_pages,
-      next_page: current_page < total_pages ? current_page + 1 : nil,
+      total_pages: nil,
+      next_page: next_page,
       primary_key: primary_key,
       deletable: false,
-      order_column: "start_at",
+      order_column: nil,
       truncated_columns: truncated_columns
     }
   end
