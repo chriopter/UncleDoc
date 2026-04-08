@@ -1,20 +1,24 @@
 class ResearchChatContext
   def self.refresh!(chat, locale: I18n.locale)
     I18n.with_locale(locale) do
-      context_message = chat.context_message || chat.messages.build(role: :system, message_kind: "context", hidden: true)
-      context_message.content = system_prompt_for(chat.person)
-      context_message.save!
-      broadcast_context_preview(chat, context_message.content)
+      chat.with_lock do
+        latest_updated_at = latest_source_updated_at(chat.person)
+        return if chat.context_message.present? && chat.context_source_updated_at == latest_updated_at
 
-      if chat.context_source_updated_at.present?
-        chat.add_message(role: :system, content: I18n.t("chat.context_refreshed"))
-        chat.messages.where(role: "system", message_kind: "message").order(:id).last&.update!(message_kind: "context_notice")
+        context_message = chat.context_message || chat.messages.build(role: :system, message_kind: "context", hidden: true)
+        context_message.content = system_prompt_for(chat.person)
+        context_message.save!
+        broadcast_context_preview(chat, context_message.content)
+
+        if chat.context_source_updated_at.present? && chat.context_source_updated_at != latest_updated_at
+          chat.messages.create!(role: :system, content: I18n.t("chat.context_refreshed"), message_kind: "context_notice")
+        end
+
+        chat.update!(
+          context_refreshed_at: Time.current,
+          context_source_updated_at: latest_updated_at
+        )
       end
-
-      chat.update!(
-        context_refreshed_at: Time.current,
-        context_source_updated_at: latest_source_updated_at(chat.person)
-      )
     end
   end
 

@@ -632,6 +632,22 @@ module ApplicationHelper
     safe_join(blocks)
   end
 
+  def compact_chat_messages(messages)
+    message_list = Array(messages)
+    latest_context_notice_ids = message_list
+      .select { |message| message.role == "system" && message.message_kind == "context_notice" }
+      .group_by(&:content)
+      .transform_values { |group| group.max_by(&:id)&.id }
+
+    message_list.each_with_object([]) do |message, compacted|
+      if message.role == "system" && message.message_kind == "context_notice"
+        next if latest_context_notice_ids[message.content] != message.id
+      end
+
+      compacted << message
+    end
+  end
+
   private
 
   def render_markdown_block(lines)
