@@ -89,7 +89,7 @@ UncleDoc keeps the core model intentionally small: people, accounts, timeline en
 | `PersonState` | Mutable per-person runtime state | baby timer state |
 | `User` | Login account linked 1:1 to a person | `email_address`, `password_digest`, `admin`, native app token |
 | `Session` | Persistent web login session | `user_id`, `token`, request metadata |
-| `Entry` | Main timeline item for manual logs and generated summaries | `input`, `occurred_at`, `facts`, `parseable_data`, `parse_status`, `source` |
+| `Entry` | Main timeline item for manual logs and generated summaries | `input`, `occurred_at`, `extracted_data`, `parse_status`, `source`, `source_ref` |
 | `UserPreference` | Saved display preferences | locale, date format |
 | `AppSetting` | Saved global LLM configuration | provider, model, encrypted API key |
 | `HealthkitRecord` / `HealthkitSync` | Raw imported iOS health data and sync state | source payloads, sync metadata |
@@ -99,8 +99,141 @@ Normal logging follows a simple three-layer flow:
 | Layer | What it stores | Example |
 | --- | --- | --- |
 | Original input | The raw note or uploaded-document context | "Fever 38.2C after lunch" |
-| Facts | Short human-readable takeaways | "Temperature 38.2 C" |
-| `parseable_data` | Structured machine-readable items | `{ "type": "temperature", "value": 38.2, "unit": "C" }` |
+| Facts | Short human-readable takeaways with structure attached | `{ "text": "Temperature 38.2 C", "kind": "measurement", "metric": "temperature", "value": 38.2, "unit": "C" }` |
+| `extracted_data` | Parsed entry payload used by UI, charts, and chat | `{ "facts": [...], "document": {}, "llm": {...} }` |
+
+</details>
+
+## 6. Entry JSON Model
+
+Every parsed `Entry` stores one JSON object in `entries.extracted_data`.
+
+Top-level shape:
+
+```json
+{
+  "document": {
+    "type": "lab_report",
+    "title": "Laborblatt vom 06.04.2018"
+  },
+  "facts": [
+    {
+      "text": "Hemoglobin 15.2 g/dl",
+      "kind": "measurement",
+      "metric": "hemoglobin",
+      "result": 15.2,
+      "unit": "g/dl",
+      "ref": "13.5-17.5"
+    }
+  ],
+  "llm": {
+    "status": "structured",
+    "confidence": "high",
+    "note": "Canonical structured facts extracted successfully."
+  }
+}
+```
+
+Rules:
+
+- `document` is optional metadata for uploaded files, such as `invoice`, `lab_report`, or `medical_letter`.
+- `facts` is the core array. Every fact starts with `text` and `kind`.
+- `kind` distinguishes fact families like `measurement`, `medication`, `vaccination`, `appointment`, `todo`, `symptom`, `summary`, and `note`.
+- `llm` stores parser metadata only, not health content.
+
+<details>
+<summary>Example 1: simple medication note</summary>
+
+```json
+{
+  "document": {},
+  "facts": [
+    {
+      "text": "Ibuprofen 50 mg taken",
+      "kind": "medication",
+      "value": "ibuprofen",
+      "dose": 50,
+      "unit": "mg",
+      "quality": "taken"
+    }
+  ],
+  "llm": {
+    "status": "structured",
+    "confidence": "high",
+    "note": "Canonical structured facts extracted successfully."
+  }
+}
+```
+
+</details>
+
+<details>
+<summary>Example 2: baby widget entry</summary>
+
+```json
+{
+  "document": {},
+  "facts": [
+    {
+      "text": "Stillen Rechts 18 min",
+      "kind": "measurement",
+      "metric": "breast_feeding",
+      "value": 18,
+      "unit": "min",
+      "side": "right"
+    },
+    {
+      "text": "Windel nass und fest",
+      "kind": "measurement",
+      "metric": "diaper",
+      "wet": true,
+      "solid": true
+    }
+  ],
+  "llm": {}
+}
+```
+
+</details>
+
+<details>
+<summary>Example 3: scanned lab PDF</summary>
+
+```json
+{
+  "document": {
+    "type": "lab_report",
+    "title": "Laborblatt vom 06.04.2018"
+  },
+  "facts": [
+    {
+      "text": "Hemoglobin 15,2 g/dl",
+      "kind": "measurement",
+      "metric": "hemoglobin",
+      "result": 15.2,
+      "unit": "g/dl",
+      "ref": "13,5-17,5"
+    },
+    {
+      "text": "Leukozyten 4,8 Tsd/µl",
+      "kind": "measurement",
+      "metric": "leukocytes",
+      "result": 4.8,
+      "unit": "Tsd/µl",
+      "ref": "4-10"
+    },
+    {
+      "text": "Laborblatt vom 06.04.2018",
+      "kind": "summary"
+    }
+  ],
+  "llm": {
+    "status": "structured",
+    "confidence": "high",
+    "note": "Canonical structured facts extracted successfully."
+  }
+}
+```
 
 </details>
 
