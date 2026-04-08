@@ -188,6 +188,7 @@ de:
       empty_syncs: "Für diese Person ist noch kein HealthKit-Sync auf dem Server angekommen."
       empty_summaries: "Es sind noch keine HealthKit-Zusammenfassungs-Eintrage vorhanden."
       empty_raw: "Es wurden noch keine rohen HealthKit-Daten synchronisiert."
+      payload_preview_note: "Payload nur als Vorschau"
 
   chat:
     title: "%{name} — Gesundheits-Chat"

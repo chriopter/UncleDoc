@@ -1,7 +1,7 @@
 <% assistant ||= local_assigns[:message] %>
 <div id="<%= dom_id(assistant) %>" class="flex justify-start">
   <div class="max-w-[85%] rounded-2xl rounded-tl-md border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed text-slate-700 shadow-sm">
-    <div id="<%= dom_id(assistant) %>_content" class="whitespace-pre-wrap"><%= assistant.content %></div>
+    <div id="<%= dom_id(assistant) %>_content" class="space-y-3 break-words"><%= render_chat_markdown(assistant.content) %></div>
     <p class="mt-2 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400"><%= assistant.created_at&.strftime("%H:%M") %></p>
   </div>
 </div>
