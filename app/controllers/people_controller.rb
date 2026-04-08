@@ -1,4 +1,6 @@
 class PeopleController < ApplicationController
+  require_admin_access only: %i[create update destroy]
+
   def show
     @person = Person.find_by!(name: params[:person_slug])
     @entry_sort = params[:sort].to_s == "entered" ? "entered" : "occurred"
@@ -18,10 +20,12 @@ class PeopleController < ApplicationController
 
   def create
     @person = Person.new(person_params)
+    @person.build_user if @person.user.nil?
 
     if @person.save
       @people = Person.recent_first
       @fresh_person = Person.new
+      @fresh_person.build_user(admin: false)
 
       respond_to do |format|
         format.html { redirect_to root_path(person_slug: @person.name, tab: "log"), notice: t("people.flash.created") }
@@ -32,6 +36,7 @@ class PeopleController < ApplicationController
         format.html do
           @tab = "log"
           @people = Person.recent_first
+          @person.build_user if @person.user.nil?
           # When validation fails, show empty state - no current person selected
           @entry = Entry.new
           render "dashboard/show", status: :unprocessable_entity
@@ -50,6 +55,7 @@ class PeopleController < ApplicationController
 
   def update
     @person = Person.find(params[:id])
+    @person.build_user if @person.user.nil?
 
     if @person.update(person_params)
       redirect_to request.referer || person_overview_path(person_slug: @person.name), notice: t("people.flash.updated")
@@ -78,6 +84,13 @@ class PeopleController < ApplicationController
   private
 
   def person_params
-    params.require(:person).permit(:name, :birth_date, :baby_mode, :locale, :date_format)
+    params.require(:person).permit(
+      :name,
+      :birth_date,
+      :baby_mode,
+      :locale,
+      :date_format,
+      user_attributes: [ :id, :email_address, :password, :password_confirmation, :admin ]
+    )
   end
 end

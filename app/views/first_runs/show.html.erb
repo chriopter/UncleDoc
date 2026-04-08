@@ -1,0 +1,38 @@
+<section class="mx-auto max-w-2xl rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur md:p-8">
+  <div class="max-w-xl space-y-6">
+    <div>
+      <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("auth.first_run.kicker") %></p>
+      <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-950"><%= t("auth.first_run.title") %></h1>
+      <p class="mt-3 text-sm leading-6 text-slate-600"><%= t("auth.first_run.description") %></p>
+    </div>
+
+    <%= form_with url: first_run_path, scope: :setup, class: "space-y-4" do |form| %>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div class="space-y-1.5 sm:col-span-2">
+          <%= form.label :person_name, t("auth.first_run.person_name"), class: "text-sm font-semibold text-slate-700" %>
+          <%= form.text_field :person_name, value: @person&.name, autocomplete: "name", autofocus: true, required: true, class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+        </div>
+        <div class="space-y-1.5">
+          <%= form.label :birth_date, t("auth.first_run.birth_date"), class: "text-sm font-semibold text-slate-700" %>
+          <%= form.datetime_local_field :birth_date, value: @person&.birth_date&.strftime("%Y-%m-%dT%H:%M"), class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+        </div>
+        <div class="space-y-1.5">
+          <%= form.label :email_address, t("auth.first_run.email_address"), class: "text-sm font-semibold text-slate-700" %>
+          <%= form.email_field :email_address, value: @user&.email_address, autocomplete: "username", required: true, class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+        </div>
+        <div class="space-y-1.5">
+          <%= form.label :password, t("auth.first_run.password"), class: "text-sm font-semibold text-slate-700" %>
+          <%= form.password_field :password, autocomplete: "new-password", required: true, maxlength: 72, class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+        </div>
+        <div class="space-y-1.5">
+          <%= form.label :password_confirmation, t("auth.first_run.password_confirmation"), class: "text-sm font-semibold text-slate-700" %>
+          <%= form.password_field :password_confirmation, autocomplete: "new-password", required: true, maxlength: 72, class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" %>
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <%= form.submit t("auth.first_run.submit"), class: "inline-flex items-center rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800" %>
+      </div>
+    <% end %>
+  </div>
+</section>

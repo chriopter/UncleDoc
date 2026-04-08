@@ -3,15 +3,37 @@ require "test_helper"
 class PeopleControllerTest < ActionDispatch::IntegrationTest
   test "creates a person" do
     assert_difference("Person.count", 1) do
-      post people_url, params: { person: { name: "Mila", birth_date: "2024-03-10" } }
+      assert_difference("User.count", 1) do
+        post people_url, params: {
+          person: {
+            name: "Mila",
+            birth_date: "2024-03-10",
+            user_attributes: {
+              email_address: "mila@example.com",
+              password: "very-secure-pass",
+              password_confirmation: "very-secure-pass",
+              admin: "0"
+            }
+          }
+        }
+      end
     end
 
     assert_redirected_to root_url(person_slug: "Mila", tab: "log")
+    assert_equal "mila@example.com", Person.find_by!(name: "Mila").user.email_address
   end
 
   test "does not create invalid person" do
     assert_no_difference("Person.count") do
-      post people_url, params: { person: { name: "", birth_date: "2024-03-10" } }
+      assert_no_difference("User.count") do
+        post people_url, params: {
+          person: {
+            name: "",
+            birth_date: "2024-03-10",
+            user_attributes: { email_address: "bad@example.com" }
+          }
+        }
+      end
     end
 
     assert_response :unprocessable_entity
@@ -75,6 +97,7 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
 
   test "updates a person including datetime birth date, baby mode, and personal display settings" do
     person = Person.create!(name: "Mila", birth_date: Time.zone.local(2024, 3, 10, 12, 0))
+    person.create_user!(email_address: "mila@example.com", password: "very-secure-pass", password_confirmation: "very-secure-pass")
 
     patch person_url(person), params: {
       person: {
@@ -82,7 +105,14 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
         birth_date: "2024-03-11T08:30",
         baby_mode: "1",
         locale: "de",
-        date_format: "compact"
+        date_format: "compact",
+        user_attributes: {
+          id: person.user.id,
+          email_address: "mila.rose@example.com",
+          password: "even-more-secure",
+          password_confirmation: "even-more-secure",
+          admin: "1"
+        }
       }
     }
 
@@ -93,6 +123,8 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     assert person.baby_mode?
     assert_equal "de", person.locale
     assert_equal "compact", person.date_format
+    assert_equal "mila.rose@example.com", person.user.email_address
+    assert person.user.admin?
   end
 
   test "person scoped pages use personal locale and date format" do

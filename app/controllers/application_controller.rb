@@ -1,4 +1,6 @@
 class ApplicationController < ActionController::Base
+  include Authentication
+  include Authorization
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
 
@@ -23,12 +25,14 @@ class ApplicationController < ActionController::Base
   end
 
   def load_family_members
-    @family_members = Person.recent_first
+    @family_members = current_user.present? ? Person.recent_first : []
   end
 
   def set_current_person
     if params[:person_slug].present?
       @current_person = Person.find_by(name: params[:person_slug])
+    elsif Current.user_person.present?
+      @current_person = Current.user_person
     elsif @family_members.any?
       @current_person = @family_members.first
     end

@@ -33,6 +33,8 @@ module DashboardHelper
   end
 
   def shell_settings_items(request_path)
+    return [] unless current_user&.can_administer?
+
     [
       { label: t("settings.users.nav"), path: settings_path_for(:users), active: request_path == settings_path_for(:users) || request_path == "/settings" },
       { label: t("settings.llm.title"), path: settings_path_for(:llm), active: request_path.include?("llm") },
@@ -42,7 +44,7 @@ module DashboardHelper
 
   def shell_db_tables
     connection = ActiveRecord::Base.connection
-    data_tables = %w[people user_preferences]
+    data_tables = %w[people person_states sessions user_preferences users]
     health_data_tables = %w[entries healthkit_records healthkit_syncs]
     attachment_tables = %w[active_storage_attachments active_storage_blobs active_storage_variant_records]
     log_tables = %w[llm_logs]

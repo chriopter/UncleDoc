@@ -103,7 +103,7 @@
                           <% end %>
                         <% end %>
                       <% end %>
-                    <% else %>
+                    <% elsif current_user&.can_administer? %>
                       <%= link_to settings_path_for, class: "flex items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-white/80", aria: { label: t("nav.settings") } do %>
                         <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-amber-700 shadow-sm ring-1 ring-black/5">
                           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -112,6 +112,32 @@
                         </span>
                         <span><%= t("nav.settings") %></span>
                       <% end %>
+                    <% end %>
+
+                    <% if current_user.present? %>
+                      <div class="mt-2 border-t border-amber-100/80 pt-3">
+                        <div class="flex items-center gap-2.5 px-3 py-2">
+                          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-xs font-black text-amber-800"><%= current_user.person&.name&.first&.upcase || "?" %></span>
+                          <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold text-slate-900"><%= current_user.person&.name || current_user.email_address %></p>
+                            <p class="truncate text-[11px] text-slate-400"><%= current_user.email_address %></p>
+                          </div>
+                        </div>
+                        <% if current_user.can_administer? %>
+                          <%= link_to settings_path_for, class: "flex w-full items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-white/80" do %>
+                            <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-amber-700 shadow-sm ring-1 ring-black/5">
+                              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="<%= shell_nav_icon(t('nav.settings')) %>" /></svg>
+                            </span>
+                            <span><%= t("nav.settings") %></span>
+                          <% end %>
+                        <% end %>
+                        <%= button_to session_path, method: :delete, class: "flex w-full items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-white/80" do %>
+                          <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-amber-700 shadow-sm ring-1 ring-black/5">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3h9m0 0-3-3m3 3-3 3" /></svg>
+                          </span>
+                          <span><%= t("auth.logout.button") %></span>
+                        <% end %>
+                      </div>
                     <% end %>
 
                   </div>
@@ -220,17 +246,34 @@
                 <% end %>
               </nav>
 
-              <%# Settings link — navigates to settings %>
+              <%# Settings & user menu %>
               <div class="mt-auto border-t border-amber-100/80 pt-3">
-                <%= link_to settings_path_for, class: shell_menu_item_class(false), aria: { label: t("nav.settings") } do %>
-                  <span class="flex items-center gap-3">
-                    <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
-                      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="<%= shell_nav_icon(t('nav.settings')) %>" />
-                      </svg>
+                <% if current_user&.can_administer? %>
+                  <%= link_to settings_path_for, class: shell_menu_item_class(false) do %>
+                    <span class="flex items-center gap-3">
+                      <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="<%= shell_nav_icon(t('nav.settings')) %>" /></svg>
+                      </span>
+                      <span><%= t("nav.settings") %></span>
                     </span>
-                    <span><%= t("nav.settings") %></span>
-                  </span>
+                  <% end %>
+                <% end %>
+
+                <% if current_user.present? %>
+                  <details class="group mt-2" data-controller="dropdown">
+                    <summary class="flex cursor-pointer items-center gap-3 rounded-[1.15rem] px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-white/80 [&::-webkit-details-marker]:hidden">
+                      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-xs font-black text-amber-800"><%= current_user.person&.name&.first&.upcase || "?" %></span>
+                      <span class="min-w-0 truncate"><%= current_user.person&.name || current_user.email_address %></span>
+                      <svg class="ml-auto h-4 w-4 shrink-0 text-slate-400 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" /></svg>
+                    </summary>
+                    <div class="mt-1 rounded-2xl border border-amber-100/80 bg-white/90 p-2 shadow-sm">
+                      <p class="truncate px-3 py-1.5 text-[11px] text-slate-400"><%= current_user.email_address %></p>
+                      <%= button_to session_path, method: :delete, class: "flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-amber-50" do %>
+                        <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3h9m0 0-3-3m3 3-3 3" /></svg>
+                        <span><%= t("auth.logout.button") %></span>
+                      <% end %>
+                    </div>
+                  </details>
                 <% end %>
 
                 <div data-native-menu-slot="desktop" class="hidden mt-3 border-t border-amber-100/80 pt-3"></div>
