@@ -65,7 +65,7 @@ docker compose up -d
 Then open `http://127.0.0.1:3000` after the container becomes healthy.
 
 <details>
-<summary>1) compose.yml</summary>
+<summary>compose.yml</summary>
 
 ```yaml
 services:
@@ -95,20 +95,26 @@ volumes:
 </details>
 
 <details>
-<summary>2) .env.docker</summary>
+<summary>.env.docker</summary>
 
 ```dotenv
 UNCLEDOC_IMAGE=ghcr.io/chriopter/uncledoc:latest
+UNCLEDOC_PORT=3000
+
 RAILS_MASTER_KEY=replace_with_config_master_key
 SECRET_KEY_BASE=replace_with_long_random_secret
-APP_HOST=localhost
-APP_PROTOCOL=http
-ALLOWED_HOSTS=localhost,127.0.0.1
-FORCE_SSL=false
-ASSUME_SSL=false
-MAILER_FROM=no-reply@localhost
-DB_POOL=10
-SOLID_QUEUE_IN_PUMA=true
+
+# Optional: reverse proxy / HTTPS
+# APP_HOST=localhost
+# APP_PROTOCOL=http
+# ALLOWED_HOSTS=localhost,127.0.0.1
+# FORCE_SSL=false
+# ASSUME_SSL=false
+
+# Optional: runtime tuning
+# MAILER_FROM=no-reply@localhost
+# DB_POOL=10
+# SOLID_QUEUE_IN_PUMA=true
 ```
 
 </details>
