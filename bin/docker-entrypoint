@@ -1,5 +1,22 @@
 #!/bin/bash -e
 
+generated_env_file="/rails/storage/docker.env"
+
+if [ -f "$generated_env_file" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  . "$generated_env_file"
+  set +a
+fi
+
+if [ -z "$SECRET_KEY_BASE" ]; then
+  SECRET_KEY_BASE="$(openssl rand -hex 64)"
+  umask 077
+  mkdir -p /rails/storage
+  printf 'SECRET_KEY_BASE=%s\n' "$SECRET_KEY_BASE" > "$generated_env_file"
+  export SECRET_KEY_BASE
+fi
+
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare

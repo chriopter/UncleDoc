@@ -91,12 +91,15 @@ volumes:
 
 Create `.env.docker`:
 
+```bash
+printf "RAILS_MASTER_KEY=PASTE_YOURS\n" > .env.docker
+```
+
 <details>
 <summary>.env.docker</summary>
 
 ```dotenv
 RAILS_MASTER_KEY=replace_with_config_master_key
-SECRET_KEY_BASE=replace_with_long_random_secret
 ```
 
 </details>
@@ -108,6 +111,8 @@ docker compose up -d
 ```
 
 Open `http://127.0.0.1:3000` after the container becomes healthy.
+
+`SECRET_KEY_BASE` is generated automatically on first start and persisted in the Docker volume.
 
 
 
