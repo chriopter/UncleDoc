@@ -165,6 +165,64 @@
   </div>
 </section>
 
+<section class="rounded-[2rem] border border-slate-200 bg-white p-5 ring-1 ring-black/5">
+  <div class="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-3">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("settings.llm.reparse.label") %></p>
+      <h3 class="mt-0.5 text-lg font-bold text-slate-950"><%= t("settings.llm.reparse.title") %></h3>
+      <p class="mt-1 text-sm text-slate-600"><%= t("settings.llm.reparse.description") %></p>
+    </div>
+
+    <div class="text-right">
+      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500"><%= t("settings.llm.reparse.unparsed_count") %></p>
+      <p class="text-3xl font-black text-slate-950"><%= @unparsed_entry_count %></p>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <details class="group min-w-[18rem] flex-1 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+      <summary class="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+        <div>
+          <p class="text-sm font-semibold text-slate-900"><%= t("settings.llm.reparse.unparsed_entries") %></p>
+          <p class="text-xs text-slate-500"><%= t("settings.llm.reparse.expand_hint") %></p>
+        </div>
+        <svg class="h-4 w-4 text-slate-400 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+        </svg>
+      </summary>
+
+      <div class="mt-3 space-y-2">
+        <% if @unparsed_entries.any? %>
+          <% @unparsed_entries.each do |entry| %>
+            <% status_label = case entry.parse_status
+            when "pending" then t("entries.tags.pending")
+            when "failed" then t("entries.tags.parse_error")
+            when "skipped" then t("entries.tags.skipped")
+            else entry.parse_status
+            end %>
+            <div class="rounded-xl border border-slate-200 bg-white px-3 py-2">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="text-sm font-semibold text-slate-900"><%= entry.person.name %></p>
+                <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-800"><%= status_label %></span>
+              </div>
+              <p class="mt-1 text-xs text-slate-500"><%= l(entry.display_time, format: :long) %> · <%= entry.source %></p>
+              <p class="mt-1 text-sm text-slate-700"><%= entry.document_title.presence || entry.input.presence || entry.fact_summary.presence || t("entries.documents.document_only") %></p>
+            </div>
+          <% end %>
+        <% else %>
+          <p class="text-sm text-slate-500"><%= t("settings.llm.reparse.none") %></p>
+        <% end %>
+      </div>
+    </details>
+
+    <%= button_to settings_llm_reparse_all_path, method: :post,
+        class: "inline-flex items-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800",
+        data: { turbo_confirm: t("settings.llm.reparse.confirm") } do %>
+      <%= t("settings.llm.reparse.trigger") %>
+    <% end %>
+  </div>
+</section>
+
 <% if @section.in?(["llm_prompt", "llm_prompt_preview"]) %>
   <% @prompt_previews.each do |key, messages| %>
     <section class="rounded-[2rem] border border-slate-200 bg-white p-5 ring-1 ring-black/5">
