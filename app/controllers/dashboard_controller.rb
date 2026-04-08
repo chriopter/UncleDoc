@@ -108,6 +108,7 @@ class DashboardController < ApplicationController
     primary_key = connection.primary_key(table_name)
     per_page = 250
     current_page = [ page.to_i, 1 ].max
+    truncated_columns = %w[payload]
 
     person_id = person.id
     count_sql = table.project(Arel.star.count).where(table[:person_id].eq(person_id))
@@ -116,16 +117,29 @@ class DashboardController < ApplicationController
     current_page = [ current_page, total_pages ].min
     offset = (current_page - 1) * per_page
 
-    rows_query = table.project(Arel.star)
-      .where(table[:person_id].eq(person_id))
-      .order(table[:start_at].desc)
-      .take(per_page)
-      .skip(offset)
+    select_columns = columns.map do |column|
+      quoted = connection.quote_column_name(column)
+
+      if column == "payload"
+        "CASE WHEN length(#{quoted}) > 400 THEN substr(#{quoted}, 1, 400) || '…' ELSE #{quoted} END AS #{quoted}"
+      else
+        quoted
+      end
+    end.join(", ")
+
+    rows_sql = <<~SQL.squish
+      SELECT #{select_columns}
+      FROM #{connection.quote_table_name(table_name)}
+      WHERE #{connection.quote_column_name("person_id")} = #{connection.quote(person_id)}
+      ORDER BY #{connection.quote_column_name("start_at")} DESC
+      LIMIT #{per_page}
+      OFFSET #{offset}
+    SQL
 
     {
       name: table_name,
       columns: columns,
-      rows: connection.select_all(rows_query).to_a,
+      rows: connection.select_all(rows_sql).to_a,
       count: total_count,
       rendered_count: [ offset + per_page, total_count ].min,
       page: current_page,
@@ -134,7 +148,8 @@ class DashboardController < ApplicationController
       next_page: current_page < total_pages ? current_page + 1 : nil,
       primary_key: primary_key,
       deletable: false,
-      order_column: "start_at"
+      order_column: "start_at",
+      truncated_columns: truncated_columns
     }
   end
 

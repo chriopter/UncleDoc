@@ -9,7 +9,7 @@ class LlmMessage < ApplicationRecord
                   model_class: "LlmModel"
   has_many_attached :attachments
 
-  after_create_commit :broadcast_created_message, unless: :hidden?
+  after_create_commit :broadcast_created_message, unless: :skip_broadcast?
   after_update_commit :broadcast_updated_message, unless: :hidden?
 
   scope :visible, -> { where(hidden: false) }
@@ -23,8 +23,6 @@ class LlmMessage < ApplicationRecord
   private
 
   def broadcast_created_message
-    return if Rails.env.development?
-
     broadcast_append_to stream_name,
       target: "chat_messages",
       partial: to_partial_path,
@@ -32,12 +30,14 @@ class LlmMessage < ApplicationRecord
   end
 
   def broadcast_updated_message
-    return if Rails.env.development?
-
     broadcast_replace_to stream_name,
       target: dom_id,
       partial: to_partial_path,
       locals: { message: self }
+  end
+
+  def skip_broadcast?
+    hidden? || role == "user"
   end
 
   def stream_name

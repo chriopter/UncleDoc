@@ -572,7 +572,38 @@ module ApplicationHelper
     entry.parseable_data.present? || entry.fact_items.present? || entry.documents_attached? || entry.input.present?
   end
 
+  def render_chat_markdown(text)
+    return "" if text.blank?
+
+    blocks = text.to_s.gsub("\r\n", "\n").split(/\n{2,}/).filter_map do |block|
+      lines = block.split("\n").map(&:rstrip)
+      next if lines.empty?
+
+      if lines.all? { |line| line.lstrip.start_with?("- ", "* ") }
+        items = lines.map { |line| content_tag(:li, markdown_inline(line.lstrip[2..])) }
+        content_tag(:ul, safe_join(items), class: "list-disc space-y-1 pl-5")
+      elsif lines.first.start_with?("### ")
+        content_tag(:h3, markdown_inline(lines.first.delete_prefix("### ")), class: "mt-3 text-sm font-bold text-slate-900")
+      elsif lines.first.start_with?("## ")
+        content_tag(:h2, markdown_inline(lines.first.delete_prefix("## ")), class: "mt-3 text-base font-bold text-slate-900")
+      elsif lines.first.start_with?("# ")
+        content_tag(:h1, markdown_inline(lines.first.delete_prefix("# ")), class: "mt-3 text-lg font-bold text-slate-900")
+      else
+        content_tag(:p, markdown_inline(lines.join("<br>").html_safe), class: "leading-7")
+      end
+    end
+
+    safe_join(blocks)
+  end
+
   private
+
+  def markdown_inline(text)
+    escaped = ERB::Util.html_escape(text.to_s)
+    escaped = escaped.gsub(/`([^`]+)`/, '<code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.9em] text-slate-900">\1</code>')
+    escaped = escaped.gsub(/\*\*([^*]+)\*\*/, '<strong class="font-semibold text-slate-900">\1</strong>')
+    escaped.gsub(/\*([^*]+)\*/, '<em>\1</em>').html_safe
+  end
 
   def local_git_sha
     @local_git_sha ||= `git rev-parse HEAD 2>/dev/null`.strip.presence

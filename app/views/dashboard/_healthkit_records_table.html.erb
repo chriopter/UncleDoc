@@ -9,6 +9,9 @@
           <% if table[:order_column].present? %>
             · <%= t("db.table.sorted_by", column: table[:order_column]) %>
           <% end %>
+          <% if table[:truncated_columns].present? %>
+            · <%= t("dashboard.healthkit.payload_preview_note") %>
+          <% end %>
         </p>
       </div>
     </div>

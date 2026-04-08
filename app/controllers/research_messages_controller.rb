@@ -23,11 +23,7 @@ class ResearchMessagesController < ApplicationController
     latest_visible_id = @chat.visible_messages.maximum(:id) || 0
     @chat.add_message(role: :user, content: content)
 
-    if Rails.env.development?
-      ResearchChatResponseJob.perform_now(@chat.id, I18n.locale.to_s)
-    else
-      ResearchChatResponseJob.perform_later(@chat.id, I18n.locale.to_s)
-    end
+    ResearchChatResponseJob.perform_later(@chat.id, I18n.locale.to_s)
 
     @new_visible_messages = @chat.visible_messages.where("id > ?", latest_visible_id)
 
