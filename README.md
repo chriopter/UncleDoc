@@ -1,10 +1,18 @@
-# UncleDoc
+<p align="center">
+  <img src="assets/icons/web/icon-512.png" alt="UncleDoc logo" width="120" />
+</p>
 
-**UncleDoc** is a self-hosted family health manager built in Rails.
-It lets you enter health data or upload documents, track your workouts or doctor appoints.
-All information is built up to an health record that you can then chat with via your own LLM.
+<h1 align="center">UncleDoc</h1>
 
-<img src="docs/screenshots/overview-demo-nora.png" alt="Demo Nora overview" width="60%" />
+<p align="center">
+  <strong>Your family's health record — self-hosted, LLM-powered, fully yours.</strong><br/>
+  Enter notes, upload documents, track appointments and workouts.<br/>
+  UncleDoc builds a living health record you can chat with via your own LLM.
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/overview-demo-nora.png" alt="UncleDoc overview" width="80%" />
+</p>
 
 > UncleDoc is a self-hosted record-keeping tool, not a medical device. It does not provide medical advice, diagnosis, or treatment, and should support your documentation rather than replace professional care. 
 > All information processing that leads to suggestion is done by an LLM you provide (Bring your own LLM.).
