@@ -13,12 +13,12 @@ class EntryExtractedDataRefreshService
 
   def call
     rebuilt_count = rebuild_babywidget_entries
-    scheduled = schedule_non_babywidget_reparse
+    result = schedule_non_babywidget_reparse
 
     Result.new(
       rebuilt_count: rebuilt_count,
-      queued_count: scheduled ? [ @batch_size.to_i, [ @max_pending.to_i - Entry.where(parse_status: "pending").count, 0 ].max ].min : 0,
-      scheduled: scheduled
+      queued_count: result.marked_count,
+      scheduled: result.scheduled
     )
   end
 
@@ -39,11 +39,12 @@ class EntryExtractedDataRefreshService
   end
 
   def schedule_non_babywidget_reparse
-    return false unless EntryDataParser.ready?
-    return false unless Entry.where.not(source: Entry::SOURCES[:babywidget]).where.not(parse_status: "pending").exists?
-
-    EntryReparseBatchJob.perform_later(batch_size: @batch_size, max_pending: @max_pending, delay_seconds: @delay_seconds)
-    true
+    EntryReparseScheduler.call(
+      scope: Entry.where.not(source: Entry::SOURCES[:babywidget]),
+      batch_size: @batch_size,
+      max_pending: @max_pending,
+      delay_seconds: @delay_seconds
+    )
   end
 
   def babywidget_facts_for(entry)
