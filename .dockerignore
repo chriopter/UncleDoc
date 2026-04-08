@@ -39,12 +39,23 @@
 # Ignore CI service files.
 /.github
 
+# Ignore local/editor and repo-only files.
+/.claude/
+/README.md
+/AGENTS.md
+/prompts/
+
 # Ignore Kamal files.
 /config/deploy*.yml
 /.kamal
 
 # Ignore development files
 /.devcontainer
+/test/
+/ios/
+/package.json
+/package-lock.json
+/invoice*.pdf
 
 # Ignore Docker-related files
 /.dockerignore
