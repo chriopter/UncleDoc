@@ -453,12 +453,23 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
   test "healthkit page can queue reparse" do
     person = Person.create!(name: "Queue Reparse", birth_date: Date.new(2024, 1, 1))
+    AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
+    entry = person.entries.create!(
+      source: Entry::SOURCES[:healthkit],
+      source_ref: "healthkit:day:2026-03-01",
+      occurred_at: Time.zone.local(2026, 3, 1, 23, 59),
+      input: "Apple Health daily summary for March 1, 2026.",
+      extracted_data: { "facts" => [ { "text" => "Old summary", "kind" => "summary" } ], "document" => {}, "llm" => { "status" => "structured" } },
+      parse_status: "parsed"
+    )
 
-    assert_enqueued_with(job: HealthkitSummaryReparseJob, args: [ person.id ]) do
+    assert_enqueued_with(job: EntryReparseBatchJob) do
       post person_healthkit_reparse_url(person_slug: person.name)
     end
 
     assert_redirected_to person_healthkit_path(person_slug: person.name)
+    assert_equal "pending", entry.reload.parse_status
+    assert_equal [], entry.fact_objects
   end
 
   test "log can filter by date and parsed type" do

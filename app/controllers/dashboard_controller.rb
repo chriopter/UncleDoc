@@ -64,7 +64,7 @@ class DashboardController < ApplicationController
 
   def queue_healthkit_reparse
     person = Person.find_by!(name: params[:person_slug])
-    HealthkitSummaryReparseJob.perform_later(person.id)
+    HealthkitSummaryReparseJob.perform_now(person.id)
 
     redirect_to person_healthkit_path(person_slug: person.name), notice: t("dashboard.healthkit.flash.reparse_queued")
   end
