@@ -21,7 +21,7 @@ class ResearchChatContextTest < ActiveSupport::TestCase
 
   test "refresh_needed tracks entry updates and missing context" do
     person = Person.create!(name: "Refresh Ria", birth_date: Date.new(2024, 1, 1))
-    chat = person.build_llm_chat
+    chat = person.build_chat
     AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
     ResearchChatRuntime.prepare!(chat, setting: AppSetting.current)
 

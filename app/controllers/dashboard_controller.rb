@@ -19,8 +19,8 @@ class DashboardController < ApplicationController
 
   def research
     @person = Person.find_by!(name: params[:person_slug])
-    @chat = @person.llm_chat
-    @message = LlmMessage.new
+    @chat = @person.chat
+    @message = Message.new
     @chat_context_preview = @chat&.context_message&.content || ResearchChatContext.system_prompt_for(@person)
   end
 

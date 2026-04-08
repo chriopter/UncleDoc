@@ -2,7 +2,7 @@ class Person < ApplicationRecord
   has_many :entries, dependent: :destroy
   has_many :healthkit_records, dependent: :destroy
   has_many :healthkit_syncs, dependent: :destroy
-  has_one :llm_chat, dependent: :destroy
+  has_one :chat, dependent: :destroy
   has_one :person_state, dependent: :destroy, autosave: true
   has_one :user, dependent: :destroy
 

@@ -2,8 +2,8 @@ class ResearchMessagesController < ApplicationController
   before_action :set_person
 
   def create
-    @chat = @person.llm_chat || @person.build_llm_chat
-    @message = LlmMessage.new
+    @chat = @person.chat || @person.build_chat
+    @message = Message.new
     @error_message = nil
     @new_visible_messages = []
     content = params.dig(:message, :content).presence || params.dig(:llm_message, :content).presence
@@ -37,7 +37,7 @@ class ResearchMessagesController < ApplicationController
   end
 
   def render_form_error(message)
-    @chat = @person.llm_chat
+    @chat = @person.chat
     @error_message = message
     render turbo_stream: turbo_stream.replace(
       "research_chat_form",
@@ -51,7 +51,7 @@ class ResearchMessagesController < ApplicationController
       turbo_stream.replace(
         "research_chat_form",
         partial: "dashboard/chat_form",
-        locals: { person: @person, message: LlmMessage.new, error_message: nil }
+        locals: { person: @person, message: Message.new, error_message: nil }
       )
     ]
     @new_visible_messages.each do |message|

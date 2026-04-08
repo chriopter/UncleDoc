@@ -10,7 +10,6 @@ RubyLLM.configure do |config|
   config.openai_api_base ||= UserPreference::FIREWORKS_API_BASE if ENV["FIREWORKS_API_KEY"].present?
   config.openrouter_api_key = ENV["OPENROUTER_API_KEY"]
   config.perplexity_api_key = ENV["PERPLEXITY_API_KEY"]
-  config.model_registry_class = "LlmModel"
   config.use_new_acts_as = true
   config.xai_api_key = ENV["XAI_API_KEY"]
   config.logger = Rails.logger

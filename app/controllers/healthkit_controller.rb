@@ -79,10 +79,10 @@ class HealthkitController < ApplicationController
   def require_healthkit_authentication
     return if resume_session.present?
 
-    user = User.authenticate_native_app_token(native_app_bearer_token)
-    if user.present?
-      user.touch_native_app_token_usage!
-      Current.session = Session.new(user: user)
+    user_device = User.authenticate_native_app_device(native_app_bearer_token)
+    if user_device.present?
+      user_device.touch_token_usage!
+      Current.session = Session.new(user: user_device.user)
       return
     end
 

@@ -2,7 +2,7 @@ class ResearchChatResponseJob < ApplicationJob
   queue_as :default
 
   def perform(chat_id, locale)
-    chat = LlmChat.includes(:person).find_by(id: chat_id)
+    chat = Chat.includes(:person).find_by(id: chat_id)
     return unless chat
 
     I18n.with_locale(locale.presence || I18n.default_locale) do
@@ -13,7 +13,7 @@ class ResearchChatResponseJob < ApplicationJob
       chat.complete do |chunk|
         next if chunk.content.blank?
 
-        assistant_message = chat.llm_messages.order(:id).last
+        assistant_message = chat.messages.order(:id).last
         assistant_message.broadcast_append_chunk(chunk.content) if assistant_message.present?
       end
     end
