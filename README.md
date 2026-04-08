@@ -81,7 +81,7 @@ kamal deploy
 <details>
 <summary>Data model</summary>
 
-UncleDoc starts with a simple model: a person, a timeline of entries, and optional structured data layered on top.
+UncleDoc keeps the core model intentionally small: people, accounts, timeline entries, app settings, and imported health data.
 
 | Model | Purpose | Main fields |
 | --- | --- | --- |
@@ -94,12 +94,7 @@ UncleDoc starts with a simple model: a person, a timeline of entries, and option
 | `AppSetting` | Saved global LLM configuration | provider, model, encrypted API key |
 | `HealthkitRecord` / `HealthkitSync` | Raw imported iOS health data and sync state | source payloads, sync metadata |
 
-</details>
-
-<details>
-<summary>Normal data and parsing</summary>
-
-The normal flow is deliberately simple: write a note, attach a document if needed, and let UncleDoc keep it as-is or enrich it with structure.
+Normal logging follows a simple three-layer flow:
 
 | Layer | What it stores | Example |
 | --- | --- | --- |
@@ -107,19 +102,66 @@ The normal flow is deliberately simple: write a note, attach a document if neede
 | Facts | Short human-readable takeaways | "Temperature 38.2 C" |
 | `parseable_data` | Structured machine-readable items | `{ "type": "temperature", "value": 38.2, "unit": "C" }` |
 
-This means the app is still useful without parsing, but gets much stronger once structured data exists.
+</details>
+
+<details>
+<summary>Setup & demo data</summary>
+
+For local development, start the app with:
+
+```bash
+bin/dev
+```
+
+If you want seeded demo content first, run:
+
+```bash
+bundle exec bin/rails db:prepare db:seed
+```
+
+The seed data creates three demo profiles:
+
+- `Demo Nora`
+- `Demo Theo`
+- `Demo Mila`
+
+`Demo Nora` is the strongest walkthrough profile and includes the best overview/demo data.
+
+Open it at:
+
+```text
+http://127.0.0.1:3000/Demo%20Nora/overview
+```
+
+This repo is also used in a LAN-only self-hosted setup:
+
+- app directory: `/root/uncledoc`
+- service: `uncledoc-dev.service`
+- command: `bin/dev`
+- environment: `development`
+- bind: `0.0.0.0:3000`
+- persistent DB: `storage/development.sqlite3`
+
+Useful commands:
+
+```bash
+systemctl status uncledoc-dev.service
+systemctl restart uncledoc-dev.service
+systemctl stop uncledoc-dev.service
+journalctl -u uncledoc-dev.service -f
+```
 
 </details>
 
 <details>
-<summary>User management</summary>
+<summary>User</summary>
 
-UncleDoc now has real account-based auth.
+UncleDoc now uses real account-based auth with a simple family-first model.
 
 - Every `User` is linked to exactly one `Person`.
 - Every route is protected by default.
 - The first run screen is only shown on a truly empty system.
-- Existing people can exist with disabled login until a password is set.
+- A linked person can exist with login disabled until a password is set.
 
 Admin users can:
 
@@ -154,12 +196,14 @@ If configured, UncleDoc can:
 
 Supported providers currently include `OpenAI`, `Fireworks`, `OpenRouter`, `Ollama`, `xAI`, `Mistral`, `Perplexity`, and `DeepSeek`.
 
+The active prompts live in `prompts/`, and the global LLM provider/model/API key live in `AppSetting`.
+
 </details>
 
 <details>
-<summary>HealthKit compaction</summary>
+<summary>HealthKit integration</summary>
 
-HealthKit imports are stored separately first, then compacted into timeline-friendly summaries so the main log stays readable.
+The iOS app can sync HealthKit data into UncleDoc while keeping the main app experience in Rails.
 
 | Layer | Purpose | Result in UncleDoc |
 | --- | --- | --- |
@@ -167,47 +211,7 @@ HealthKit imports are stored separately first, then compacted into timeline-frie
 | Sync / grouping | Organize records by person and import window | Makes updates repeatable |
 | Generated summary `Entry` | Turn many readings into one usable timeline item | Daily or grouped health summary |
 
-</details>
-
-<details>
-<summary>Demo data</summary>
-
-The seed data builds three demo profiles:
-
-- `Demo Nora`
-- `Demo Theo`
-- `Demo Mila`
-
-`Demo Nora` is the best overview/demo profile and includes curated recent activity, planning items, and chartable measurements.
-
-After starting the app, open:
-
-```text
-http://127.0.0.1:3000/Demo%20Nora/overview
-```
-
-</details>
-
-<details>
-<summary>Local LAN setup</summary>
-
-This repo is also used in a LAN-only self-hosted setup:
-
-- app directory: `/root/uncledoc`
-- service: `uncledoc-dev.service`
-- command: `bin/dev`
-- environment: `development`
-- bind: `0.0.0.0:3000`
-- persistent DB: `storage/development.sqlite3`
-
-Useful commands:
-
-```bash
-systemctl status uncledoc-dev.service
-systemctl restart uncledoc-dev.service
-systemctl stop uncledoc-dev.service
-journalctl -u uncledoc-dev.service -f
-```
+The native app signs into the normal web UI first, then uses a separate native app token for `/ios/healthkit/*` requests so background/device sync does not depend on browser cookies.
 
 </details>
 
