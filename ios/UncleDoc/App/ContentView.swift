@@ -104,7 +104,7 @@ struct ContentView: View {
                         Label("What happens next", systemImage: "sparkles")
                             .font(.headline)
 
-                        Text("The app stores your server URL locally, opens UncleDoc through Hotwire Native, and keeps your web session inside the app once you sign in.")
+                        Text("The app stores your server URL locally, opens UncleDoc through Hotwire Native, and securely provisions an app token for HealthKit sync after you sign in.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }

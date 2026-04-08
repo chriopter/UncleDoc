@@ -110,6 +110,21 @@ final class HealthKitSyncService: ObservableObject {
         }
     }
 
+    func handleRemoteAuthenticationChanged(isAuthenticated: Bool) {
+        availablePeople = []
+        lastPeopleLoadError = nil
+
+        guard isAuthenticated else {
+            refreshSnapshot(statusOverride: nil)
+            return
+        }
+
+        Task {
+            await loadAvailablePeopleIfNeeded()
+            await refreshRemoteStatusIfPossible()
+        }
+    }
+
     func registerBackgroundTasks() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.refreshTaskIdentifier, using: nil) { task in
             Task { @MainActor in

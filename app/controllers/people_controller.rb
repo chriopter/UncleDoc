@@ -88,8 +88,6 @@ class PeopleController < ApplicationController
       :name,
       :birth_date,
       :baby_mode,
-      :locale,
-      :date_format,
       user_attributes: [ :id, :email_address, :password, :password_confirmation, :admin ]
     )
   end

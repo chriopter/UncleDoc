@@ -6,6 +6,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="UncleDoc">
     <meta name="mobile-web-app-capable" content="yes">
+    <% if current_native_app_token.present? %>
+      <meta name="uncledoc-native-app-token" content="<%= current_native_app_token %>">
+      <meta name="uncledoc-native-app-email" content="<%= current_user.email_address %>">
+    <% end %>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 

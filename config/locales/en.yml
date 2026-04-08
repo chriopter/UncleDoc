@@ -547,6 +547,7 @@ en:
       kicker: "Secure access"
       title: "Sign in to UncleDoc"
       description: "All app routes are protected. Sign in with a family account to continue."
+      required: "Please sign in to continue."
       email_address: "Email address"
       email_placeholder: "Enter your email address"
       password: "Password"

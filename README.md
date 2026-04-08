@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/overview-demo-nora.png" alt="UncleDoc overview" />
+  <img src="assets/screenshots/overview-demo-nora.png" alt="UncleDoc overview" />
 </p>
 
 > UncleDoc is a self-hosted record-keeping tool, not a medical device. It does not provide medical advice, diagnosis, or treatment, and should support your documentation rather than replace professional care.
@@ -86,6 +86,9 @@ UncleDoc starts with a simple model: a person, a timeline of entries, and option
 | Model | Purpose | Main fields |
 | --- | --- | --- |
 | `Person` | Household member being tracked | `name`, `birth_date`, `baby_mode`, `uuid` |
+| `PersonState` | Mutable per-person runtime state | baby timer state |
+| `User` | Login account linked 1:1 to a person | `email_address`, `password_digest`, `admin`, native app token |
+| `Session` | Persistent web login session | `user_id`, `token`, request metadata |
 | `Entry` | Main timeline item for manual logs and generated summaries | `input`, `occurred_at`, `facts`, `parseable_data`, `parse_status`, `source` |
 | `UserPreference` | Saved display preferences | locale, date format |
 | `AppSetting` | Saved global LLM configuration | provider, model, encrypted API key |
@@ -105,6 +108,35 @@ The normal flow is deliberately simple: write a note, attach a document if neede
 | `parseable_data` | Structured machine-readable items | `{ "type": "temperature", "value": 38.2, "unit": "C" }` |
 
 This means the app is still useful without parsing, but gets much stronger once structured data exists.
+
+</details>
+
+<details>
+<summary>User management</summary>
+
+UncleDoc now has real account-based auth.
+
+- Every `User` is linked to exactly one `Person`.
+- Every route is protected by default.
+- The first run screen is only shown on a truly empty system.
+- Existing people can exist with disabled login until a password is set.
+
+Admin users can:
+
+- access Settings and the DB browser
+- create, edit, and delete people/accounts
+- set or reset passwords
+- grant or revoke admin access
+- configure global LLM settings
+
+Non-admin users can:
+
+- sign in
+- view and use the main app
+- access all family people/logs in the current v1 model
+- not access admin/settings areas
+
+The iOS app uses the normal web login for the Hotwire shell, then provisions a separate native app token for HealthKit sync requests.
 
 </details>
 

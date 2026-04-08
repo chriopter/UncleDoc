@@ -547,6 +547,7 @@ de:
       kicker: "Geschützter Zugriff"
       title: "Bei UncleDoc anmelden"
       description: "Alle App-Routen sind geschützt. Melden Sie sich mit einem Familienkonto an, um fortzufahren."
+      required: "Bitte melden Sie sich an, um fortzufahren."
       email_address: "E-Mail-Adresse"
       email_placeholder: "E-Mail-Adresse eingeben"
       password: "Passwort"

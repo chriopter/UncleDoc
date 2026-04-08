@@ -104,6 +104,10 @@ final class APIClient: NSObject, @unchecked Sendable {
         ServerURLStore.load()
     }
 
+    private var nativeAppToken: String? {
+        NativeAppTokenStore.token(for: baseURL)
+    }
+
     func fetchPeople() async throws -> [RemotePerson] {
         struct Response: Decodable { let people: [RemotePerson] }
         return try await request(path: "ios/healthkit/people", method: "GET", body: Optional<Data>.none, responseType: Response.self).people
@@ -146,6 +150,9 @@ final class APIClient: NSObject, @unchecked Sendable {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let nativeAppToken {
+            request.setValue("Bearer \(nativeAppToken)", forHTTPHeaderField: "Authorization")
+        }
         if let body {
             request.httpBody = body
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")

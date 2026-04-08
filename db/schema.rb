@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_08_120003) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_08_130000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -114,18 +114,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_120003) do
   end
 
   create_table "people", force: :cascade do |t|
-    t.string "baby_feeding_timer_side"
-    t.datetime "baby_feeding_timer_started_at"
     t.boolean "baby_mode"
-    t.datetime "baby_sleep_timer_started_at"
     t.datetime "birth_date"
     t.datetime "created_at", null: false
-    t.string "date_format"
-    t.string "locale"
     t.string "name", null: false
     t.datetime "updated_at", null: false
     t.string "uuid", null: false
     t.index ["uuid"], name: "index_people_on_uuid", unique: true
+  end
+
+  create_table "person_states", force: :cascade do |t|
+    t.string "baby_feeding_timer_side"
+    t.datetime "baby_feeding_timer_started_at"
+    t.datetime "baby_sleep_timer_started_at"
+    t.datetime "created_at", null: false
+    t.integer "person_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["person_id"], name: "index_person_states_on_person_id", unique: true
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -152,11 +157,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_120003) do
     t.datetime "created_at", null: false
     t.string "email_address", null: false
     t.datetime "last_signed_in_at"
+    t.text "native_app_token"
+    t.string "native_app_token_digest"
+    t.datetime "native_app_token_generated_at"
+    t.datetime "native_app_token_last_used_at"
     t.string "password_digest"
     t.datetime "password_set_at"
     t.integer "person_id", null: false
     t.datetime "updated_at", null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
+    t.index ["native_app_token_digest"], name: "index_users_on_native_app_token_digest", unique: true
     t.index ["person_id"], name: "index_users_on_person_id", unique: true
   end
 
@@ -167,6 +177,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_120003) do
   add_foreign_key "healthkit_syncs", "people"
   add_foreign_key "llm_logs", "entries", on_delete: :cascade
   add_foreign_key "llm_logs", "people", on_delete: :cascade
+  add_foreign_key "person_states", "people"
   add_foreign_key "sessions", "users"
   add_foreign_key "users", "people"
 end
