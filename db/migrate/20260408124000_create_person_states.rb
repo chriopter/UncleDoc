@@ -30,28 +30,9 @@ class CreatePersonStates < ActiveRecord::Migration[8.1]
         baby_sleep_timer_started_at: person.baby_sleep_timer_started_at
       )
     end
-
-    remove_column :people, :baby_feeding_timer_side, :string
-    remove_column :people, :baby_feeding_timer_started_at, :datetime
-    remove_column :people, :baby_sleep_timer_started_at, :datetime
   end
 
   def down
-    add_column :people, :baby_feeding_timer_side, :string
-    add_column :people, :baby_feeding_timer_started_at, :datetime
-    add_column :people, :baby_sleep_timer_started_at, :datetime
-
-    MigrationPerson.reset_column_information
-    MigrationPersonState.reset_column_information
-
-    MigrationPersonState.find_each do |state|
-      MigrationPerson.find(state.person_id).update!(
-        baby_feeding_timer_side: state.baby_feeding_timer_side,
-        baby_feeding_timer_started_at: state.baby_feeding_timer_started_at,
-        baby_sleep_timer_started_at: state.baby_sleep_timer_started_at
-      )
-    end
-
     drop_table :person_states
   end
 end

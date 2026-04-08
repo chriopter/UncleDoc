@@ -1,0 +1,7 @@
+<% user ||= local_assigns[:message] %>
+<div id="<%= dom_id(user) %>" class="flex justify-end">
+  <div class="max-w-[85%] rounded-2xl rounded-tr-md bg-slate-950 px-4 py-3 text-sm leading-relaxed text-white">
+    <div class="whitespace-pre-wrap"><%= user.content %></div>
+    <p class="mt-2 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400"><%= user.created_at&.strftime("%H:%M") %></p>
+  </div>
+</div>

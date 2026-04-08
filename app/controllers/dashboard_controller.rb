@@ -19,10 +19,9 @@ class DashboardController < ApplicationController
 
   def research
     @person = Person.find_by!(name: params[:person_slug])
-    entries = @person.entries.order(occurred_at: :asc)
-    system = LogSummaryGenerator.system_prompt
-    patientenakte = build_patientenakte(@person, entries)
-    @chat_system_prompt = "#{system}\n\n# Patientenakte: #{@person.name}\n\n#{patientenakte}"
+    @chat = @person.chat
+    @message = Message.new
+    @chat_context_preview = @chat&.context_message&.content || ResearchChatContext.system_prompt_for(@person)
   end
 
   def calendar
@@ -66,39 +65,6 @@ class DashboardController < ApplicationController
     HealthkitSummaryReparseJob.perform_later(person.id)
 
     redirect_to person_healthkit_path(person_slug: person.name), notice: t("dashboard.healthkit.flash.reparse_queued")
-  end
-
-  def chat
-    @person = Person.find_by!(name: params[:person_slug])
-    entries = @person.entries.order(occurred_at: :asc)
-    preference = app_setting
-
-    error = EntryDataParser.configuration_error_for(preference)
-    if error
-      render json: { error: I18n.t("log_summary.states.#{error}") } and return
-    end
-
-    if entries.blank?
-      render json: { error: I18n.t("log_summary.states.no_entries") } and return
-    end
-
-    system = LogSummaryGenerator.system_prompt
-    patientenakte = build_patientenakte(@person, entries)
-
-    result = LlmChatRequest.call(
-      request_kind: "chat",
-      preference: preference,
-      person: @person,
-      messages: [
-        { role: "system", content: "#{system}\n\n# Patientenakte: #{@person.name}\n\n#{patientenakte}" },
-        { role: "user", content: params[:message].to_s }
-      ]
-    )
-
-    render json: { reply: result.content }
-  rescue StandardError => e
-    Rails.logger.warn("Chat failed: #{e.class}: #{e.message}")
-    render json: { error: I18n.t("log_summary.states.request_failed") }
   end
 
   def summarize_log
@@ -167,24 +133,6 @@ class DashboardController < ApplicationController
       deletable: false,
       order_column: "start_at"
     }
-  end
-
-  def build_patientenakte(person, entries)
-    lines = entries.map do |entry|
-      date = entry.occurred_at ? I18n.l(entry.occurred_at, format: :long) : "unknown date"
-      parts = []
-      parts << entry.fact_summary if entry.respond_to?(:fact_summary) && entry.facts.present?
-      parts << entry.input if entry.input.present?
-      if entry.parseable_data.present?
-        data_parts = Array(entry.parseable_data).filter_map do |item|
-          next unless item.is_a?(Hash)
-          item.map { |k, v| "#{k}: #{v}" }.join(", ")
-        end
-        parts << data_parts.join("; ") if data_parts.any?
-      end
-      "- #{date}: #{parts.compact_blank.join(' — ')}"
-    end
-    lines.join("\n")
   end
 
   def entry_sort_mode(params_hash)

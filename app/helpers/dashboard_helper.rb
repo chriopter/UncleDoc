@@ -46,6 +46,7 @@ module DashboardHelper
     connection = ActiveRecord::Base.connection
     data_tables = %w[people person_states sessions user_preferences users]
     health_data_tables = %w[entries healthkit_records healthkit_syncs]
+    ruby_llm_tables = %w[chats messages models tool_calls]
     attachment_tables = %w[active_storage_attachments active_storage_blobs active_storage_variant_records]
     log_tables = %w[llm_logs]
     rails_tables = %w[ar_internal_metadata schema_migrations]
@@ -59,10 +60,11 @@ module DashboardHelper
     groups << { label: t("db.groups.system"), tables: all.select { |t| system_tables.include?(t[:name]) } }
     groups << { label: t("db.groups.data"), tables: all.select { |t| data_tables.include?(t[:name]) } }
     groups << { label: t("db.groups.health_data"), tables: all.select { |t| health_data_tables.include?(t[:name]) } }
+    groups << { label: t("db.groups.ruby_llm"), tables: all.select { |t| ruby_llm_tables.include?(t[:name]) } }
     groups << { label: t("db.groups.attachments"), tables: all.select { |t| attachment_tables.include?(t[:name]) } }
     groups << { label: t("db.groups.logs"), tables: all.select { |t| log_tables.include?(t[:name]) } }
     groups << { label: t("db.groups.rails"), tables: all.select { |t| rails_tables.include?(t[:name]) } }
-    others = all.reject { |t| (data_tables + health_data_tables + attachment_tables + log_tables + rails_tables + system_tables).include?(t[:name]) }
+    others = all.reject { |t| (data_tables + health_data_tables + ruby_llm_tables + attachment_tables + log_tables + rails_tables + system_tables).include?(t[:name]) }
     groups << { label: t("db.groups.other"), tables: others } if others.any?
     groups
   end

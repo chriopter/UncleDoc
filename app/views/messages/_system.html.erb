@@ -1,0 +1,6 @@
+<% system ||= local_assigns[:message] %>
+<div id="<%= dom_id(system) %>" class="flex justify-center">
+  <div class="max-w-[90%] rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs font-semibold text-amber-800 shadow-sm">
+    <%= system.content %>
+  </div>
+</div>

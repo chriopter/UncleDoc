@@ -90,6 +90,23 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, I18n.t("chat.title", name: person.name)
     assert_includes @response.body, person_chat_path(person_slug: person.name)
     assert_includes @response.body, I18n.t("chat.welcome", name: person.name)
+    assert_select "summary", text: /#{Regexp.escape(I18n.t("chat.system_prompt_label"))}/
+  end
+
+  test "research page shows persisted chat history when present" do
+    person = Person.create!(name: "History Hanna", birth_date: Date.new(2024, 1, 1))
+    chat = person.build_chat
+    AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
+    ResearchChatRuntime.prepare!(chat, setting: AppSetting.current)
+    chat.add_message(role: :user, content: "Old question")
+    chat.add_message(role: :assistant, content: "Old answer")
+
+    get person_research_url(person_slug: person.name)
+
+    assert_response :success
+    assert_includes @response.body, "Old question"
+    assert_includes @response.body, "Old answer"
+    assert_not_includes @response.body, I18n.t("chat.welcome", name: person.name)
   end
 
   test "data menu links to log while research stays separate" do
