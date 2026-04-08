@@ -49,20 +49,20 @@ UncleDoc keeps the active LLM system prompts in Markdown files under `prompts/`.
 
 ### Docker Compose
 
-For most users, this is the easiest way to run UncleDoc.
+Install with Docker.
 
-1. Create a new folder.
-2. Put `compose.yml` and `.env.docker` into it.
-3. Run:
+Create these two files:
+
+- `compose.yml`
+- `.env.docker`
+
+Run:
 
 ```bash
 docker compose up -d
 ```
 
-4. Open `http://127.0.0.1:3000` after the container becomes healthy.
-
-Use `ghcr.io/chriopter/uncledoc:latest` for the newest release.
-Use `ghcr.io/chriopter/uncledoc:edge` if you want the newest push to `main`.
+Then open `http://127.0.0.1:3000` after the container becomes healthy.
 
 <details>
 <summary>1) compose.yml</summary>
@@ -110,6 +110,14 @@ MAILER_FROM=no-reply@localhost
 DB_POOL=10
 SOLID_QUEUE_IN_PUMA=true
 ```
+
+</details>
+
+<details>
+<summary>Container tags</summary>
+
+- `ghcr.io/chriopter/uncledoc:latest` for the newest release
+- `ghcr.io/chriopter/uncledoc:edge` for the newest push to `main`
 
 </details>
 
