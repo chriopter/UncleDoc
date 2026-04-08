@@ -173,7 +173,7 @@ class DashboardController < ApplicationController
     current_page = [ page.to_i, 1 ].max
     truncated_columns = %w[payload]
 
-    scope = person.healthkit_records.import_recent_first
+    scope = person.healthkit_records.recent_first
     offset = (current_page - 1) * per_page
     records = scope.offset(offset).limit(per_page + 1).to_a
     next_page = current_page + 1 if records.length > per_page
@@ -197,7 +197,7 @@ class DashboardController < ApplicationController
       next_page: next_page,
       primary_key: primary_key,
       deletable: false,
-      order_column: nil,
+      order_column: "start_at",
       truncated_columns: truncated_columns
     }
   end
