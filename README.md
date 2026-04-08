@@ -57,7 +57,7 @@ Install with Docker.
 ```yaml
 services:
   app:
-    image: ${UNCLEDOC_IMAGE}
+    image: ghcr.io/chriopter/uncledoc:latest
     restart: unless-stopped
     ports:
       - "3000:80"
@@ -65,13 +65,22 @@ services:
       - .env.docker
     environment:
       RAILS_ENV: production
-      FORCE_SSL: ${FORCE_SSL:-false}
-      ASSUME_SSL: ${ASSUME_SSL:-false}
-      APP_PROTOCOL: ${APP_PROTOCOL:-http}
-      APP_HOST: ${APP_HOST:-localhost}
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
-      DB_POOL: ${DB_POOL:-10}
-      SOLID_QUEUE_IN_PUMA: ${SOLID_QUEUE_IN_PUMA:-true}
+      FORCE_SSL: "false"
+      ASSUME_SSL: "false"
+      APP_PROTOCOL: http
+      APP_HOST: localhost
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      DB_POOL: "10"
+      SOLID_QUEUE_IN_PUMA: "true"
+      # Image tags:
+      # - ghcr.io/chriopter/uncledoc:latest -> newest release
+      # - ghcr.io/chriopter/uncledoc:edge -> newest push to main
+      # MAILER_FROM: no-reply@localhost
+      # APP_HOST: your.domain
+      # APP_PROTOCOL: https
+      # ALLOWED_HOSTS: your.domain
+      # FORCE_SSL: "true"
+      # ASSUME_SSL: "true"
     volumes:
       - uncledoc_storage:/rails/storage
 
@@ -86,23 +95,8 @@ volumes:
 <summary>.env.docker</summary>
 
 ```dotenv
-UNCLEDOC_IMAGE=ghcr.io/chriopter/uncledoc:latest
-UNCLEDOC_PORT=3000
-
 RAILS_MASTER_KEY=replace_with_config_master_key
 SECRET_KEY_BASE=replace_with_long_random_secret
-
-# Optional: reverse proxy / HTTPS
-# APP_HOST=localhost
-# APP_PROTOCOL=http
-# ALLOWED_HOSTS=localhost,127.0.0.1
-# FORCE_SSL=false
-# ASSUME_SSL=false
-
-# Optional: runtime tuning
-# MAILER_FROM=no-reply@localhost
-# DB_POOL=10
-# SOLID_QUEUE_IN_PUMA=true
 ```
 
 </details>
@@ -119,27 +113,6 @@ Then open `http://127.0.0.1:3000` after the container becomes healthy.
 
 
 
-
-<details>
-<summary>Container tags</summary>
-
-- `ghcr.io/chriopter/uncledoc:latest` for the newest release
-- `ghcr.io/chriopter/uncledoc:edge` for the newest push to `main`
-
-</details>
-
-<details>
-<summary>Optional: reverse proxy settings</summary>
-
-If you run behind a reverse proxy, also set these in `.env.docker`:
-
-- `APP_HOST=your.domain`
-- `ALLOWED_HOSTS=your.domain`
-- `APP_PROTOCOL=https`
-- `FORCE_SSL=true`
-- `ASSUME_SSL=true`
-
-</details>
 
 ## 5. Details
 
