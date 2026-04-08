@@ -65,28 +65,15 @@
           <p class="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700 [overflow-wrap:anywhere]"><%= entry.input %></p>
         </section>
 
-        <section>
-          <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"><%= t("entries.facts.title") %></p>
-          <% if entry.fact_items.present? %>
-            <ul class="space-y-1 text-sm leading-relaxed text-slate-700">
-              <% entry.fact_items.each do |fact| %>
-                <li class="break-words [overflow-wrap:anywhere]">• <%= fact %></li>
-              <% end %>
-            </ul>
-          <% else %>
-            <p class="text-sm text-slate-500"><%= t("entries.parsed_data.empty") %></p>
-          <% end %>
-        </section>
+        <% if entry.fact_objects.present? %>
+          <section>
+            <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"><%= t("entries.parsed_data.title") %></p>
+            <%= render "entries/data_details", entry: entry %>
+          </section>
+        <% end %>
 
         <section>
-          <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"><%= t("entries.parsed_data.title") %></p>
-          <% if entry.fact_objects.present? %>
-            <pre class="overflow-x-auto rounded-xl border border-slate-200 bg-white p-3 text-[11px] leading-5 text-slate-700 whitespace-pre-wrap break-words [overflow-wrap:anywhere]"><%= JSON.pretty_generate(entry.extracted_data) %></pre>
-          <% else %>
-            <p class="text-sm text-slate-500"><%= t("entries.parsed_data.empty") %></p>
-          <% end %>
-
-          <div class="mt-4">
+          <div class="mt-2">
             <%= render "entries/documents", entry: entry %>
           </div>
         </section>

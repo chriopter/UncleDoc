@@ -4,6 +4,7 @@ class ResearchChatContext
       context_message = chat.context_message || chat.messages.build(role: :system, message_kind: "context", hidden: true)
       context_message.content = system_prompt_for(chat.person)
       context_message.save!
+      broadcast_context_preview(chat, context_message.content)
 
       if chat.context_source_updated_at.present?
         chat.add_message(role: :system, content: I18n.t("chat.context_refreshed"))
@@ -64,5 +65,14 @@ class ResearchChatContext
 
   def self.latest_source_updated_at(person)
     person.entries.maximum(:updated_at)&.utc
+  end
+
+  def self.broadcast_context_preview(chat, content)
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "person_chat_#{chat.person_id}",
+      target: "chat_context_preview",
+      partial: "dashboard/chat_context_preview",
+      locals: { context_preview: content }
+    )
   end
 end

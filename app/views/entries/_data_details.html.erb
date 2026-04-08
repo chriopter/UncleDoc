@@ -1,45 +1,32 @@
-<% if entry.parseable_data.present? %>
-  <div class="overflow-hidden rounded-xl border border-slate-100">
-    <% Array(entry.parseable_data).each_with_index do |item, index| %>
-      <% next unless item.is_a?(Hash) && item["type"].present? %>
-      <% label_key = item["type"].to_s.downcase %>
-      <% label = t("entries.data_labels.#{label_key}", default: item["type"].to_s.humanize) %>
-      <% detail_parts = case item["type"]
-      when "temperature", "pulse", "weight", "height", "bottle_feeding", "sleep"
-        [[item["value"], item["unit"]].compact.join(" ")]
-      when "blood_pressure"
-        [[item["systolic"], item["diastolic"]].compact.join("/"), item["unit"]].compact
-      when "breast_feeding"
-        side_label = item["side"].present? ? t("entries.data_values.side_#{item['side']}", default: item["side"].to_s.humanize) : nil
-        [[side_label, item["value"], item["unit"]].compact.join(" ")]
-      when "diaper"
-        states = []
-        states << t("entries.data_values.wet") if item["wet"] == true
-        states << t("entries.data_values.solid") if item["solid"] == true
-        states << t("entries.data_values.rash") if item["rash"] == true
-        [states.join(" + ")]
-      when "medication"
-        [[item["value"], item["dose"]].compact.join(" ")]
-      when "lab_result"
-        [[item["value"], item["result"], item["unit"]].compact.join(" "), item["ref"].presence, item["flag"].presence]
-      when "vaccination"
-        [[item["value"], item["dose"]].compact.join(" ")]
-      when "appointment"
-        [item["value"], item["scheduled_for"], item["location"], item["quality"]]
-      when "todo"
-        [item["value"], item["due_at"], item["location"], item["quality"]]
-      when "note"
-        [item["value"], item["quality"]]
-      else
-        [item["value"], item["unit"], item["dose"], item["flag"], item["ref"], item["location"], item["quality"]]
-      end.filter_map(&:presence) %>
-      <% next if detail_parts.blank? %>
+<% if entry.fact_objects.present? %>
+  <div class="overflow-hidden rounded-xl border border-slate-100 bg-white">
+    <% entry.fact_objects.each_with_index do |fact, index| %>
+      <% fields = fact.reject { |k, v| v.nil? || (v.is_a?(String) && v.blank?) } %>
+      <% next if fields.empty? %>
 
-      <div class="grid gap-2 px-3 py-2 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-start <%= index.positive? ? 'border-t border-slate-100' : '' %>">
-        <div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= label %></div>
-        <div class="text-sm text-slate-700">
-          <%= detail_parts.join(" • ") %>
+      <% primary_keys = %w[text result unit ref value dose] %>
+      <% primary = fields.select { |k, _| primary_keys.include?(k) }.sort_by { |k, _| primary_keys.index(k) || 99 } %>
+      <% secondary = fields.reject { |k, _| primary_keys.include?(k) } %>
+
+      <div class="<%= index.positive? ? 'border-t border-slate-100' : '' %> px-4 py-2">
+        <div class="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+          <% primary.each do |key, value| %>
+            <span class="inline-flex items-baseline gap-1">
+              <span class="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-600/70"><%= key %></span>
+              <span class="text-sm font-medium text-slate-800"><%= value %></span>
+            </span>
+          <% end %>
         </div>
+        <% if secondary.present? %>
+          <div class="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
+            <% secondary.each do |key, value| %>
+              <span class="inline-flex items-baseline gap-1">
+                <span class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-300"><%= key %></span>
+                <span class="text-xs text-slate-400"><%= value %></span>
+              </span>
+            <% end %>
+          </div>
+        <% end %>
       </div>
     <% end %>
   </div>

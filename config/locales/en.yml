@@ -599,6 +599,16 @@ en:
     stats:
       documents_count: "%{count} files"
       entries_count: "%{count} entries"
+    document_types:
+      lab_report: "Lab reports"
+      invoice: "Invoices"
+      medical_letter: "Medical letters"
+      discharge_letter: "Discharge letters"
+      prescription: "Prescriptions"
+      vaccination_record: "Vaccination records"
+      appointment_letter: "Appointment letters"
+      insurance_document: "Insurance documents"
+      other: "Other documents"
     list:
       label: "Archive"
       title: "Uploaded documents"

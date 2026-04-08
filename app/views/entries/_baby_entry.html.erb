@@ -73,12 +73,12 @@
     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div class="min-w-0 flex-1">
         <p class="mt-2 text-xs leading-snug text-slate-500"><span class="font-semibold uppercase tracking-[0.14em] text-slate-600"><%= t("entries.raw_input.label") %></span> <%= entry.input %></p>
-        <div class="mt-3">
-          <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"><%= t("entries.parsed_data.title") %></p>
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
-            <%= render_extracted_data(entry.extracted_data) %>
+        <% if entry.fact_objects.present? %>
+          <div class="mt-3">
+            <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"><%= t("entries.parsed_data.title") %></p>
+            <%= render "entries/data_details", entry: entry %>
           </div>
-        </div>
+        <% end %>
         <%= render "entries/parse_status", entry: entry %>
         <div class="mt-3">
           <%= render "entries/documents", entry: entry, compact: false %>

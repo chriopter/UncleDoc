@@ -79,12 +79,12 @@
         <p class="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap break-words"><%= raw_text %></p>
       </div>
 
-      <div class="min-w-0">
-        <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("entries.parsed_data.title") %></p>
-        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
-          <%= render_extracted_data(entry.extracted_data) %>
+      <% if entry.fact_objects.present? %>
+        <div class="min-w-0">
+          <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("entries.parsed_data.title") %></p>
+          <%= render "entries/data_details", entry: entry %>
         </div>
-      </div>
+      <% end %>
 
       <%= render "entries/documents", entry: entry, compact: false %>
     </div>

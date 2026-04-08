@@ -108,6 +108,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert entry.documents.attached?
     assert_equal [ "invoice.pdf" ], entry.document_names
     assert_equal "pending", entry.parse_status
+    assert_match(/\Aupload:invoice-pdf:[0-9a-f]{12}\z/, entry.source_ref)
   end
 
   test "defaults occurred_at to current time when omitted" do
@@ -306,6 +307,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "Doctor invoice follow-up needed" ], entry.facts
     assert_equal "invoice", entry.document_type
     assert_equal "Doctor invoice from March 2026", entry.document_title
+    assert_match(/\Aupload:doctor-invoice-pdf:[0-9a-f]{12}\z/, entry.source_ref)
     assert_equal "parsed", entry.parse_status
 
     get person_files_url(person_slug: @person.name)
@@ -313,6 +315,22 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes @response.body, "doctor-invoice.pdf"
     assert_includes @response.body, "Doctor invoice from March 2026"
+  end
+
+  test "adding a document to an existing manual entry assigns upload source ref once" do
+    entry = @person.entries.create!(input: "manual note", occurred_at: Time.zone.parse("2026-03-29T09:38"), parse_status: "skipped")
+
+    patch person_entry_url(@person, entry), params: {
+      entry: {
+        input: "manual note",
+        occurred_at: "2026-03-29T09:38",
+        documents: [ fake_pdf_upload(name: "lab-sheet.pdf") ]
+      }
+    }
+
+    assert_response :redirect
+    entry.reload
+    assert_match(/\Aupload:lab-sheet-pdf:[0-9a-f]{12}\z/, entry.source_ref)
   end
 
   test "destroy removes an entry" do

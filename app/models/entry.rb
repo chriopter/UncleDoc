@@ -20,6 +20,7 @@ class Entry < ApplicationRecord
   validate :documents_are_supported
 
   after_initialize :normalize_defaults
+  after_commit :refresh_research_chat_context_later, on: [ :create, :update, :destroy ]
 
   scope :recent_first, -> { order(occurred_at: :desc, created_at: :desc) }
   scope :entered_first, -> { order(created_at: :desc, occurred_at: :desc) }
@@ -421,5 +422,11 @@ class Entry < ApplicationRecord
 
       value
     end
+  end
+
+  def refresh_research_chat_context_later
+    return unless person&.chat.present?
+
+    ResearchChatContextRefreshJob.perform_later(person.id, UserPreference.current.locale)
   end
 end

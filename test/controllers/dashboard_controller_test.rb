@@ -208,7 +208,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Breast feeding left 18 min"
     assert_includes @response.body, "Input"
     assert_includes @response.body, "Parsed"
-    assert_includes @response.body, "breast_feeding"
+    assert_includes @response.body, I18n.t("entries.data_labels.breast_feeding")
   end
 
   test "recent activity summary clamps long text" do
