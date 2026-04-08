@@ -9,8 +9,8 @@ class Message < ApplicationRecord
 
   scope :visible, -> { where(hidden: false) }
 
-  def broadcast_append_chunk(content)
-    broadcast_append_to stream_name,
+  def broadcast_streaming_content(content)
+    broadcast_update_to stream_name,
       target: "#{dom_id}_raw_content",
       content: ERB::Util.html_escape(content.to_s)
   end
