@@ -44,7 +44,8 @@ class BabySleepTimersController < ApplicationController
         occurred_at: Time.current,
         input: t("baby.sleep.timer.note", duration: duration_minutes),
         facts: EntryFactListBuilder.call([ { "type" => "sleep", "value" => duration_minutes, "unit" => "min" } ]),
-        parseable_data: [ { "type" => "sleep", "value" => duration_minutes, "unit" => "min" } ]
+        parseable_data: [ { "type" => "sleep", "value" => duration_minutes, "unit" => "min" } ],
+        source: Entry::SOURCES[:babywidget]
       )
 
       @person.update!(baby_sleep_timer_started_at: nil)

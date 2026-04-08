@@ -14,6 +14,7 @@ class BabyQuickActionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Diaper: wet and solid", entry.input
     assert_equal [ "Diaper wet and solid" ], entry.facts
     assert_equal({ "type" => "diaper", "wet" => true, "solid" => true }, entry.parseable_data.first)
+    assert_equal Entry::SOURCES[:babywidget], entry.source
   end
 
   test "creates bottle entry" do
@@ -25,6 +26,7 @@ class BabyQuickActionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Bottle 120ml", entry.input
     assert_equal [ "Bottle feeding 120 ml" ], entry.facts
     assert_equal({ "type" => "bottle_feeding", "value" => 120, "unit" => "ml" }, entry.parseable_data.first)
+    assert_equal Entry::SOURCES[:babywidget], entry.source
   end
 
   test "creates german localized diaper and bottle facts" do

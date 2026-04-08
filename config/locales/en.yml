@@ -225,6 +225,7 @@ en:
       entered: "Entered"
     source:
       manual: "Manual"
+      babywidget: "Baby Widget"
       healthkit: "Healthkit"
       healthkit_short: "HK"
       healthkit_day: "HK Daily"

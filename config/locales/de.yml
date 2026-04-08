@@ -225,6 +225,7 @@ de:
       entered: "Erfasst"
     source:
       manual: "Manuell"
+      babywidget: "Baby-Widget"
       healthkit: "Healthkit"
       healthkit_short: "HK"
       healthkit_day: "HK Tages"

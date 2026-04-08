@@ -23,6 +23,7 @@ class BabySleepTimersControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Sleep 95 min", entry.input
     assert_equal [ "Sleep 95 min" ], entry.facts
     assert_equal({ "type" => "sleep", "value" => 95, "unit" => "min" }, entry.parseable_data.first)
+    assert_equal Entry::SOURCES[:babywidget], entry.source
   end
 
   test "sleep timer responds with turbo stream" do
