@@ -124,6 +124,9 @@ If the document kind is unclear, omit `document` or return an empty object.
 - When a document contains useful health or admin details, extract them even if the typed note is short or empty.
 - OCR image-based PDFs and photos carefully. A scanned page or photographed document may still contain extractable medical facts even when embedded text is missing.
 - Do not claim that a PDF contains only image data unless you truly cannot read any medically useful text from the rendered pages.
+- For administrative medical documents like sick notes, certificates, invoices, referral letters, or appointment letters, extract the medically relevant content too, not just the document purpose.
+- If a document mentions a diagnosis, symptom, reason for visit, or reason for work incapacity such as `Erkältung`, `Infekt`, `Fieber`, or `Impfberatung`, add a corresponding health fact instead of only a generic summary.
+- Filenames and visible document titles are useful hints, especially for scanned PDFs with limited OCR text, but prefer visible document content when available.
 
 ## Apple Health / HealthKit Handling
 
@@ -170,3 +173,4 @@ Always do all of the following:
 - `Apple Health monthly summary for March 2026. Entry source: healthkit.` -> `facts`: `[ { "text": "Apple Health monthly summary", "kind": "summary", "value": "Apple Health", "quality": "monthly" } ]`
 - `Apple Health daily summary for April 05, 2026. - Step count 3972 count. - Walking and running distance 2.78 km. - Active energy burned 150.55 kcal.` -> `facts`: `[ { "text": "Apple Health daily summary", "kind": "summary", "value": "Apple Health", "quality": "daily" }, { "text": "Step count 3972", "kind": "measurement", "metric": "step_count", "value": 3972, "unit": "count" }, { "text": "Walking and running distance 2.78 km", "kind": "measurement", "metric": "walking_distance", "value": 2.78, "unit": "km" }, { "text": "Active energy burned 150.55 kcal", "kind": "measurement", "metric": "active_energy", "value": 150.55, "unit": "kcal" } ]`
 - scanned lab sheet -> `document`: `{ "type": "lab_report", "title": "Laborblatt vom 06.04.2018" }`
+- `2022-01 Erkältung AU.pdf` with an Arbeitsunfähigkeitsbescheinigung for a cold -> include a symptom fact such as `{ "text": "Erkältung", "kind": "symptom", "value": "Erkältung" }` in addition to document metadata or summary facts.
