@@ -1,36 +1,38 @@
-<section class="rounded-[2rem] border border-slate-200 bg-white shadow-sm ring-1 ring-black/5">
-  <div class="rounded-t-[2rem] flex flex-col gap-3 border-b border-slate-200 bg-slate-950 px-5 py-4 text-white md:flex-row md:items-center md:justify-between">
-    <div>
-      <h3 class="text-lg font-bold"><%= table[:name] %></h3>
-      <p class="mt-1 text-xs text-slate-300">
-        <%= t(table[:count] == 1 ? "db.table.count" : "db.table.count_plural", count: table[:count]) %>
-        · <%= t("db.table.loaded_count", count: table[:rendered_count]) %>
-        <% if table[:order_column].present? %>
-          · <%= t("db.table.sorted_by", column: table[:order_column]) %>
-        <% end %>
-      </p>
-    </div>
-  </div>
-
-  <div class="overflow-x-auto">
-    <table class="w-max min-w-full divide-y divide-slate-200 text-left text-sm">
-      <thead class="bg-slate-50 text-slate-600">
-        <tr>
-          <% table[:columns].each do |column| %>
-            <th class="min-w-[10rem] px-4 py-3 font-semibold whitespace-nowrap"><%= column %></th>
+<%= turbo_frame_tag "healthkit_records_table_frame" do %>
+  <section class="rounded-[2rem] border border-slate-200 bg-white shadow-sm ring-1 ring-black/5">
+    <div class="rounded-t-[2rem] flex flex-col gap-3 border-b border-slate-200 bg-slate-950 px-5 py-4 text-white md:flex-row md:items-center md:justify-between">
+      <div>
+        <h3 class="text-lg font-bold"><%= table[:name] %></h3>
+        <p class="mt-1 text-xs text-slate-300">
+          <%= t(table[:count] == 1 ? "db.table.count" : "db.table.count_plural", count: table[:count]) %>
+          · <%= t("db.table.loaded_count", count: table[:rendered_count]) %>
+          <% if table[:order_column].present? %>
+            · <%= t("db.table.sorted_by", column: table[:order_column]) %>
           <% end %>
-        </tr>
-      </thead>
-      <tbody id="db_table_rows" class="divide-y divide-slate-100 bg-white text-slate-800">
-        <% if table[:rows].any? %>
-          <%= render "dashboard/db_table_rows", table: table %>
-        <% else %>
+        </p>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-max min-w-full divide-y divide-slate-200 text-left text-sm">
+        <thead class="bg-slate-50 text-slate-600">
           <tr>
-            <td colspan="<%= table[:columns].size %>" class="px-4 py-8 text-center text-sm text-slate-500"><%= t("db.table.empty") %></td>
+            <% table[:columns].each do |column| %>
+              <th class="min-w-[10rem] px-4 py-3 font-semibold whitespace-nowrap"><%= column %></th>
+            <% end %>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-  <%= render "dashboard/db_table_loader_healthkit", table: table, person: person %>
-</section>
+        </thead>
+        <tbody id="db_table_rows" class="divide-y divide-slate-100 bg-white text-slate-800">
+          <% if table[:rows].any? %>
+            <%= render "dashboard/db_table_rows", table: table %>
+          <% else %>
+            <tr>
+              <td colspan="<%= table[:columns].size %>" class="px-4 py-8 text-center text-sm text-slate-500"><%= t("db.table.empty") %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <%= render "dashboard/db_table_loader_healthkit", table: table, person: person %>
+  </section>
+<% end %>

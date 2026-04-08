@@ -50,7 +50,6 @@ class DashboardController < ApplicationController
     @healthkit_monthly_summary_count = healthkit_summary_scope.where("source_ref LIKE ?", "healthkit:month:%").count
     @healthkit_latest_sync = @healthkit_syncs.max_by { |sync| sync.last_synced_at || sync.updated_at || Time.zone.at(0) }
     @healthkit_last_successful_sync_at = @healthkit_syncs.filter_map(&:last_successful_sync_at).max
-    @healthkit_records_table = healthkit_records_table(@person, page: params[:page])
   end
 
   def queue_healthkit_summary_sync
@@ -89,10 +88,14 @@ class DashboardController < ApplicationController
     @person = Person.find_by!(name: params[:person_slug])
     @healthkit_records_table = healthkit_records_table(@person, page: params[:page])
 
-    render turbo_stream: [
-      turbo_stream.append("db_table_rows", partial: "dashboard/db_table_rows", locals: { table: @healthkit_records_table }),
-      turbo_stream.replace("db_table_pagination", partial: "dashboard/db_table_loader_healthkit", locals: { table: @healthkit_records_table, person: @person })
-    ]
+    if request.format.turbo_stream?
+      render turbo_stream: [
+        turbo_stream.append("db_table_rows", partial: "dashboard/db_table_rows", locals: { table: @healthkit_records_table }),
+        turbo_stream.replace("db_table_pagination", partial: "dashboard/db_table_loader_healthkit", locals: { table: @healthkit_records_table, person: @person })
+      ]
+    else
+      render partial: "dashboard/healthkit_records_table", locals: { table: @healthkit_records_table, person: @person }
+    end
   end
 
   private
@@ -103,7 +106,7 @@ class DashboardController < ApplicationController
     table = Arel::Table.new(table_name)
     columns = connection.columns(table_name).map(&:name)
     primary_key = connection.primary_key(table_name)
-    per_page = 50
+    per_page = 250
     current_page = [ page.to_i, 1 ].max
 
     person_id = person.id

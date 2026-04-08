@@ -398,6 +398,30 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes @response.body, "3"
     assert_select "a[href*='source=healthkit']"
+    assert_select "turbo-frame#healthkit_records_table_frame[src*='healthkit/records?page=1']"
+  end
+
+  test "healthkit records page loads first 250 rows lazily" do
+    person = Person.create!(name: "HeavyKit", birth_date: Date.new(2024, 1, 1))
+
+    260.times do |index|
+      person.healthkit_records.create!(
+        device_id: "iphone-main",
+        external_id: "record-#{index}",
+        record_type: "HKQuantityTypeIdentifierStepCount",
+        source_name: "Health",
+        start_at: Time.zone.local(2026, 4, 5, 8, 0) - index.minutes,
+        payload: { "quantity" => "#{index} count" }
+      )
+    end
+
+    get person_healthkit_records_url(person_slug: person.name)
+
+    assert_response :success
+    assert_select "turbo-frame#healthkit_records_table_frame"
+    assert_select "tbody#db_table_rows tr", 250
+    assert_includes @response.body, "250 loaded"
+    assert_select "turbo-frame#db_table_pagination[src*='page=2']"
   end
 
   test "healthkit page can queue summary rebuild" do
