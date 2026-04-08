@@ -1,20 +1,27 @@
 <% assistant ||= local_assigns[:message] %>
 <div id="<%= dom_id(assistant) %>" class="flex justify-start">
   <div class="max-w-[85%] rounded-2xl rounded-tl-md border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed text-slate-700 shadow-sm">
-    <div id="<%= dom_id(assistant) %>_content" class="space-y-3 break-words">
-      <% if assistant.streaming_placeholder? && assistant.content.blank? %>
-        <div class="flex items-center gap-2 text-slate-400">
-          <span class="inline-flex gap-1">
-            <span class="h-2 w-2 animate-pulse rounded-full bg-slate-300"></span>
-            <span class="h-2 w-2 animate-pulse rounded-full bg-slate-300 [animation-delay:120ms]"></span>
-            <span class="h-2 w-2 animate-pulse rounded-full bg-slate-300 [animation-delay:240ms]"></span>
-          </span>
-          <span><%= t("chat.assistant_thinking") %></span>
+    <% if assistant.streaming_placeholder? %>
+      <div class="space-y-3 break-words" data-controller="streaming-markdown">
+        <div id="<%= dom_id(assistant) %>_content" data-streaming-markdown-target="rendered">
+          <% if assistant.content.blank? %>
+            <div class="flex items-center gap-2 text-slate-400">
+              <span class="inline-flex gap-1">
+                <span class="h-2 w-2 animate-pulse rounded-full bg-slate-300"></span>
+                <span class="h-2 w-2 animate-pulse rounded-full bg-slate-300 [animation-delay:120ms]"></span>
+                <span class="h-2 w-2 animate-pulse rounded-full bg-slate-300 [animation-delay:240ms]"></span>
+              </span>
+              <span><%= t("chat.assistant_thinking") %></span>
+            </div>
+          <% end %>
         </div>
-      <% else %>
+        <div id="<%= dom_id(assistant) %>_raw_content" data-streaming-markdown-target="raw" class="hidden"><%= assistant.content %></div>
+      </div>
+    <% else %>
+      <div id="<%= dom_id(assistant) %>_content" class="space-y-3 break-words">
         <%= render_chat_markdown(assistant.content) %>
-      <% end %>
-    </div>
+      </div>
+    <% end %>
     <p class="mt-2 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400"><%= assistant.created_at&.strftime("%H:%M") %></p>
   </div>
 </div>

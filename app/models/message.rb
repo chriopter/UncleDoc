@@ -11,7 +11,7 @@ class Message < ApplicationRecord
 
   def broadcast_append_chunk(content)
     broadcast_append_to stream_name,
-      target: "#{dom_id}_content",
+      target: "#{dom_id}_raw_content",
       content: ERB::Util.html_escape(content.to_s)
   end
 

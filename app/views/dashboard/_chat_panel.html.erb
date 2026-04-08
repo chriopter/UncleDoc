@@ -19,7 +19,7 @@
 
   <div id="chat_messages" class="flex-1 space-y-3 overflow-y-auto bg-slate-50/50 px-4 py-5 sm:px-5" data-controller="chat-feed">
     <% if chat.present? && chat.visible_messages.exists? %>
-      <%= render chat.visible_messages %>
+      <%= render compact_chat_messages(chat.visible_messages) %>
     <% else %>
       <div id="chat_welcome" class="flex justify-start">
         <div class="max-w-[85%] rounded-2xl rounded-tl-md border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed text-slate-700 shadow-sm">
