@@ -112,6 +112,50 @@ class EntryDataParserTest < ActiveSupport::TestCase
     assert_equal({ "type" => "lab_report", "title" => "Laborblatt vom 06.04.2018" }, result)
   end
 
+  test "drops hallucinated document metadata when entry has no attachments" do
+    person = Person.create!(name: "HealthKit No Document", birth_date: Date.new(2020, 1, 1))
+    entry = person.entries.create!(
+      input: "Apple Health daily summary for April 07, 2026.\n- Source: Apple Health.",
+      occurred_at: Time.current,
+      parse_status: "pending",
+      source: Entry::SOURCES[:healthkit],
+      source_ref: "healthkit:day:2026-04-07"
+    )
+
+    preference = AppSetting.current
+    preference.llm_provider = "ollama"
+    preference.llm_model = "llama3"
+    preference.save!
+
+    chat_singleton = LlmChatRequest.singleton_class
+    chat_singleton.alias_method :__original_call_for_no_document_test, :call
+
+    chat_singleton.define_method(:call) do |**|
+      LlmChatRequest::Response.new(
+        content: {
+          document: { type: "lab_report", title: "Laborblatt vom 06.04.2018" },
+          facts: [
+            { text: "Apple Health daily summary", kind: "summary", value: "Apple Health", quality: "daily" }
+          ],
+          occurred_at: nil,
+          llm: { status: "structured", confidence: "high", note: "Canonical structured facts extracted successfully." }
+        }.to_json,
+        status_code: 200,
+        body: "{}"
+      )
+    end
+
+    result = EntryDataParser.call(input: entry.input, preference:, entry: entry)
+
+    assert_equal({}, result.document)
+    assert_equal "Apple Health", result.fact_objects.first["value"]
+  ensure
+    if chat_singleton.method_defined?(:__original_call_for_no_document_test)
+      chat_singleton.alias_method :call, :__original_call_for_no_document_test
+      chat_singleton.remove_method :__original_call_for_no_document_test
+    end
+  end
+
   test "enriches healthkit summaries with lab results and native measurements" do
     person = Person.create!(name: "HealthKit Parse", birth_date: Date.new(2020, 1, 1))
     entry = person.entries.create!(

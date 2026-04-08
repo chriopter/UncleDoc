@@ -33,6 +33,7 @@ Return exactly one JSON object with this shape and nothing else:
 - Do not write robotic prefixes like `User reports` unless they are clearly helpful.
 - `llm` must always be present and must be in English.
 - Include `document.type` and `document.title` when the entry contains an attached document and the document kind/title can be identified.
+- If there is no attached document, return `document: {}`.
 - Use `occurred_at` only when the input implies a specific event time. Otherwise return `null`.
 - Prefer concrete facts over generic filler like `document uploaded` or `report attached`.
 - Facts stay in the same language as the input when the input language is clear.
@@ -116,6 +117,8 @@ When the entry contains an attached document, add a `document` object when possi
 - `title`: a short human-readable title such as `Laborblatt vom 06.04.2018` or `Doctor invoice from April 2026`
 
 If the document kind is unclear, omit `document` or return an empty object.
+
+Never invent document metadata for plain text notes or HealthKit summaries that have no attached file.
 
 ## Attached Documents
 
