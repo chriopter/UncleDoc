@@ -55,12 +55,38 @@ bin/dev
 
 If you want demo content, run `bundle exec bin/rails db:prepare db:seed` first.
 
-### Deploy
+### Docker deploy
 
 ```bash
-kamal setup
-kamal deploy
+cp .env.docker.example .env.docker
 ```
+
+Then edit `.env.docker` and set at least:
+
+- `UNCLEDOC_IMAGE=ghcr.io/<repo-owner>/uncledoc:stable`
+- `RAILS_MASTER_KEY=...`
+- `SECRET_KEY_BASE=...`
+
+Then start the app:
+
+```bash
+docker compose up -d
+```
+
+Open `http://127.0.0.1:3000` after the container becomes healthy.
+
+Release image channels:
+
+- `ghcr.io/<repo-owner>/uncledoc:beta` updates from every push to `main`
+- `ghcr.io/<repo-owner>/uncledoc:stable` updates on published GitHub releases
+
+If you run behind a reverse proxy, also set these in `.env.docker`:
+
+- `APP_HOST=your.domain`
+- `ALLOWED_HOSTS=your.domain`
+- `APP_PROTOCOL=https`
+- `FORCE_SSL=true`
+- `ASSUME_SSL=true`
 
 ## 5. Details
 
@@ -241,7 +267,7 @@ Rules:
 </details>
 
 <details>
-<summary>Setup & demo data</summary>
+<summary>Development & demo data</summary>
 
 For local development, start the app with:
 
@@ -282,7 +308,7 @@ Open it at:
 http://127.0.0.1:3000/Demo%20Nora/overview
 ```
 
-This repo is also used in a LAN-only self-hosted setup:
+This repo is also used in a LAN-only development-style self-hosted setup:
 
 - app directory: `/root/uncledoc`
 - service: `uncledoc-dev.service`
@@ -302,6 +328,26 @@ BATCH_SIZE=25 MAX_PENDING=50 BATCH_DELAY=30 bin/rails entries:refresh_extracted_
 ```
 
 The refresh task schedules reparsing in small batches so a mass reparse does not flood the server with parser jobs all at once.
+
+</details>
+
+<details>
+<summary>Kamal deployment</summary>
+
+Kamal is still supported, but it is now treated as an advanced deployment path rather than the main install flow.
+
+Basic commands:
+
+```bash
+kamal setup
+kamal deploy
+```
+
+Relevant files:
+
+- `config/deploy.yml`
+- `config/deploy.lan.yml`
+- `.kamal/`
 
 </details>
 

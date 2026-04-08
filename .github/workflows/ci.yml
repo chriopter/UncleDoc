@@ -12,6 +12,8 @@ concurrency:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    env:
+      RAILS_ENV: test
 
     steps:
       - uses: actions/checkout@v6
@@ -20,5 +22,6 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
       - run: bin/quality
-        env:
-          RAILS_ENV: test
+      - run: bin/bundler-audit
+      - run: bin/importmap audit
+      - run: bin/rails db:seed:replant
