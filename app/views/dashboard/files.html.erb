@@ -1,10 +1,51 @@
 <%= turbo_stream_from [@person, :entries] %>
 
 <section class="space-y-5">
-  <section class="rounded-[2rem] border border-white/70 bg-white/90 p-5 ring-1 ring-black/5 backdrop-blur">
-    <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-      <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("files.label") %></p>
-      <h1 class="text-2xl font-black tracking-tight text-slate-950"><%= t("files.title", name: @person.name) %></h1>
+  <section class="rounded-[2rem] border border-slate-200 bg-white p-5 ring-1 ring-black/5">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex min-w-0 items-center gap-3">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-sm font-black text-amber-800 ring-1 ring-amber-200/80">
+          <%= @person.name.first.upcase %>
+        </div>
+        <div class="min-w-0">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("files.label") %></p>
+          <h1 class="truncate text-xl font-black tracking-tight text-slate-950"><%= t("files.title", name: @person.name) %></h1>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <%= render "dashboard/files_stats", document_count: @document_count, document_entries: @document_entries %>
+      </div>
+    </div>
+
+    <div class="mt-4 border-t border-slate-100 pt-4">
+      <p class="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("entries.filters.label") %></p>
+      <%= form_with url: person_files_path(person_slug: @person.name), method: :get, local: true, class: "flex flex-wrap items-end gap-3", data: { controller: "auto-submit" } do |form| %>
+        <div>
+          <%= form.label :year, t("files.filters.year"), class: "mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500" %>
+          <%= form.select :year,
+              options_for_select([[t("files.filters.all_years"), nil]] + @available_file_filters[:years].map { |y| [y.to_s, y] }, params[:year]),
+              {},
+              class: "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200",
+              data: { action: "change->auto-submit#submit" } %>
+        </div>
+
+        <div>
+          <%= form.label :doc_type, t("files.filters.doc_type"), class: "mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500" %>
+          <%= form.select :doc_type,
+              options_for_select(
+                [[t("files.filters.all_types"), nil]] + @available_file_filters[:types].map { |type| [t("files.document_types.#{type}", default: type.humanize), type] },
+                params[:doc_type]
+              ),
+              {},
+              class: "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200",
+              data: { action: "change->auto-submit#submit" } %>
+        </div>
+
+        <div>
+          <%= link_to t("entries.filters.reset"), person_files_path(person_slug: @person.name), class: "inline-flex rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-slate-950" %>
+        </div>
+      <% end %>
     </div>
   </section>
 
@@ -17,16 +58,6 @@
   </section>
 
   <section class="rounded-[2rem] border border-slate-200 bg-white p-5 ring-1 ring-black/5">
-    <div class="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"><%= t("files.list.label") %></p>
-        <h2 class="mt-0.5 text-lg font-bold text-slate-950"><%= t("files.list.title") %></h2>
-      </div>
-      <div class="flex items-center gap-2">
-        <%= render "dashboard/files_stats", document_count: @document_count, document_entries: @document_entries %>
-      </div>
-    </div>
-
     <%= render "dashboard/files_list", document_entries: @document_entries, grouped_document_entries: @grouped_document_entries %>
   </section>
 </section>

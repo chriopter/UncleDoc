@@ -35,9 +35,11 @@ class DashboardController < ApplicationController
 
   def files
     @person = Person.find_by!(name: params[:person_slug])
-    @document_entries = @person.entries.with_documents.recent_first
+    all_document_entries = @person.entries.with_documents.recent_first
+    @available_file_filters = available_file_filters(all_document_entries)
+    @document_entries = filtered_file_entries(all_document_entries)
     @document_count = @document_entries.sum(&:document_count)
-    @grouped_document_entries = group_document_entries(@document_entries)
+    @grouped_document_entries = group_document_entries_by_year(@document_entries)
   end
 
   def healthkit
@@ -101,10 +103,37 @@ class DashboardController < ApplicationController
 
   private
 
-  def group_document_entries(entries)
+  def group_document_entries_by_year(entries)
     entries
-      .group_by { |e| e.document_type.presence || "other" }
-      .transform_values { |type_entries| type_entries.group_by { |e| e.display_time.year } }
+      .group_by { |e| e.display_time.year }
+      .sort_by { |year, _| -year }
+      .map { |year, year_entries|
+        types = year_entries
+          .group_by { |e| e.document_type.presence || "other" }
+          .sort_by { |type, _| type == "other" ? 1 : 0 }
+        [year, types]
+      }
+  end
+
+  def available_file_filters(entries)
+    years = entries.map { |e| e.display_time.year }.uniq.sort.reverse
+    types = entries.filter_map(&:document_type).uniq.sort
+    { years: years, types: types }
+  end
+
+  def filtered_file_entries(entries)
+    scope = entries
+
+    if params[:year].present?
+      year = params[:year].to_i
+      scope = scope.select { |e| e.display_time.year == year }
+    end
+
+    if params[:doc_type].present?
+      scope = scope.select { |e| (e.document_type.presence || "other") == params[:doc_type] }
+    end
+
+    scope
   end
 
   def healthkit_records_table(person, page: 1)

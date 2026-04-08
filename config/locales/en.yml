@@ -609,6 +609,12 @@ en:
       appointment_letter: "Appointment letters"
       insurance_document: "Insurance documents"
       other: "Other documents"
+    details: "Details"
+    filters:
+      year: "Year"
+      doc_type: "Type"
+      all_years: "All years"
+      all_types: "All types"
     list:
       label: "Archive"
       title: "Uploaded documents"
