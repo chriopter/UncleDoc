@@ -104,7 +104,8 @@ Normal logging follows a simple three-layer flow:
 
 </details>
 
-## 6. Entry JSON Model
+<details>
+<summary>Entry JSON model</summary>
 
 Every parsed `Entry` stores one JSON object in `entries.extracted_data`.
 
@@ -234,6 +235,8 @@ Rules:
   }
 }
 ```
+
+</details>
 
 </details>
 

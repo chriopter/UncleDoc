@@ -604,64 +604,7 @@ module ApplicationHelper
     safe_join(blocks)
   end
 
-  def render_extracted_data(value)
-    render_extracted_value(value)
-  end
-
   private
-
-  def render_extracted_value(value)
-    case value
-    when Hash
-      return content_tag(:p, t("entries.parsed_data.empty"), class: "text-sm text-slate-500") if value.empty?
-
-      rows = value.map do |key, nested_value|
-        content_tag(:div, class: "grid gap-2 border-t border-slate-200/80 px-4 py-3 first:border-t-0 md:grid-cols-[12rem_minmax(0,1fr)]") do
-          safe_join([
-            content_tag(:div, format_extracted_key(key), class: "text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500"),
-            content_tag(:div, render_extracted_value(nested_value), class: "min-w-0")
-          ])
-        end
-      end
-
-      content_tag(:div, safe_join(rows), class: "overflow-hidden rounded-2xl border border-slate-200 bg-white")
-    when Array
-      return content_tag(:p, t("entries.parsed_data.empty"), class: "text-sm text-slate-500") if value.empty?
-
-      items = value.each_with_index.map do |item, index|
-        content_tag(:div, class: "rounded-2xl border border-slate-200 bg-white p-4") do
-          safe_join([
-            content_tag(:p, "#{t('entries.parsed_data.item')} #{index + 1}", class: "mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500"),
-            render_extracted_value(item)
-          ])
-        end
-      end
-
-      content_tag(:div, safe_join(items), class: "space-y-3")
-    when true, false
-      content_tag(:span, value ? t("entries.boolean.true") : t("entries.boolean.false"), class: extracted_badge_classes(value))
-    when Numeric
-      content_tag(:span, value, class: extracted_value_text_classes)
-    else
-      text = value.to_s.strip
-      return content_tag(:span, "-", class: "text-sm text-slate-400") if text.blank?
-
-      content_tag(:div, text, class: "whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700 [overflow-wrap:anywhere]")
-    end
-  end
-
-  def format_extracted_key(key)
-    key.to_s.tr("_", " ")
-  end
-
-  def extracted_badge_classes(value)
-    base = "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
-    value ? "#{base} bg-emerald-100 text-emerald-700" : "#{base} bg-slate-100 text-slate-600"
-  end
-
-  def extracted_value_text_classes
-    "text-sm font-medium text-slate-800"
-  end
 
   def markdown_inline(text)
     escaped = ERB::Util.html_escape(text.to_s)

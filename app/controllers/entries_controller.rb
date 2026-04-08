@@ -17,6 +17,7 @@ class EntriesController < ApplicationController
   def create
     @entry = @person.entries.build(model_entry_params)
     attach_uploaded_documents(@entry)
+    assign_document_source_ref(@entry) if uploaded_documents_present?
     should_enqueue_parse = @entry.fact_objects.blank? && entry_has_parseable_source?(@entry, documents_added: uploaded_documents_present?) && EntryDataParser.ready? && !@entry.babywidget_generated?
 
     @entry.parse_status = if @entry.fact_objects.present?
@@ -90,6 +91,7 @@ class EntriesController < ApplicationController
 
   def update
     @entry.assign_attributes(entry_params)
+    assign_document_source_ref(@entry) if uploaded_documents_present?
     should_enqueue_parse = prepare_reparse(@entry, documents_added: uploaded_documents_present?)
 
     if @entry.save
@@ -201,5 +203,12 @@ class EntriesController < ApplicationController
 
   def entry_has_parseable_source?(entry, documents_added: false)
     entry.input.to_s.strip.present? || entry.documents_attached? || documents_added
+  end
+
+  def assign_document_source_ref(entry)
+    return if entry.source_ref.present?
+
+    primary_name = uploaded_document_files.first&.original_filename.to_s.parameterize.presence || "document"
+    entry.source_ref = "upload:#{primary_name}:#{SecureRandom.hex(6)}"
   end
 end

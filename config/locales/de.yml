@@ -599,6 +599,16 @@ de:
     stats:
       documents_count: "%{count} Dateien"
       entries_count: "%{count} Einträge"
+    document_types:
+      lab_report: "Laborbefunde"
+      invoice: "Rechnungen"
+      medical_letter: "Arztbriefe"
+      discharge_letter: "Entlassbriefe"
+      prescription: "Rezepte"
+      vaccination_record: "Impfnachweise"
+      appointment_letter: "Terminbriefe"
+      insurance_document: "Versicherungsdokumente"
+      other: "Sonstige Dokumente"
     list:
       label: "Archiv"
       title: "Hochgeladene Dokumente"

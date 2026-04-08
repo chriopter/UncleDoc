@@ -37,6 +37,7 @@ class DashboardController < ApplicationController
     @person = Person.find_by!(name: params[:person_slug])
     @document_entries = @person.entries.with_documents.recent_first
     @document_count = @document_entries.sum(&:document_count)
+    @grouped_document_entries = group_document_entries(@document_entries)
   end
 
   def healthkit
@@ -99,6 +100,12 @@ class DashboardController < ApplicationController
   end
 
   private
+
+  def group_document_entries(entries)
+    entries
+      .group_by { |e| e.document_type.presence || "other" }
+      .transform_values { |type_entries| type_entries.group_by { |e| e.display_time.year } }
+  end
 
   def healthkit_records_table(person, page: 1)
     connection = ActiveRecord::Base.connection

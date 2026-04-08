@@ -1,6 +1,8 @@
 require "test_helper"
 
 class EntryTest < ActiveSupport::TestCase
+  include ActiveJob::TestHelper
+
   test "defaults parseable_data to empty array" do
     entry = Entry.new(input: "Plain input")
 
@@ -30,5 +32,15 @@ class EntryTest < ActiveSupport::TestCase
     entry = Entry.new(input: "raw", facts: [ "Bottle feeding 120 ml", "Diaper wet" ])
 
     assert_equal "Bottle feeding 120 ml. Diaper wet", entry.fact_summary
+  end
+
+  test "entry changes enqueue a research context refresh when chat exists" do
+    person = Person.create!(name: "Chat Mila", birth_date: Date.new(2024, 3, 10))
+    AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
+    ResearchChatRuntime.prepare!(person.build_chat, setting: AppSetting.current)
+
+    assert_enqueued_with(job: ResearchChatContextRefreshJob, args: [ person.id, UserPreference.current.locale ]) do
+      person.entries.create!(input: "New note", occurred_at: Time.current)
+    end
   end
 end
