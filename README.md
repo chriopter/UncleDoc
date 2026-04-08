@@ -63,7 +63,7 @@ cp .env.docker.example .env.docker
 
 Then edit `.env.docker` and set at least:
 
-- `UNCLEDOC_IMAGE=ghcr.io/<repo-owner>/uncledoc:stable`
+- `UNCLEDOC_IMAGE=ghcr.io/<repo-owner>/uncledoc:latest`
 - `RAILS_MASTER_KEY=...`
 - `SECRET_KEY_BASE=...`
 
@@ -78,8 +78,7 @@ Open `http://127.0.0.1:3000` after the container becomes healthy.
 Release image channels:
 
 - `ghcr.io/<repo-owner>/uncledoc:edge` updates from every push to `main`
-- `ghcr.io/<repo-owner>/uncledoc:stable` updates on published GitHub releases
-- `ghcr.io/<repo-owner>/uncledoc:latest` points to the newest published stable release
+- `ghcr.io/<repo-owner>/uncledoc:latest` updates on published GitHub releases
 
 If you run behind a reverse proxy, also set these in `.env.docker`:
 
