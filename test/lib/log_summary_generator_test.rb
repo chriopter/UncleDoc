@@ -18,7 +18,7 @@ class LogSummaryGeneratorTest < ActiveSupport::TestCase
   end
 
   test "stores raw summary llm logs" do
-    preference = UserPreference.current
+    preference = AppSetting.current
     preference.update!(llm_provider: "ollama", llm_model: "llama3")
     person = Person.create!(name: "Marlon", birth_date: Date.new(2025, 1, 1), baby_mode: true)
     entry = person.entries.create!(

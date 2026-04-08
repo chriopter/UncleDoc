@@ -6,7 +6,7 @@ class EntryDataParseJob < ApplicationJob
     return unless entry
     return if entry.parsed? && entry.parseable_data.present?
 
-    result = EntryDataParser.call(input: entry.input, preference: UserPreference.current, entry: entry)
+    result = EntryDataParser.call(input: entry.input, preference: AppSetting.current, entry: entry)
     if result.error.present?
       entry.update!(parse_status: "failed") if entry.pending_parse?
       broadcast_entries(entry.person)

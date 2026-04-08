@@ -3,7 +3,7 @@ require "json"
 class LogSummaryGenerator
   Result = Struct.new(:summary, :error, keyword_init: true)
 
-  def self.call(person:, entries:, preference: UserPreference.current)
+  def self.call(person:, entries:, preference: AppSetting.current)
     return Result.new(error: :missing_model) if preference.llm_model.blank?
     return Result.new(error: :missing_api_key) if preference.llm_runtime_api_key.blank? && preference.llm_ruby_provider != :ollama
     return Result.new(error: :no_entries) if entries.blank?

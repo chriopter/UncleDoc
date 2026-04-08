@@ -178,6 +178,8 @@ FileUtils.chdir(APP_ROOT) do
 
   puts "\n== Updating gems =="
   sh("bundle", "update", "--all")
+  sh("bundle", "update", "--bundler")
+  sh("bundle", "update", "--ruby")
 
   puts "\n== Updating importmap packages =="
   sh("bin/importmap", "update")

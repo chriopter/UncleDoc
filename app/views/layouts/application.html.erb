@@ -303,7 +303,7 @@
           </div>
         </aside>
 
-        <div class="min-w-0 flex-1">
+        <div class="min-w-0 flex-1 <%= on_db ? 'overflow-x-auto pb-2' : '' %>">
           <% if notice.present? || alert.present? %>
             <div class="mb-4 flex flex-col gap-2">
               <% if notice.present? %>
@@ -315,7 +315,9 @@
             </div>
           <% end %>
 
-          <%= yield %>
+          <div class="<%= on_db ? 'min-w-max' : '' %>">
+            <%= yield %>
+          </div>
         </div>
       </div>
     </main>

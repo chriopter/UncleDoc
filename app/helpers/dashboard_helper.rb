@@ -46,21 +46,54 @@ module DashboardHelper
     health_data_tables = %w[entries healthkit_records healthkit_syncs]
     attachment_tables = %w[active_storage_attachments active_storage_blobs active_storage_variant_records]
     log_tables = %w[llm_logs]
-    system_tables = %w[ar_internal_metadata schema_migrations]
+    rails_tables = %w[ar_internal_metadata schema_migrations]
+    system_tables = %w[app_settings]
 
     all = connection.tables.sort.map do |name|
       { name: name, count: connection.select_value("SELECT COUNT(*) FROM #{connection.quote_table_name(name)}").to_i }
     end
 
     groups = []
+    groups << { label: t("db.groups.system"), tables: all.select { |t| system_tables.include?(t[:name]) } }
     groups << { label: t("db.groups.data"), tables: all.select { |t| data_tables.include?(t[:name]) } }
     groups << { label: t("db.groups.health_data"), tables: all.select { |t| health_data_tables.include?(t[:name]) } }
     groups << { label: t("db.groups.attachments"), tables: all.select { |t| attachment_tables.include?(t[:name]) } }
     groups << { label: t("db.groups.logs"), tables: all.select { |t| log_tables.include?(t[:name]) } }
-    groups << { label: t("db.groups.system"), tables: all.select { |t| system_tables.include?(t[:name]) } }
-    others = all.reject { |t| (data_tables + health_data_tables + attachment_tables + log_tables + system_tables).include?(t[:name]) }
+    groups << { label: t("db.groups.rails"), tables: all.select { |t| rails_tables.include?(t[:name]) } }
+    others = all.reject { |t| (data_tables + health_data_tables + attachment_tables + log_tables + rails_tables + system_tables).include?(t[:name]) }
     groups << { label: t("db.groups.other"), tables: others } if others.any?
     groups
+  end
+
+  def db_column_width_class(column)
+    case column.to_s
+    when "id", /_id\z/
+      "min-w-[5rem] max-w-[6rem] w-[5rem]"
+    when /\A(created_at|updated_at|occurred_at|last_synced_at|last_successful_sync_at|start_at|end_at)\z/
+      "min-w-[10rem] max-w-[12rem] w-[10rem]"
+    when "record_type"
+      "min-w-[10rem] max-w-[14rem] w-[10rem]"
+    when "external_id"
+      "min-w-[8rem] max-w-[12rem] w-[8rem]"
+    when "status", "phase"
+      "min-w-[7rem] max-w-[8rem] w-[7rem]"
+    when /count\z/, /total\z/
+      "min-w-[7rem] max-w-[8rem] w-[7rem]"
+    when "device_id", "source_ref"
+      "min-w-[11rem] max-w-[13rem] w-[11rem]"
+    when "details", "payload", "response_body", "request_body", "parseable_data", "facts", "input"
+      "min-w-[16rem] max-w-[24rem] w-[16rem]"
+    else
+      "min-w-[9rem] max-w-[12rem] w-[9rem]"
+    end
+  end
+
+  def db_cell_text_class(column)
+    if column.to_s.match?(/\Aid\z|_id\z|\A(created_at|updated_at|occurred_at|last_synced_at|last_successful_sync_at|start_at|end_at)\z|\Adevice_id\z|\Aexternal_id\z/)
+      "font-mono text-[11px]"
+    else
+      ""
+    end
   end
 
   def shell_menu_item_class(active = false)

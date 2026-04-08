@@ -1,7 +1,25 @@
 <% table[:rows].each do |row| %>
   <tr>
     <% table[:columns].each do |column| %>
-      <td class="min-w-[10rem] max-w-[24rem] px-4 py-3 align-top text-xs leading-5 text-slate-700 whitespace-normal break-words [overflow-wrap:anywhere]"><%= row[column].presence || "-" %></td>
+      <% value = row[column].presence || "-" %>
+      <% value_text = value.to_s %>
+      <% expandable = value_text.length > 120 || value_text.include?("\n") %>
+      <td class="<%= db_column_width_class(column) %> px-4 py-3 align-top text-xs leading-5 text-slate-700 whitespace-normal break-words [overflow-wrap:anywhere] <%= db_cell_text_class(column) %>">
+        <% if expandable %>
+          <details class="group">
+            <summary class="list-none cursor-pointer">
+              <div class="space-y-2">
+                <div class="line-clamp-3 whitespace-pre-wrap break-words [overflow-wrap:anywhere]"><%= value_text %></div>
+                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 transition group-open:hidden"><%= t("db.table.expand") %></span>
+                <span class="hidden items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 group-open:inline-flex"><%= t("db.table.collapse") %></span>
+              </div>
+            </summary>
+            <div class="mt-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3 whitespace-pre-wrap break-words [overflow-wrap:anywhere]"><%= value_text %></div>
+          </details>
+        <% else %>
+          <div class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]"><%= value_text %></div>
+        <% end %>
+      </td>
     <% end %>
     <% if table[:deletable] %>
       <td class="min-w-[8rem] px-4 py-3 align-top text-xs">

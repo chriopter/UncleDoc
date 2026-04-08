@@ -2,7 +2,7 @@ require "test_helper"
 
 class LlmChatRequestTest < ActiveSupport::TestCase
   test "stores raw request and raw response" do
-    preference = UserPreference.current
+    preference = AppSetting.current
     preference.update!(llm_provider: "ollama", llm_model: "llama3")
     person = Person.create!(name: "Peter", birth_date: Date.new(2020, 1, 1))
 
@@ -41,7 +41,7 @@ class LlmChatRequestTest < ActiveSupport::TestCase
   end
 
   test "stores raw error on failed response" do
-    preference = UserPreference.current
+    preference = AppSetting.current
     preference.update!(llm_provider: "ollama", llm_model: "llama3")
 
     fake_response = Struct.new(:code, :body).new("500", '{"error":"boom"}')

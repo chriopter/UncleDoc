@@ -78,7 +78,8 @@ UncleDoc starts with a simple model: a person, a timeline of entries, and option
 | --- | --- | --- |
 | `Person` | Household member being tracked | `name`, `birth_date`, `baby_mode`, `uuid` |
 | `Entry` | Main timeline item for manual logs and generated summaries | `input`, `occurred_at`, `facts`, `parseable_data`, `parse_status`, `source` |
-| `UserPreference` | Saved app and LLM preferences | locale, date format, provider, model |
+| `UserPreference` | Saved display preferences | locale, date format |
+| `AppSetting` | Saved global LLM configuration | provider, model, encrypted API key |
 | `HealthkitRecord` / `HealthkitSync` | Raw imported iOS health data and sync state | source payloads, sync metadata |
 
 </details>

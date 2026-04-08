@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_07_194000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_08_120000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -37,6 +37,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_194000) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "app_settings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "llm_api_key"
+    t.string "llm_model"
+    t.string "llm_provider"
+    t.datetime "updated_at", null: false
   end
 
   create_table "entries", force: :cascade do |t|
@@ -123,9 +131,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_194000) do
   create_table "user_preferences", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "date_format"
-    t.text "llm_api_key_ciphertext"
-    t.string "llm_model"
-    t.string "llm_provider"
     t.string "locale"
     t.datetime "updated_at", null: false
   end

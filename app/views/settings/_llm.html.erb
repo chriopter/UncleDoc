@@ -1,4 +1,4 @@
-<% llm_ready = user_preference.llm_model.present? && (user_preference.llm_api_key_configured? || user_preference.llm_provider == "ollama") %>
+<% llm_ready = app_setting.llm_model.present? && (app_setting.llm_api_key_configured? || app_setting.llm_provider == "ollama") %>
 <% open_logs = @section == "llm_logs" %>
 
 <section class="rounded-[2rem] border border-white/70 bg-white/90 p-5 ring-1 ring-black/5 backdrop-blur">
@@ -22,19 +22,19 @@
       <% end %>
     </div>
 
-    <%= form_with url: settings_path(section: :llm), method: :patch, class: "space-y-3", data: { controller: "llm-settings", llm_settings_path_value: settings_llm_models_path, llm_settings_initial_model_value: user_preference.llm_model.to_s } do |form| %>
+    <%= form_with url: settings_path(section: :llm), method: :patch, class: "space-y-3", data: { controller: "llm-settings", llm_settings_path_value: settings_llm_models_path, llm_settings_initial_model_value: app_setting.llm_model.to_s } do |form| %>
       <div class="grid gap-3 sm:grid-cols-[1fr_2fr]">
         <div class="space-y-1.5">
           <%= form.label :llm_provider, t("settings.llm.provider_label"), class: "text-sm font-semibold text-slate-700" %>
-          <%= form.select :llm_provider, UserPreference::LLM_PROVIDERS.keys.map { |provider| [t("settings.llm.providers.#{provider}.name"), provider] }, { selected: current_llm_provider }, class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200", data: { llm_settings_target: "provider", action: "change->llm-settings#lookup" } %>
+          <%= form.select :llm_provider, AppSetting::LLM_PROVIDERS.keys.map { |provider| [t("settings.llm.providers.#{provider}.name"), provider] }, { selected: current_llm_provider }, class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200", data: { llm_settings_target: "provider", action: "change->llm-settings#lookup" } %>
         </div>
 
         <div class="space-y-1.5">
           <div class="flex items-center justify-between gap-3">
             <%= form.label :llm_api_key, t("settings.llm.api_key_title"), class: "text-sm font-semibold text-slate-700" %>
-            <span class="text-xs text-slate-500"><%= user_preference.llm_api_key_configured? ? t("settings.llm.api_key_saved") : t("settings.llm.api_key_missing") %></span>
+            <span class="text-xs text-slate-500"><%= app_setting.llm_api_key_configured? ? t("settings.llm.api_key_saved") : t("settings.llm.api_key_missing") %></span>
           </div>
-        <%= form.password_field :llm_api_key, autocomplete: "off", placeholder: user_preference.llm_api_key_configured? ? "••••••••••••••••" : t("settings.llm.api_key_placeholder"), class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-200", data: { llm_settings_target: "apiKey", action: "blur->llm-settings#lookup input->llm-settings#queueLookup" } %>
+        <%= form.password_field :llm_api_key, autocomplete: "off", placeholder: app_setting.llm_api_key_configured? ? "••••••••••••••••" : t("settings.llm.api_key_placeholder"), class: "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-200", data: { llm_settings_target: "apiKey", action: "blur->llm-settings#lookup input->llm-settings#queueLookup" } %>
         </div>
       </div>
 

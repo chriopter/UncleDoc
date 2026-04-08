@@ -6,7 +6,7 @@ class EntryDataParserTest < ActiveSupport::TestCase
     entry = person.entries.create!(input: "seed", occurred_at: Time.current, facts: [], parseable_data: [], parse_status: "pending")
     entry.documents.attach(io: StringIO.new("Ibuprofen 400mg invoice"), filename: "invoice.txt", content_type: "text/plain")
 
-    preference = UserPreference.current
+    preference = AppSetting.current
     preference.llm_api_key = "test-key"
     preference.llm_provider = "openrouter"
     preference.llm_model = "openai/gpt-5.4"
@@ -91,7 +91,7 @@ class EntryDataParserTest < ActiveSupport::TestCase
       parse_status: "pending"
     )
 
-    preference = UserPreference.current
+    preference = AppSetting.current
     preference.llm_provider = "ollama"
     preference.llm_model = "llama3"
     preference.save!
