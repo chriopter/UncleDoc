@@ -1,6 +1,33 @@
 require "test_helper"
 
 class HealthkitControllerTest < ActionDispatch::IntegrationTest
+  test "sync accepts native app bearer auth without a csrf token" do
+    original = ActionController::Base.allow_forgery_protection
+    ActionController::Base.allow_forgery_protection = true
+
+    user = users(:one)
+    token = user.ensure_native_app_token!
+    person = user.person
+
+    post "/ios/healthkit/sync",
+      params: {
+        person_uuid: person.uuid,
+        device_id: "device-a",
+        status: "syncing",
+        phase: "manual",
+        batch_count: 0,
+        completed: false,
+        records: []
+      },
+      as: :json,
+      headers: { "Authorization" => "Bearer #{token}" }
+
+    assert_response :success
+    assert_equal "syncing", person.healthkit_syncs.find_by!(device_id: "device-a").status
+  ensure
+    ActionController::Base.allow_forgery_protection = original
+  end
+
   test "status returns the requested device sync when device_id is provided" do
     person = Person.create!(name: "Multi Device", birth_date: Date.new(2024, 3, 10))
     older_sync = HealthkitSync.create!(
