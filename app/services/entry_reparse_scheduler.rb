@@ -38,13 +38,11 @@ class EntryReparseScheduler
   private
 
   def mark_entries_pending
-    count = 0
+    scope = pending_scope.where.not(parse_status: "pending")
+    count = scope.count
+    return 0 if count.zero?
 
-    pending_scope.find_each do |entry|
-      entry.update!(extracted_data: EMPTY_EXTRACTED_DATA, parse_status: "pending")
-      count += 1
-    end
-
+    scope.update_all(extracted_data: EMPTY_EXTRACTED_DATA, parse_status: "pending", updated_at: Time.current)
     count
   end
 

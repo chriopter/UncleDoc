@@ -139,6 +139,18 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "measurement", baby_entry.fact_objects.first["kind"]
   end
 
+  test "global reparse does not enqueue chat context refresh jobs for every marked entry" do
+    AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
+    person = Person.create!(name: "Quiet Reparse Person", birth_date: Date.new(2024, 1, 1))
+    3.times do |index|
+      person.entries.create!(input: "reparse #{index}", occurred_at: Time.zone.local(2026, 4, 8, 10, index), parse_status: "parsed", extracted_data: { "facts" => [ { "text" => "Old", "kind" => "note" } ], "document" => {}, "llm" => { "status" => "structured" } })
+    end
+
+    assert_no_enqueued_jobs only: ResearchChatContextRefreshJob do
+      post settings_llm_reparse_all_url
+    end
+  end
+
   test "shows dedicated llm prompt page" do
     get settings_url(section: "llm_prompt")
 
