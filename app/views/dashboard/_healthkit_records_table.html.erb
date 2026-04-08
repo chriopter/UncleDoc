@@ -4,8 +4,10 @@
       <div>
         <h3 class="text-lg font-bold"><%= table[:name] %></h3>
         <p class="mt-1 text-xs text-slate-300">
-          <%= t(table[:count] == 1 ? "db.table.count" : "db.table.count_plural", count: table[:count]) %>
-          · <%= t("db.table.loaded_count", count: table[:rendered_count]) %>
+          <%= t("db.table.loaded_count", count: table[:rendered_count]) %>
+          <% if table[:count].present? %>
+            · <%= t(table[:count] == 1 ? "db.table.count" : "db.table.count_plural", count: table[:count]) %>
+          <% end %>
           <% if table[:order_column].present? %>
             · <%= t("db.table.sorted_by", column: table[:order_column]) %>
           <% end %>
