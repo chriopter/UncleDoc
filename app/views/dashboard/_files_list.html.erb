@@ -46,6 +46,9 @@
                       <%= link_to person_files_path(person_slug: entry.person.name, year: params[:year], doc_type: params[:doc_type], entry_id: entry.id), class: "min-w-0 flex-1 truncate text-xs font-medium text-slate-700 hover:text-slate-950" do %>
                         <%= entry.document_title.presence || entry.document_names.join(", ").presence || t("files.list.document_only") %>
                       <% end %>
+                      <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] <%= entry.failed_parse? ? 'bg-red-600 text-white' : entry.pending_parse? ? 'bg-amber-500 text-white' : 'bg-slate-700 text-white' %>">
+                        <%= entry.failed_parse? ? t("entries.tags.parse_error") : entry.pending_parse? ? t("entries.tags.pending") : t("entries.tags.skipped") %>
+                      </span>
                       <% unless entry.babywidget_generated? %>
                         <%= button_to reparse_person_entry_path(entry.person, entry), method: :patch,
                             class: "shrink-0 rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-800",
