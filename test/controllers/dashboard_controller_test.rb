@@ -378,6 +378,24 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Re-parse HealthKit entries"
   end
 
+  test "healthkit page uses browser time zone cookie for displayed times" do
+    person = Person.create!(name: "ZoneKit", birth_date: Date.new(2024, 1, 1))
+    person.healthkit_syncs.create!(
+      device_id: "iphone-main",
+      status: "synced",
+      last_synced_at: Time.utc(2026, 4, 6, 7, 30),
+      last_successful_sync_at: Time.utc(2026, 4, 6, 7, 30),
+      synced_record_count: 42
+    )
+
+    cookies[:browser_time_zone] = "Europe/Berlin"
+
+    get person_healthkit_url(person_slug: person.name)
+
+    assert_response :success
+    assert_includes @response.body, "09:30"
+  end
+
   test "healthkit page shows stats and links to log" do
     person = Person.create!(name: "PagedKit", birth_date: Date.new(2024, 1, 1))
 

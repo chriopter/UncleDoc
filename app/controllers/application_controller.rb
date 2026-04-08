@@ -8,6 +8,7 @@ class ApplicationController < ActionController::Base
   stale_when_importmap_changes
 
   before_action :set_locale_from_preferences
+  around_action :use_browser_time_zone
   before_action :load_family_members
   before_action :set_current_person
   before_action :initialize_entry_for_current_person
@@ -22,6 +23,12 @@ class ApplicationController < ActionController::Base
 
   def set_locale_from_preferences
     I18n.locale = current_locale
+  end
+
+  def use_browser_time_zone(&block)
+    zone_name = browser_time_zone_name
+    zone = zone_name.present? ? ActiveSupport::TimeZone[zone_name] : nil
+    zone ? Time.use_zone(zone, &block) : yield
   end
 
   def load_family_members
@@ -93,6 +100,10 @@ class ApplicationController < ActionController::Base
     return unless request.user_agent.to_s.include?("UncleDoc iOS") && current_user.present?
 
     @current_native_app_token ||= current_user.ensure_native_app_token!
+  end
+
+  def browser_time_zone_name
+    params[:time_zone].presence || cookies[:browser_time_zone].presence || request.headers["X-Time-Zone"].presence
   end
 
   def user_preference
