@@ -51,19 +51,6 @@ UncleDoc keeps the active LLM system prompts in Markdown files under `prompts/`.
 
 Install with Docker.
 
-Create these two files:
-
-- `compose.yml`
-- `.env.docker`
-
-Run:
-
-```bash
-docker compose up -d
-```
-
-Then open `http://127.0.0.1:3000` after the container becomes healthy.
-
 <details>
 <summary>compose.yml</summary>
 
@@ -94,6 +81,7 @@ volumes:
 
 </details>
 
+
 <details>
 <summary>.env.docker</summary>
 
@@ -118,6 +106,19 @@ SECRET_KEY_BASE=replace_with_long_random_secret
 ```
 
 </details>
+
+
+
+Run:
+
+```bash
+docker compose up -d
+```
+
+Then open `http://127.0.0.1:3000` after the container becomes healthy.
+
+
+
 
 <details>
 <summary>Container tags</summary>
