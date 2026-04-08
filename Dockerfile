@@ -28,9 +28,9 @@ ARG GIT_COMMIT_SUBJECT=unknown
 
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
-    BUNDLE_JOBS="1" \
+    BUNDLE_JOBS="4" \
     BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development" \
+    BUNDLE_WITHOUT="development:test" \
     APP_REVISION="$GIT_SHA" \
     APP_COMMIT_SUBJECT="$GIT_COMMIT_SUBJECT"
 
@@ -41,7 +41,7 @@ FROM base AS build
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libyaml-dev pkg-config && \
+    apt-get install --no-install-recommends -y build-essential libyaml-dev pkg-config && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install application gems
