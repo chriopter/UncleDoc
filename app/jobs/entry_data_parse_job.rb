@@ -4,7 +4,8 @@ class EntryDataParseJob < ApplicationJob
   def perform(entry_id)
     entry = Entry.find_by(id: entry_id)
     return unless entry
-    return if entry.parsed? && entry.parseable_data.present?
+    return if entry.babywidget_generated?
+    return if entry.parsed? && entry.fact_objects.present?
 
     result = EntryDataParser.call(input: entry.input, preference: AppSetting.current, entry: entry)
     if result.error.present?
@@ -14,7 +15,7 @@ class EntryDataParseJob < ApplicationJob
     end
 
     if entry.reload.pending_parse?
-      attributes = { facts: result.facts, parseable_data: result.parseable_data, llm_response: result.llm_response, parse_status: "parsed" }
+      attributes = { extracted_data: { "facts" => result.facts, "llm" => result.llm }, parse_status: "parsed" }
       attributes[:occurred_at] = result.occurred_at if result.occurred_at.present?
       entry.update!(attributes)
       broadcast_entries(entry.person)

@@ -1,4 +1,15 @@
 class EntryFactListBuilder
+  def self.fact_objects(parseable_data, locale: I18n.locale)
+    Array(parseable_data).filter_map.with_index do |item, index|
+      next unless item.is_a?(Hash)
+
+      text = call([ item ], locale: locale).first
+      next if text.blank?
+
+      Entry.build_fact_object_from_legacy_item(item.deep_stringify_keys, text)
+    end
+  end
+
   def self.call(parseable_data, locale: I18n.locale)
     I18n.with_locale(locale) do
       Array(parseable_data).filter_map do |item|

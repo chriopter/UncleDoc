@@ -3,11 +3,12 @@ class BabyQuickActionsController < ApplicationController
   before_action :ensure_baby_mode
 
   def diaper
+    payload = diaper_payload
     @person.entries.create!(
       occurred_at: Time.current,
       input: diaper_note,
-      facts: EntryFactListBuilder.call([ diaper_payload ]),
-      parseable_data: [ diaper_payload ],
+      extracted_data: { "facts" => EntryFactListBuilder.fact_objects([ payload ]), "llm" => {} },
+      parse_status: "parsed",
       source: Entry::SOURCES[:babywidget]
     )
 
@@ -27,8 +28,8 @@ class BabyQuickActionsController < ApplicationController
     @person.entries.create!(
       occurred_at: Time.current,
       input: t("baby.bottle.note", amount: amount),
-      facts: EntryFactListBuilder.call([ { "type" => "bottle_feeding", "value" => amount, "unit" => "ml" } ]),
-      parseable_data: [ { "type" => "bottle_feeding", "value" => amount, "unit" => "ml" } ],
+      extracted_data: { "facts" => EntryFactListBuilder.fact_objects([ { "type" => "bottle_feeding", "value" => amount, "unit" => "ml" } ]), "llm" => {} },
+      parse_status: "parsed",
       source: Entry::SOURCES[:babywidget]
     )
 

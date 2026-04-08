@@ -17,17 +17,14 @@ class EntriesController < ApplicationController
   def create
     @entry = @person.entries.build(model_entry_params)
     attach_uploaded_documents(@entry)
-    populate_facts_from_parseable_data(@entry)
-    should_enqueue_parse = @entry.parseable_data.blank? && entry_has_parseable_source?(@entry, documents_added: uploaded_documents_present?) && EntryDataParser.ready?
+    should_enqueue_parse = @entry.fact_objects.blank? && entry_has_parseable_source?(@entry, documents_added: uploaded_documents_present?) && EntryDataParser.ready? && !@entry.babywidget_generated?
 
-    if @entry.has_attribute?(:parse_status)
-      @entry.parse_status = if @entry.parseable_data.present?
-        "parsed"
-      elsif should_enqueue_parse
-        "pending"
-      else
-        "skipped"
-      end
+    @entry.parse_status = if @entry.fact_objects.present?
+      "parsed"
+    elsif should_enqueue_parse
+      "pending"
+    else
+      "skipped"
     end
 
     if @entry.save
@@ -78,6 +75,8 @@ class EntriesController < ApplicationController
   end
 
   def reparse
+    return redirect_back fallback_location: person_log_path(person_slug: @person.name) if @entry.babywidget_generated?
+
     force_reparse(@entry)
     @entry.save!
 
@@ -91,7 +90,6 @@ class EntriesController < ApplicationController
 
   def update
     @entry.assign_attributes(entry_params)
-    populate_facts_from_parseable_data(@entry)
     should_enqueue_parse = prepare_reparse(@entry, documents_added: uploaded_documents_present?)
 
     if @entry.save
@@ -167,12 +165,9 @@ class EntriesController < ApplicationController
   end
 
   def force_reparse(entry)
-    entry.facts = [] if entry.has_attribute?(:facts)
-    entry.parseable_data = []
-    entry.llm_response = {} if entry.has_attribute?(:llm_response)
+    entry.extracted_data = { "facts" => [], "llm" => {} }
     entry.todo_done = false if entry.has_attribute?(:todo_done)
     entry.todo_done_at = nil if entry.has_attribute?(:todo_done_at)
-    return false unless entry.has_attribute?(:parse_status)
 
     if EntryDataParser.ready?
       entry.parse_status = "pending"
@@ -181,13 +176,6 @@ class EntriesController < ApplicationController
       entry.parse_status = "skipped"
       false
     end
-  end
-
-  def populate_facts_from_parseable_data(entry)
-    return unless entry.has_attribute?(:facts)
-    return if entry.facts.present? || entry.parseable_data.blank?
-
-    entry.facts = EntryFactListBuilder.call(entry.parseable_data)
   end
 
   def uploaded_documents_present?

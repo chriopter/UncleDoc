@@ -27,16 +27,18 @@
     </svg>
   <% end %>
 
-  <%= button_to reparse_person_entry_path(entry.person, entry), method: :patch,
-      class: "inline-flex items-center rounded-full border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800",
-      aria: { label: t("entries.reparse.trigger") } do %>
-    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 1 0 3-6.708" />
-      <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5V10h5.5" />
-    </svg>
+  <% unless entry.babywidget_generated? %>
+    <%= button_to reparse_person_entry_path(entry.person, entry), method: :patch,
+        class: "inline-flex items-center rounded-full border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800",
+        aria: { label: t("entries.reparse.trigger") } do %>
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 1 0 3-6.708" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5V10h5.5" />
+      </svg>
+    <% end %>
   <% end %>
 
-  <% if entry.parseable_data.present? %>
+  <% if entry.fact_objects.present? %>
     <details class="relative">
       <summary class="flex cursor-pointer list-none items-center rounded-full border border-slate-200 bg-white p-1.5 text-slate-500 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800">
         <span class="sr-only"><%= t("entries.raw_data.toggle") %></span>
@@ -50,7 +52,7 @@
         <div class="border-b border-slate-200 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
           <%= t("entries.raw_data.toggle") %>
         </div>
-        <pre class="max-h-80 overflow-auto px-4 py-3 text-[11px] leading-5 text-slate-700 whitespace-pre-wrap break-words"><%= JSON.pretty_generate(entry.parseable_data) %></pre>
+        <pre class="max-h-80 overflow-auto px-4 py-3 text-[11px] leading-5 text-slate-700 whitespace-pre-wrap break-words"><%= JSON.pretty_generate(entry.extracted_data) %></pre>
       </div>
     </details>
   <% end %>

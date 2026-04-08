@@ -7,9 +7,7 @@ class HealthkitSummaryReparseJob < ApplicationJob
 
     person.entries.where(source: Entry::SOURCES[:healthkit]).find_each do |entry|
       entry.update!(
-        facts: [],
-        parseable_data: [],
-        llm_response: {},
+        extracted_data: { "facts" => [], "llm" => {} },
         parse_status: EntryDataParser.ready? ? "pending" : "skipped"
       )
 

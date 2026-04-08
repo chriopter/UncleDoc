@@ -4,16 +4,17 @@ class Entry < ApplicationRecord
 
   PARSE_STATUSES = %w[pending parsed failed skipped].freeze
   SOURCES = { manual: "manual", babywidget: "babywidget", healthkit: "healthkit" }.freeze
+  FACT_KINDS = %w[measurement appointment todo medication vaccination symptom summary note].freeze
   DOCUMENT_CONTENT_TYPES = %w[application/pdf image/png image/jpeg text/plain].freeze
   MAX_DOCUMENT_COUNT = 5
   MAX_DOCUMENT_SIZE = 10.megabytes
 
   validates :occurred_at, presence: true
-  validates :parse_status, inclusion: { in: PARSE_STATUSES }, if: -> { has_attribute?(:parse_status) }
-  validates :source, inclusion: { in: SOURCES.values }, if: -> { has_attribute?(:source) }
-  validate :parseable_data_must_be_array
-  validate :facts_must_be_array
-  validate :llm_response_must_be_hash
+  validates :parse_status, inclusion: { in: PARSE_STATUSES }
+  validates :source, inclusion: { in: SOURCES.values }
+  validate :extracted_data_must_be_hash
+  validate :fact_objects_must_be_valid
+  validate :llm_metadata_must_be_hash
   validate :input_or_documents_present
   validate :documents_are_supported
 
@@ -22,14 +23,62 @@ class Entry < ApplicationRecord
   scope :recent_first, -> { order(occurred_at: :desc, created_at: :desc) }
   scope :entered_first, -> { order(created_at: :desc, occurred_at: :desc) }
   scope :with_documents, -> { includes(documents_attachments: :blob).where.associated(:documents_attachments).distinct }
-  scope :by_parseable_data_type, ->(type) {
-    where("EXISTS (SELECT 1 FROM json_each(entries.parseable_data) WHERE json_extract(value, '$.type') = ?)", type)
-  }
   scope :healthkit_generated, -> { where(source: SOURCES[:healthkit]) }
   scope :babywidget_generated, -> { where(source: SOURCES[:babywidget]) }
+  scope :by_parseable_data_type, ->(type) {
+    normalized_type = type.to_s
+    facts_path = "json_each(entries.extracted_data, '$.facts')"
+
+    case normalized_type
+    when "appointment", "todo", "medication", "vaccination", "symptom", "note"
+      where("EXISTS (SELECT 1 FROM #{facts_path} WHERE json_extract(value, '$.kind') = ?)", normalized_type)
+    when "healthkit_summary"
+      where("EXISTS (SELECT 1 FROM #{facts_path} WHERE json_extract(value, '$.kind') = 'summary' AND json_extract(value, '$.value') = 'Apple Health')")
+    else
+      where("EXISTS (SELECT 1 FROM #{facts_path} WHERE json_extract(value, '$.kind') = 'measurement' AND json_extract(value, '$.metric') = ?)", normalized_type)
+    end
+  }
+
+  def fact_objects
+    facts_value.is_a?(Array) ? facts_value.filter_map { |item| item.is_a?(Hash) ? item.deep_stringify_keys : nil } : []
+  end
+
+  def facts
+    fact_items
+  end
+
+  def facts=(value)
+    @legacy_fact_texts = Array(value).filter_map do |item|
+      case item
+      when Hash
+        normalized = item.deep_stringify_keys
+        normalized["text"].to_s.strip.presence
+      else
+        item.to_s.strip.presence
+      end
+    end
+    sync_legacy_payloads
+  end
+
+  def llm_response
+    llm_metadata
+  end
+
+  def llm_response=(value)
+    update_extracted_data("llm", normalize_hash(value))
+  end
+
+  def parseable_data
+    fact_objects.filter_map { |fact| legacy_parseable_item_for(fact) }
+  end
+
+  def parseable_data=(value)
+    @legacy_parseable_data = Array(value).filter_map { |item| item.is_a?(Hash) ? item.deep_stringify_keys : nil }
+    sync_legacy_payloads
+  end
 
   def parseable_data_of_type(type)
-    parseable_data_items.select { |item| item["type"] == type }
+    parseable_data.select { |item| item["type"] == type }
   end
 
   def first_parseable_data_of_type(type)
@@ -53,11 +102,11 @@ class Entry < ApplicationRecord
   end
 
   def appointment?
-    parseable_data_of_type("appointment").any?
+    fact_objects.any? { |fact| fact["kind"] == "appointment" }
   end
 
   def todo?
-    parseable_data_of_type("todo").any?
+    fact_objects.any? { |fact| fact["kind"] == "todo" }
   end
 
   def feeding?
@@ -87,11 +136,11 @@ class Entry < ApplicationRecord
   end
 
   def appointment_data
-    first_parseable_data_of_type("appointment") || {}
+    fact_objects.find { |fact| fact["kind"] == "appointment" } || {}
   end
 
   def todo_data
-    first_parseable_data_of_type("todo") || {}
+    fact_objects.find { |fact| fact["kind"] == "todo" } || {}
   end
 
   def diaper_rash?
@@ -115,7 +164,7 @@ class Entry < ApplicationRecord
   end
 
   def fact_items
-    facts.is_a?(Array) ? facts.filter_map { |item| item.to_s.strip.presence } : []
+    fact_objects.filter_map { |fact| fact["text"].to_s.strip.presence }
   end
 
   def fact_summary
@@ -135,19 +184,19 @@ class Entry < ApplicationRecord
   end
 
   def pending_parse?
-    current_parse_status == "pending"
+    parse_status == "pending"
   end
 
   def parsed?
-    current_parse_status == "parsed"
+    parse_status == "parsed"
   end
 
   def failed_parse?
-    current_parse_status == "failed"
+    parse_status == "failed"
   end
 
   def skipped_parse?
-    current_parse_status == "skipped"
+    parse_status == "skipped"
   end
 
   def todo_open?
@@ -170,40 +219,48 @@ class Entry < ApplicationRecord
     appointment_data["value"].presence
   end
 
+  def llm_metadata
+    llm_value.is_a?(Hash) ? llm_value.deep_stringify_keys : {}
+  end
+
   def time_since
     return nil unless display_time
 
     Time.current - display_time
   end
 
-  private
-
   def self.sorted_by(mode)
     mode.to_s == "entered" ? entered_first : recent_first
   end
 
+  private
+
   def normalize_defaults
-    self[:parseable_data] = [] if has_attribute?(:parseable_data) && self[:parseable_data].nil?
-    self[:facts] = [] if has_attribute?(:facts) && self[:facts].nil?
-    self[:llm_response] = {} if has_attribute?(:llm_response) && self[:llm_response].nil?
+    self.extracted_data = default_extracted_data if extracted_data.blank?
     self.occurred_at ||= Time.current
-    self.parse_status ||= parseable_data_value.present? ? "parsed" : "pending" if has_attribute?(:parse_status)
+    self.parse_status ||= fact_objects.present? ? "parsed" : "pending"
   end
 
-  def current_parse_status
-    return parse_status if has_attribute?(:parse_status)
-
-    parseable_data_value.present? ? "parsed" : "pending"
+  def sync_legacy_payloads
+    fact_texts = @legacy_fact_texts.nil? ? fact_items : @legacy_fact_texts
+    parseable_items = @legacy_parseable_data.nil? ? parseable_data : @legacy_parseable_data
+    fact_objects = self.class.build_fact_objects_from_legacy(fact_texts, parseable_items)
+    update_extracted_data("facts", fact_objects)
   end
 
-  def parseable_data_items
-    parseable_data_value.is_a?(Array) ? parseable_data_value : []
+  def extracted_data_must_be_hash
+    errors.add(:extracted_data, :invalid) unless extracted_data.is_a?(Hash)
   end
 
-  def parseable_data_must_be_array
-    return if parseable_data_value.is_a?(Array)
+  def fact_objects_must_be_valid
+    fact_objects.each do |fact|
+      errors.add(:extracted_data, :invalid) and return if fact["text"].to_s.strip.blank?
+      errors.add(:extracted_data, :invalid) and return unless FACT_KINDS.include?(fact["kind"])
+    end
+  end
 
-    errors.add(:parseable_data, :invalid)
+  def llm_metadata_must_be_hash
+    errors.add(:extracted_data, :invalid) unless llm_metadata.is_a?(Hash)
   end
 
   def input_or_documents_present
@@ -230,20 +287,6 @@ class Entry < ApplicationRecord
     end
   end
 
-  def facts_must_be_array
-    return unless has_attribute?(:facts)
-    return if facts.is_a?(Array) && facts.all? { |item| item.is_a?(String) }
-
-    errors.add(:facts, :invalid)
-  end
-
-  def llm_response_must_be_hash
-    return unless has_attribute?(:llm_response)
-    return if self[:llm_response].is_a?(Hash)
-
-    errors.add(:llm_response, :invalid)
-  end
-
   def numeric_value(value)
     return value if value.is_a?(Numeric)
     return value.to_i if value.to_s.match?(/\A-?\d+\z/)
@@ -252,7 +295,99 @@ class Entry < ApplicationRecord
     nil
   end
 
-  def parseable_data_value
-    has_attribute?(:parseable_data) ? self[:parseable_data] : nil
+  def facts_value
+    extracted_data.is_a?(Hash) ? extracted_data["facts"] || extracted_data[:facts] : []
+  end
+
+  def llm_value
+    extracted_data.is_a?(Hash) ? extracted_data["llm"] || extracted_data[:llm] : {}
+  end
+
+  def update_extracted_data(key, value)
+    base = extracted_data.is_a?(Hash) ? extracted_data.deep_stringify_keys : default_extracted_data
+    base[key] = value
+    self.extracted_data = base
+  end
+
+  def default_extracted_data
+    { "facts" => [], "llm" => {} }
+  end
+
+  def normalize_hash(value)
+    value.is_a?(Hash) ? value.deep_stringify_keys : {}
+  end
+
+  def legacy_parseable_item_for(fact)
+    case fact["kind"]
+    when "measurement"
+      measurement_parseable_item_for(fact)
+    when "medication", "vaccination", "appointment", "todo", "symptom", "note"
+      fact.slice("value", "dose", "location", "quality", "scheduled_for", "due_at", "flag", "ref", "result").merge("type" => fact["kind"])
+    when "summary"
+      return nil unless fact["value"] == "Apple Health"
+
+      { "type" => "healthkit_summary", "value" => fact["value"], "quality" => fact["quality"] }.compact
+    end
+  end
+
+  def measurement_parseable_item_for(fact)
+    metric = fact["metric"].presence
+    return unless metric
+
+    item = { "type" => metric }
+    %w[value unit side dose wet solid rash flag location quality systolic diastolic scheduled_for due_at ref result].each do |key|
+      item[key] = fact[key] if fact.key?(key)
+    end
+    item.compact
+  end
+
+  class << self
+    def build_fact_objects_from_legacy(fact_texts, parseable_items)
+      texts = Array(fact_texts)
+      items = Array(parseable_items).filter_map { |item| item.is_a?(Hash) ? item.deep_stringify_keys : nil }
+
+      if items.present?
+        built_facts = items.each_with_index.map do |item, index|
+          build_fact_object_from_legacy_item(item, texts[index])
+        end.compact
+
+        extra_texts = texts.drop(items.length)
+        built_facts + extra_texts.filter_map { |text| note_fact(text) }
+      else
+        texts.filter_map { |text| note_fact(text) }
+      end
+    end
+
+    def build_fact_object_from_legacy_item(item, text = nil)
+      type = item["type"].to_s
+      text ||= EntryFactListBuilder.call([ item ]).first
+      return unless text.present?
+
+      case type
+      when "appointment", "todo", "medication", "vaccination", "symptom", "note"
+        fact_hash(text, type, item.except("type"))
+      when "healthkit_summary"
+        fact_hash(text, "summary", item.except("type"))
+      else
+        fact_hash(text, "measurement", item.except("type").merge("metric" => type))
+      end
+    end
+
+    def note_fact(text)
+      normalized_text = text.to_s.strip
+      return if normalized_text.blank?
+
+      fact_hash(normalized_text, "note", {})
+    end
+
+    def fact_hash(text, kind, attributes)
+      normalized = { "text" => text.to_s.strip, "kind" => kind.to_s }
+      attributes.each do |key, value|
+        next if value.blank? && value != false
+
+        normalized[key.to_s] = value
+      end
+      normalized
+    end
   end
 end

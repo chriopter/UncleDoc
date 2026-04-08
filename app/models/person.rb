@@ -15,9 +15,7 @@ class Person < ApplicationRecord
   scope :baby_mode, -> { where(baby_mode: true) }
 
   def last_feeding
-    entries.where(
-      "EXISTS (SELECT 1 FROM json_each(entries.parseable_data) WHERE json_extract(value, '$.type') IN ('breast_feeding', 'bottle_feeding'))"
-    ).recent_first.first
+    entries.merge(Entry.by_parseable_data_type("breast_feeding").or(Entry.by_parseable_data_type("bottle_feeding"))).recent_first.first
   end
 
   def last_diaper
