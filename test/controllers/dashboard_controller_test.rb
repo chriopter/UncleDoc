@@ -131,10 +131,10 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     get person_log_url(person_slug: person.name)
 
     assert_response :success
-    assert_includes @response.body, "Log for Marlon"
+    assert_includes @response.body, I18n.t("dashboard.protocol.title", name: person.name)
     assert_includes @response.body, "Bottle feeding 120 ml"
     assert_includes @response.body, "Show raw data"
-    assert_includes @response.body, "Sending input to the LLM"
+    assert_includes @response.body, I18n.t("entries.tags.pending")
     assert_select "details[data-entry-collapsible='true']", minimum: 2
   end
 
