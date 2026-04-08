@@ -1,14 +1,24 @@
 class EntryExtractedDataRefreshService
-  Result = Struct.new(:rebuilt_count, :queued_count, keyword_init: true)
+  Result = Struct.new(:rebuilt_count, :queued_count, :scheduled, keyword_init: true)
 
-  def self.call
-    new.call
+  def self.call(batch_size: EntryReparseBatchJob::DEFAULT_BATCH_SIZE, max_pending: EntryReparseBatchJob::DEFAULT_MAX_PENDING, delay_seconds: EntryReparseBatchJob::DEFAULT_DELAY.to_i)
+    new(batch_size:, max_pending:, delay_seconds:).call
+  end
+
+  def initialize(batch_size:, max_pending:, delay_seconds:)
+    @batch_size = batch_size
+    @max_pending = max_pending
+    @delay_seconds = delay_seconds
   end
 
   def call
+    rebuilt_count = rebuild_babywidget_entries
+    scheduled = schedule_non_babywidget_reparse
+
     Result.new(
-      rebuilt_count: rebuild_babywidget_entries,
-      queued_count: queue_non_babywidget_reparse
+      rebuilt_count: rebuilt_count,
+      queued_count: scheduled ? [ @batch_size.to_i, [ @max_pending.to_i - Entry.where(parse_status: "pending").count, 0 ].max ].min : 0,
+      scheduled: scheduled
     )
   end
 
@@ -28,18 +38,12 @@ class EntryExtractedDataRefreshService
     rebuilt_count
   end
 
-  def queue_non_babywidget_reparse
-    queued_count = 0
+  def schedule_non_babywidget_reparse
+    return false unless EntryDataParser.ready?
+    return false unless Entry.where.not(source: Entry::SOURCES[:babywidget]).where.not(parse_status: "pending").exists?
 
-    Entry.where.not(source: Entry::SOURCES[:babywidget]).find_each do |entry|
-      entry.update!(extracted_data: { "facts" => [], "document" => {}, "llm" => {} }, parse_status: EntryDataParser.ready? ? "pending" : "skipped")
-      if entry.pending_parse?
-        EntryDataParseJob.perform_later(entry.id)
-        queued_count += 1
-      end
-    end
-
-    queued_count
+    EntryReparseBatchJob.perform_later(batch_size: @batch_size, max_pending: @max_pending, delay_seconds: @delay_seconds)
+    true
   end
 
   def babywidget_facts_for(entry)

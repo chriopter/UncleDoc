@@ -58,6 +58,9 @@ env:
     # Use uncle_doc-db for a db accessory server on same machine via local kamal docker network.
     # DB_HOST: your-db-host
 
+    # Solid Queue runs inside Puma in production, so the SQLite pool must cover web + job threads.
+    DB_POOL: 10
+
     # Log everything from Rails
     # RAILS_LOG_LEVEL: debug
 

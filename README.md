@@ -298,7 +298,10 @@ systemctl status uncledoc-dev.service
 systemctl restart uncledoc-dev.service
 systemctl stop uncledoc-dev.service
 journalctl -u uncledoc-dev.service -f
+BATCH_SIZE=25 MAX_PENDING=50 BATCH_DELAY=30 bin/rails entries:refresh_extracted_data
 ```
+
+The refresh task schedules reparsing in small batches so a mass reparse does not flood the server with parser jobs all at once.
 
 </details>
 
