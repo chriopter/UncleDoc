@@ -280,6 +280,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     parser_singleton.define_method(:call) do |**|
       EntryDataParser::Result.new(
         facts: [ "Doctor invoice follow-up needed" ],
+        document: { "type" => "invoice", "title" => "Doctor invoice from March 2026" },
         parseable_data: [ { "type" => "todo", "value" => "Pay doctor invoice" } ],
         occurred_at: Time.zone.local(2026, 3, 28, 10, 5, 0),
         llm_response: { "status" => "structured", "confidence" => "high", "note" => "Document parsed successfully." }
@@ -303,13 +304,15 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
 
     entry = Entry.order(:created_at).last
     assert_equal [ "Doctor invoice follow-up needed" ], entry.facts
+    assert_equal "invoice", entry.document_type
+    assert_equal "Doctor invoice from March 2026", entry.document_title
     assert_equal "parsed", entry.parse_status
 
     get person_files_url(person_slug: @person.name)
 
     assert_response :success
     assert_includes @response.body, "doctor-invoice.pdf"
-    assert_includes @response.body, "Doctor invoice follow-up needed"
+    assert_includes @response.body, "Doctor invoice from March 2026"
   end
 
   test "destroy removes an entry" do
