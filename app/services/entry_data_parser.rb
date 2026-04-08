@@ -70,7 +70,7 @@ class EntryDataParser
     Result.new(
       facts: facts,
       occurred_at: sanitize_occurred_at(payload["occurred_at"]),
-      document: sanitize_document(payload["document"]),
+      document: entry_documents(entry).present? ? sanitize_document(payload["document"]) : {},
       llm: sanitize_llm(payload["llm"] || payload["llm_response"])
     )
   rescue StandardError => error
