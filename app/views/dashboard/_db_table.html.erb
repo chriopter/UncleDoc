@@ -1,6 +1,6 @@
 <section class="space-y-6">
-  <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm ring-1 ring-black/5">
-    <div class="flex flex-col gap-3 border-b border-slate-200 bg-slate-950 px-5 py-4 text-white md:flex-row md:items-center md:justify-between">
+  <section class="min-w-max rounded-[2rem] border border-slate-200 bg-white shadow-sm ring-1 ring-black/5">
+    <div class="rounded-t-[2rem] flex flex-col gap-3 border-b border-slate-200 bg-slate-950 px-5 py-4 text-white md:flex-row md:items-center md:justify-between">
       <div>
         <h3 class="text-lg font-bold"><%= table[:name] %></h3>
         <p class="mt-1 text-xs text-slate-300">
@@ -13,15 +13,15 @@
       </div>
     </div>
 
-    <div class="overflow-x-auto">
-      <table class="w-max min-w-full divide-y divide-slate-200 text-left text-sm">
+    <div>
+      <table class="w-max table-fixed divide-y divide-slate-200 text-left text-sm">
         <thead class="bg-slate-50 text-slate-600">
           <tr>
             <% table[:columns].each do |column| %>
-              <th class="min-w-[10rem] px-4 py-3 font-semibold whitespace-nowrap"><%= column %></th>
+              <th class="<%= db_column_width_class(column) %> px-4 py-3 font-semibold whitespace-nowrap"><%= column %></th>
             <% end %>
             <% if table[:deletable] %>
-              <th class="min-w-[8rem] px-4 py-3 font-semibold whitespace-nowrap"><%= t("db.table.actions") %></th>
+              <th class="min-w-[9rem] w-[9rem] px-4 py-3 font-semibold whitespace-nowrap"><%= t("db.table.actions") %></th>
             <% end %>
           </tr>
         </thead>

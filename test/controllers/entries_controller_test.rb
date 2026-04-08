@@ -51,7 +51,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "creates free text entry and enqueues parsing" do
-    UserPreference.current.update!(llm_provider: "ollama", llm_model: "llama3")
+    AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
 
     assert_enqueued_with(job: EntryDataParseJob) do
       assert_difference("Entry.count", 1) do
@@ -73,7 +73,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "creates free text entry without enqueueing when llm is not configured" do
-    UserPreference.current.update!(llm_provider: "openai", llm_model: nil)
+    AppSetting.current.update!(llm_provider: "openai", llm_model: nil)
 
     assert_no_enqueued_jobs only: EntryDataParseJob do
       assert_difference("Entry.count", 1) do
@@ -90,7 +90,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "creates document-only entry and enqueues parsing" do
-    UserPreference.current.update!(llm_provider: "ollama", llm_model: "llama3")
+    AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
 
     assert_enqueued_with(job: EntryDataParseJob) do
       assert_difference("Entry.count", 1) do
@@ -167,7 +167,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "updates input and enqueues parsing again" do
-    UserPreference.current.update!(llm_provider: "ollama", llm_model: "llama3")
+    AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
     entry = @person.entries.create!(input: "Ate 5 donuts", occurred_at: Time.zone.parse("2026-03-29T09:38"), facts: [ "Food donuts" ], parseable_data: [ { "type" => "food", "value" => "donuts" } ], parse_status: "parsed")
 
     assert_enqueued_with(job: EntryDataParseJob) do
@@ -187,7 +187,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "updates input without enqueueing when llm is not configured" do
-    UserPreference.current.update!(llm_provider: "openai", llm_model: nil)
+    AppSetting.current.update!(llm_provider: "openai", llm_model: nil)
     entry = @person.entries.create!(input: "Ate 5 donuts", occurred_at: Time.zone.parse("2026-03-29T09:38"), facts: [ "Food donuts" ], parseable_data: [ { "type" => "food", "value" => "donuts" } ], parse_status: "parsed")
 
     assert_no_enqueued_jobs only: EntryDataParseJob do
@@ -206,7 +206,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "reparse forces a fresh parse even when input is unchanged" do
-    UserPreference.current.update!(llm_provider: "ollama", llm_model: "llama3")
+    AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
     entry = @person.entries.create!(
       input: "40 Celsius fieber",
       occurred_at: Time.zone.parse("2026-03-31T17:47"),
@@ -229,7 +229,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "free text entry flows from create through parse job to rendered log" do
-    UserPreference.current.update!(llm_provider: "ollama", llm_model: "llama3")
+    AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
 
     parser_singleton = EntryDataParser.singleton_class
     parser_singleton.alias_method :__original_call_for_test, :call
@@ -273,7 +273,7 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "document entry flows from create through parse job to rendered files tab" do
-    UserPreference.current.update!(llm_provider: "ollama", llm_model: "llama3")
+    AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
 
     parser_singleton = EntryDataParser.singleton_class
     parser_singleton.alias_method :__original_call_for_document_test, :call

@@ -78,7 +78,7 @@ class EntryDataParser
     [ /\ADietary water (?<value>-?\d+(?:\.\d+)?) (?<unit>[^;]+)\.?\z/i, "Dietary water" ]
   ].freeze
 
-  def self.call(input:, preference: UserPreference.current, entry: nil)
+  def self.call(input:, preference: AppSetting.current, entry: nil)
     return Result.new(facts: [], parseable_data: [], occurred_at: nil, llm_response: {}, error: :blank_input) if input.blank? && entry_documents(entry).blank?
 
     configuration_error = configuration_error_for(preference)
@@ -102,7 +102,7 @@ class EntryDataParser
     Result.new(facts: [], parseable_data: [], occurred_at: nil, llm_response: {}, error: :request_failed)
   end
 
-  def self.ready?(preference = UserPreference.current)
+  def self.ready?(preference = AppSetting.current)
     configuration_error_for(preference).nil?
   end
 

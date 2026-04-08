@@ -10,7 +10,7 @@ class ApplicationController < ActionController::Base
   before_action :set_current_person
   before_action :initialize_entry_for_current_person
 
-  helper_method :current_date_format, :current_locale, :current_llm_provider, :current_person, :family_members, :person_root_path_for, :settings_path_for, :user_preference, :baby_feeding_timer_started_at_for, :baby_feeding_timer_side_for, :baby_sleep_timer_started_at_for
+  helper_method :app_setting, :current_date_format, :current_locale, :current_llm_provider, :current_person, :family_members, :person_root_path_for, :settings_path_for, :user_preference, :baby_feeding_timer_started_at_for, :baby_feeding_timer_side_for, :baby_sleep_timer_started_at_for
 
   def default_url_options
     {}
@@ -78,11 +78,15 @@ class ApplicationController < ActionController::Base
   end
 
   def current_llm_provider
-    if params[:llm_provider].present? && UserPreference::LLM_PROVIDERS.key?(params[:llm_provider])
+    if params[:llm_provider].present? && AppSetting::LLM_PROVIDERS.key?(params[:llm_provider])
       params[:llm_provider]
     else
-      user_preference.llm_provider
+      app_setting.llm_provider
     end
+  end
+
+  def app_setting
+    @app_setting ||= AppSetting.current
   end
 
   def user_preference

@@ -38,7 +38,7 @@ class SettingsController < ApplicationController
   end
 
   def llm_test
-    preference = user_preference
+    preference = app_setting
     error = EntryDataParser.configuration_error_for(preference)
     if error
       render json: { error: I18n.t("log_summary.states.#{error}") } and return
@@ -79,9 +79,9 @@ class SettingsController < ApplicationController
   end
 
   def llm_models
-    provider = params[:llm_provider].presence || UserPreference.current.llm_provider
-    metadata = UserPreference.provider_metadata(provider)
-    api_key = params[:llm_api_key].presence || UserPreference.current.llm_api_key || ENV[metadata[:env_key]]
+    provider = params[:llm_provider].presence || AppSetting.current.llm_provider
+    metadata = AppSetting.provider_metadata(provider)
+    api_key = params[:llm_api_key].presence || AppSetting.current.llm_api_key || ENV[metadata[:env_key]]
     api_base = metadata[:env_base_key].present? ? ENV[metadata[:env_base_key]].presence || metadata[:api_base] : metadata[:api_base]
     result = LlmModelCatalog.lookup(provider: provider, api_key: api_key, api_base: api_base)
 
@@ -99,12 +99,11 @@ class SettingsController < ApplicationController
 
   def save_preferences
     UserPreference.update_locale(params[:locale]) if params[:locale].present?
-    UserPreference.update_llm_provider(params[:llm_provider]) if params[:llm_provider].present?
 
     return unless params[:llm_provider].present? || params[:llm_api_key].present? || params[:llm_model].present?
 
-    UserPreference.update_llm_settings(
-      llm_provider: params[:llm_provider].presence || UserPreference.current.llm_provider,
+    AppSetting.update_llm_settings(
+      llm_provider: params[:llm_provider].presence || AppSetting.current.llm_provider,
       llm_api_key: params[:llm_api_key],
       llm_model: params[:llm_model]
     )
@@ -130,7 +129,7 @@ class SettingsController < ApplicationController
   end
 
   def selected_llm_model(models)
-    preferred_model = params[:llm_model].presence || UserPreference.current.llm_model
+    preferred_model = params[:llm_model].presence || AppSetting.current.llm_model
     return preferred_model if preferred_model.present? && models.include?(preferred_model)
 
     models.first
@@ -201,7 +200,7 @@ class SettingsController < ApplicationController
   end
 
   def database_table_deletable?(table_name, primary_key)
-    primary_key.present? && !%w[ar_internal_metadata schema_migrations user_preferences].include?(table_name)
+    primary_key.present? && !%w[app_settings ar_internal_metadata schema_migrations user_preferences].include?(table_name)
   end
 
   def delete_database_row!(table_name, row_id, primary_key)

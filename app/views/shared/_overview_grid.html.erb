@@ -9,9 +9,6 @@
   <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 xl:items-start">
     <%= render "shared/planning_widget", person: person, card_classes: "md:col-span-2 xl:col-span-4" %>
     <%= render "shared/weight_activity_widget", person: person %>
-    <% unless person.baby_mode? %>
-      <%= render "shared/height_activity_widget", person: person %>
-    <% end %>
     <%= render "shared/vital_activity_widget", person: person, type: :temperature %>
     <%= render "shared/vital_activity_widget", person: person, type: :pulse %>
     <%= render "shared/vital_activity_widget", person: person, type: :blood_pressure %>

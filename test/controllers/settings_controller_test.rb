@@ -123,7 +123,7 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows compact llm status when configured" do
-    UserPreference.update_llm_settings(llm_provider: "ollama", llm_model: "llama3")
+    AppSetting.update_llm_settings(llm_provider: "ollama", llm_model: "llama3")
 
     get settings_url(section: "llm")
 

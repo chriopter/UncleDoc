@@ -2,7 +2,7 @@ require "test_helper"
 
 class HealthkitSummarySyncServiceTest < ActiveSupport::TestCase
   test "creates summary entries and removes stale healthkit entries" do
-    preference = UserPreference.current
+    preference = AppSetting.current
     original_provider = preference.llm_provider
     original_model = preference.llm_model
     preference.update!(llm_provider: "ollama", llm_model: "llama3")
@@ -46,7 +46,7 @@ class HealthkitSummarySyncServiceTest < ActiveSupport::TestCase
   end
 
   test "updates existing monthly summary entries when preview changes" do
-    preference = UserPreference.current
+    preference = AppSetting.current
     original_provider = preference.llm_provider
     original_model = preference.llm_model
     preference.update!(llm_provider: "ollama", llm_model: "llama3")

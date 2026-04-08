@@ -51,6 +51,7 @@ class DashboardController < ApplicationController
     @healthkit_monthly_summary_count = healthkit_summary_scope.where("source_ref LIKE ?", "healthkit:month:%").count
     @healthkit_latest_sync = @healthkit_syncs.max_by { |sync| sync.last_synced_at || sync.updated_at || Time.zone.at(0) }
     @healthkit_last_successful_sync_at = @healthkit_syncs.filter_map(&:last_successful_sync_at).max
+    @healthkit_records_table = healthkit_records_table(@person, page: params[:page])
   end
 
   def queue_healthkit_summary_sync
@@ -70,7 +71,7 @@ class DashboardController < ApplicationController
   def chat
     @person = Person.find_by!(name: params[:person_slug])
     entries = @person.entries.order(occurred_at: :asc)
-    preference = user_preference
+    preference = app_setting
 
     error = EntryDataParser.configuration_error_for(preference)
     if error
@@ -107,7 +108,7 @@ class DashboardController < ApplicationController
     @available_log_filters = available_log_filters(@person)
     @entries = filtered_entries(@person, @entry_sort)
 
-    result = LogSummaryGenerator.call(person: @person, entries: @entries, preference: user_preference)
+    result = LogSummaryGenerator.call(person: @person, entries: @entries, preference: app_setting)
     @log_summary = result.summary
     @log_summary_state = result.error || :ready
 
@@ -118,7 +119,55 @@ class DashboardController < ApplicationController
     )
   end
 
+  def healthkit_records_page
+    @person = Person.find_by!(name: params[:person_slug])
+    @healthkit_records_table = healthkit_records_table(@person, page: params[:page])
+
+    render turbo_stream: [
+      turbo_stream.append("db_table_rows", partial: "dashboard/db_table_rows", locals: { table: @healthkit_records_table }),
+      turbo_stream.replace("db_table_pagination", partial: "dashboard/db_table_loader_healthkit", locals: { table: @healthkit_records_table, person: @person })
+    ]
+  end
+
   private
+
+  def healthkit_records_table(person, page: 1)
+    connection = ActiveRecord::Base.connection
+    table_name = "healthkit_records"
+    table = Arel::Table.new(table_name)
+    columns = connection.columns(table_name).map(&:name)
+    primary_key = connection.primary_key(table_name)
+    per_page = 50
+    current_page = [ page.to_i, 1 ].max
+
+    person_id = person.id
+    count_sql = table.project(Arel.star.count).where(table[:person_id].eq(person_id))
+    total_count = connection.select_value(count_sql).to_i
+    total_pages = [ (total_count.to_f / per_page).ceil, 1 ].max
+    current_page = [ current_page, total_pages ].min
+    offset = (current_page - 1) * per_page
+
+    rows_query = table.project(Arel.star)
+      .where(table[:person_id].eq(person_id))
+      .order(table[:start_at].desc)
+      .take(per_page)
+      .skip(offset)
+
+    {
+      name: table_name,
+      columns: columns,
+      rows: connection.select_all(rows_query).to_a,
+      count: total_count,
+      rendered_count: [ offset + per_page, total_count ].min,
+      page: current_page,
+      per_page: per_page,
+      total_pages: total_pages,
+      next_page: current_page < total_pages ? current_page + 1 : nil,
+      primary_key: primary_key,
+      deletable: false,
+      order_column: "start_at"
+    }
+  end
 
   def build_patientenakte(person, entries)
     lines = entries.map do |entry|
