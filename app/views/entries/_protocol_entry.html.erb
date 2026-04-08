@@ -4,8 +4,10 @@
 <% show_date = local_assigns[:show_date] %>
 <% date = local_assigns[:date] %>
 
+<% needs_attention = entry.failed_parse? || entry.pending_parse? || entry.skipped_parse? %>
+
 <details class="group" data-entry-collapsible="true">
-  <summary class="grid cursor-pointer list-none grid-cols-[5.5rem_minmax(0,1fr)_5.5rem_6rem_1rem] items-center gap-2 px-4 py-3.5 transition hover:bg-amber-50/40 [&::-webkit-details-marker]:hidden">
+  <summary class="grid cursor-pointer list-none grid-cols-[5.5rem_minmax(0,1fr)_5.5rem_6rem_2.75rem_1rem] items-center gap-2 px-4 py-3.5 transition [&::-webkit-details-marker]:hidden <%= needs_attention ? 'border-l-4 border-l-red-500 bg-red-50/70 hover:bg-red-50' : 'hover:bg-amber-50/40' %>">
     <div class="shrink-0 text-right">
       <% if show_date %>
         <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700"><%= log_day_label(date) %></p>
@@ -44,14 +46,29 @@
       <% elsif entry.documents_attached? %>
         <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-emerald-700"><%= t("entries.tags.document") %></span>
       <% elsif entry.failed_parse? %>
-        <span class="rounded-full bg-red-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-red-600"><%= t("entries.tags.parse_error") %></span>
+        <span class="rounded-full border border-red-200 bg-red-600 px-2.5 py-1 text-[10px] font-bold leading-none text-white shadow-sm"><%= t("entries.tags.parse_error") %></span>
       <% elsif entry.pending_parse? %>
-        <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-amber-700">
+        <span class="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-500 px-2.5 py-1 text-[10px] font-bold leading-none text-white shadow-sm">
           <svg class="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
           <%= t("entries.tags.pending") %>
         </span>
       <% elsif entry.skipped_parse? %>
-        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-slate-500"><%= t("entries.tags.skipped") %></span>
+        <span class="rounded-full border border-slate-300 bg-slate-700 px-2.5 py-1 text-[10px] font-bold leading-none text-white shadow-sm"><%= t("entries.tags.skipped") %></span>
+      <% end %>
+    </div>
+
+    <div class="flex justify-end">
+      <% if needs_attention && !entry.babywidget_generated? %>
+        <%= button_to reparse_person_entry_path(entry.person, entry), method: :patch,
+            class: "inline-flex items-center rounded-full border border-red-200 bg-white p-1.5 text-red-600 shadow-sm transition hover:border-red-300 hover:bg-red-50 hover:text-red-700",
+            form_class: "contents",
+            onclick: "event.stopPropagation()",
+            aria: { label: t("entries.reparse.trigger") } do %>
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 1 0 3-6.708" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5V10h5.5" />
+          </svg>
+        <% end %>
       <% end %>
     </div>
 

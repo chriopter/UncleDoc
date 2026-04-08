@@ -27,4 +27,26 @@ class LlmMultimodalRequestTest < ActiveSupport::TestCase
       Open3.singleton_class.remove_method :__original_capture3_for_pdf_test
     end
   end
+
+  test "pdf attachments fall back to native pdf when pdftoppm is unavailable" do
+    blob = ActiveStorage::Blob.create_and_upload!(
+      io: StringIO.new("%PDF fake"),
+      filename: "sample.pdf",
+      content_type: "application/pdf"
+    )
+
+    LlmMultimodalRequest.singleton_class.alias_method :__original_pdf_image_parts_for_fallback_test, :pdf_image_parts
+    LlmMultimodalRequest.singleton_class.define_method(:pdf_image_parts) do |*_args, **_kwargs|
+      raise Errno::ENOENT, "pdftoppm"
+    end
+
+    attachments = LlmMultimodalRequest.attachment_inputs(blob)
+
+    assert_equal [ blob ], attachments
+  ensure
+    if LlmMultimodalRequest.singleton_class.method_defined?(:__original_pdf_image_parts_for_fallback_test)
+      LlmMultimodalRequest.singleton_class.alias_method :pdf_image_parts, :__original_pdf_image_parts_for_fallback_test
+      LlmMultimodalRequest.singleton_class.remove_method :__original_pdf_image_parts_for_fallback_test
+    end
+  end
 end
