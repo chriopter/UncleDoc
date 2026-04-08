@@ -18,6 +18,8 @@ All information is built up to an health record that you can then chat with via 
 - Baby mode for feeding, diapers, sleep, and growth
 - HealthKit sync through the iOS app
 
+**Key principe** is to enter data (e.g. a note, a uploaded PDF) that will then be parsed by your LLM to be condensed to key facts. The resulting health record (sum of all "facts") is what you can then chat with.
+
 ## 2. iOS App
 
 UncleDoc also includes an iOS app so the same household health record feels at home on iPhone.
