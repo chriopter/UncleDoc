@@ -1,13 +1,13 @@
 class ResearchChatContext
   def self.refresh!(chat, locale: I18n.locale)
     I18n.with_locale(locale) do
-      context_message = chat.context_message || chat.messages.build(role: :system, message_kind: "context", hidden: true)
+      context_message = chat.context_message || chat.llm_messages.build(role: :system, message_kind: "context", hidden: true)
       context_message.content = system_prompt_for(chat.person)
       context_message.save!
 
       if chat.context_source_updated_at.present?
         chat.add_message(role: :system, content: I18n.t("chat.context_refreshed"))
-        chat.messages.where(role: "system", message_kind: "message").order(:id).last&.update!(message_kind: "context_notice")
+        chat.llm_messages.where(role: "system", message_kind: "message").order(:id).last&.update!(message_kind: "context_notice")
       end
 
       chat.update!(

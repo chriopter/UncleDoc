@@ -13,7 +13,7 @@ class ResearchChatResponseJob < ApplicationJob
       chat.complete do |chunk|
         next if chunk.content.blank?
 
-        assistant_message = chat.messages.order(:id).last
+        assistant_message = chat.llm_messages.order(:id).last
         assistant_message.broadcast_append_chunk(chunk.content) if assistant_message.present?
       end
     end

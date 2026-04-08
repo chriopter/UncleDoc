@@ -26,7 +26,7 @@ class ResearchChatResponseJobTest < ActiveJob::TestCase
       end
     end
 
-    assert_equal I18n.t("chat.request_failed"), chat.messages.visible.where(role: "assistant").last&.content
+    assert_equal I18n.t("chat.request_failed"), chat.llm_messages.visible.where(role: "assistant").last&.content
   end
 
   test "job also handles non ruby_llm standard errors" do
@@ -54,6 +54,6 @@ class ResearchChatResponseJobTest < ActiveJob::TestCase
       end
     end
 
-    assert_equal I18n.t("chat.request_failed"), chat.messages.visible.where(role: "assistant").last&.content
+    assert_equal I18n.t("chat.request_failed"), chat.llm_messages.visible.where(role: "assistant").last&.content
   end
 end

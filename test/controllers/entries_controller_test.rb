@@ -312,14 +312,11 @@ class EntriesControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Doctor invoice follow-up needed"
   end
 
-  test "destroy removes dependent llm logs" do
+  test "destroy removes an entry" do
     entry = @person.entries.create!(input: "RSV Impfung durchgeführt", occurred_at: Time.zone.parse("2026-03-29T09:38"), facts: [ "RSV Impfung durchgeführt" ], parseable_data: [ { "type" => "medication", "value" => "RSV Impfung" } ], parse_status: "parsed")
-    LlmLog.create!(request_kind: "entry_parse", provider: "ollama", endpoint: "http://localhost:11434/v1/chat/completions", request_payload: "{}", response_body: "{}", status_code: 200, person: @person, entry: entry)
 
     assert_difference("Entry.count", -1) do
-      assert_difference("LlmLog.count", -1) do
-        delete person_entry_url(@person, entry)
-      end
+      delete person_entry_url(@person, entry)
     end
 
     assert_response :redirect

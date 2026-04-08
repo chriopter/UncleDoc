@@ -1,6 +1,5 @@
 class Entry < ApplicationRecord
   belongs_to :person
-  has_many :llm_logs, dependent: :destroy
   has_many_attached :documents
 
   PARSE_STATUSES = %w[pending parsed failed skipped].freeze

@@ -4,7 +4,7 @@ class SettingsController < ApplicationController
   def show
     save_preferences if params[:locale].present? || params[:llm_provider].present?
 
-    @section = params[:section].in?(%w[llm llm_prompt llm_prompt_preview llm_logs db db_table users]) ? params[:section] : "users"
+    @section = params[:section].in?(%w[llm llm_prompt llm_prompt_preview db db_table users]) ? params[:section] : "users"
     @database_table = database_table_detail(params[:table], page: params[:page]) if @section == "db_table" && params[:table].present?
     if @section == "users"
       @people = Person.recent_first
@@ -14,7 +14,6 @@ class SettingsController < ApplicationController
 
     return unless llm_section?
 
-    @llm_logs = LlmLog.order(created_at: :desc).limit(200)
     @llm_stats = llm_stats
     load_prompt_preview
   end
@@ -115,21 +114,19 @@ class SettingsController < ApplicationController
   end
 
   def resolved_section
-    params[:section].in?(%w[llm llm_prompt llm_prompt_preview llm_logs db db_table users]) ? params[:section] : "users"
+    params[:section].in?(%w[llm llm_prompt llm_prompt_preview db db_table users]) ? params[:section] : "users"
   end
 
   def llm_section?
-    @section.in?(%w[llm llm_prompt llm_prompt_preview llm_logs])
+    @section.in?(%w[llm llm_prompt llm_prompt_preview])
   end
 
   def llm_stats
-    scope = LlmLog.all
-
     {
-      total_requests: scope.count,
-      parse_requests: scope.where(request_kind: "entry_parse").count,
-      summary_requests: scope.where(request_kind: "log_summary").count,
-      latest_request_at: scope.maximum(:created_at)
+      total_requests: LlmChat.count,
+      parse_requests: LlmMessage.where(role: "user").count,
+      summary_requests: LlmMessage.where(role: "assistant").count,
+      latest_request_at: LlmMessage.maximum(:created_at)
     }
   end
 
