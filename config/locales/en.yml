@@ -808,6 +808,8 @@ en:
         empty: "No height entries yet."
       appointments:
         title: "Appointments"
+        scheduled_for: "Scheduled %{time}"
+        logged_on: "Logged %{date}"
         empty: "No appointments yet."
       todos:
         title: "Todos"

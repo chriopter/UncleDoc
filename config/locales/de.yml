@@ -808,6 +808,8 @@ de:
         empty: "Noch keine Körpergrößen-Einträge vorhanden."
       appointments:
         title: "Termine"
+        scheduled_for: "Geplant %{time}"
+        logged_on: "Eingetragen %{date}"
         empty: "Noch keine Termine vorhanden."
       todos:
         title: "Aufgaben"

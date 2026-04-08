@@ -1,5 +1,5 @@
 <% appointments_by_date = @appointments.each_with_object({}) do |entry, hash|
-  date = entry.occurred_at.to_date
+  date = entry.appointment_calendar_time.to_date
   (hash[date] ||= []) << entry
 end %>
 <% today = Time.zone.today %>
@@ -62,7 +62,12 @@ end %>
               <div class="mt-1 space-y-0.5">
                 <% day_appts.each do |entry| %>
                   <div class="truncate rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900">
-                    <%= (entry.fact_summary.presence || entry.appointment_title).to_s.truncate(24) %>
+                    <div><%= (entry.fact_summary.presence || entry.appointment_title).to_s.truncate(24) %></div>
+                    <% if entry.appointment_logged_at.to_date != entry.appointment_calendar_time.to_date %>
+                      <div class="text-[9px] font-medium text-amber-700/80">
+                        <%= t("person.overview.appointments.logged_on", date: l(entry.appointment_logged_at.to_date, format: :long)) %>
+                      </div>
+                    <% end %>
                   </div>
                 <% end %>
               </div>
