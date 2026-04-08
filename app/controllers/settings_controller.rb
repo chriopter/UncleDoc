@@ -122,12 +122,49 @@ class SettingsController < ApplicationController
   end
 
   def llm_stats
+    prompts = Message.where(role: "user", hidden: false)
+    responses = Message.includes(:model).where(role: "assistant", hidden: false)
+
+    priced_responses = 0
+    estimated_cost_usd = 0.0
+
+    responses.each do |message|
+      cost = estimated_message_cost_usd(message)
+      next unless cost
+
+      priced_responses += 1
+      estimated_cost_usd += cost
+    end
+
     {
-      total_requests: Chat.count,
-      parse_requests: Message.where(role: "user").count,
-      summary_requests: Message.where(role: "assistant").count,
-      latest_request_at: Message.maximum(:created_at)
+      chat_count: Chat.count,
+      prompt_count: prompts.count,
+      response_count: responses.count,
+      input_tokens: responses.sum(:input_tokens),
+      output_tokens: responses.sum(:output_tokens),
+      cached_tokens: responses.sum(:cached_tokens),
+      thinking_tokens: responses.sum(:thinking_tokens),
+      estimated_cost_usd: estimated_cost_usd,
+      priced_responses: priced_responses,
+      latest_request_at: responses.maximum(:created_at)
     }
+  end
+
+  def estimated_message_cost_usd(message)
+    pricing = message.model&.pricing
+    text_pricing = pricing.is_a?(Hash) ? pricing.dig("text_tokens", "standard") || pricing.dig(:text_tokens, :standard) : nil
+    return unless text_pricing.is_a?(Hash)
+
+    input_rate = text_pricing["input_per_million"] || text_pricing[:input_per_million]
+    output_rate = text_pricing["output_per_million"] || text_pricing[:output_per_million]
+    cached_rate = text_pricing["cached_input_per_million"] || text_pricing[:cached_input_per_million]
+
+    uncached_input_tokens = [ message.input_tokens.to_i - message.cached_tokens.to_i, 0 ].max
+    cost = 0.0
+    cost += uncached_input_tokens * input_rate.to_f / 1_000_000 if input_rate
+    cost += message.cached_tokens.to_i * cached_rate.to_f / 1_000_000 if cached_rate
+    cost += message.output_tokens.to_i * output_rate.to_f / 1_000_000 if output_rate
+    cost
   end
 
   def selected_llm_model(models)

@@ -28,21 +28,17 @@ class LogSummaryGeneratorTest < ActiveSupport::TestCase
       parseable_data: [ { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" } ]
     )
 
-    fake_response = Struct.new(:code, :body).new("200", { choices: [ { message: { content: "All good" } } ] }.to_json)
-
-    http_singleton = Net::HTTP.singleton_class
-    http_singleton.alias_method :__original_start_for_test, :start
-    http_singleton.define_method(:start) do |*_args, **_kwargs, &block|
-      http = Object.new
-      http.define_singleton_method(:request) { |_request| fake_response }
-      block.call(http)
+    request_singleton = LlmChatRequest.singleton_class
+    request_singleton.alias_method :__original_call_for_summary_test, :call
+    request_singleton.define_method(:call) do |**|
+      LlmChatRequest::Response.new(content: "All good", status_code: 200, body: "{}")
     end
 
     begin
       result = LogSummaryGenerator.call(person: person, entries: [ entry ], preference: preference)
     ensure
-      http_singleton.alias_method :start, :__original_start_for_test
-      http_singleton.remove_method :__original_start_for_test
+      request_singleton.alias_method :call, :__original_call_for_summary_test
+      request_singleton.remove_method :__original_call_for_summary_test
     end
 
     assert_equal "All good", result.summary
