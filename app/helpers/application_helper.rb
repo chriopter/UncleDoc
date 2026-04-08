@@ -575,36 +575,100 @@ module ApplicationHelper
   def render_chat_markdown(text)
     return "" if text.blank?
 
-    blocks = text.to_s.gsub("\r\n", "\n").split(/\n{2,}/).filter_map do |block|
-      lines = block.split("\n").map(&:rstrip)
-      next if lines.empty?
+    lines = text.to_s.gsub("\r\n", "\n").split("\n")
+    blocks = []
+    index = 0
 
-      if code_block?(lines)
-        code = lines[1..-2].join("\n")
-        content_tag(:pre, class: "overflow-x-auto rounded-2xl bg-slate-950 px-4 py-3 text-xs leading-6 text-slate-100") do
-          content_tag(:code, code)
-        end
-      elsif lines.all? { |line| line.lstrip.start_with?("- ", "* ") }
-        items = lines.map { |line| content_tag(:li, markdown_inline(line.lstrip[2..])) }
-        content_tag(:ul, safe_join(items), class: "list-disc space-y-1 pl-5")
-      elsif lines.all? { |line| line.lstrip.match?(/\A\d+\.\s+/) }
-        items = lines.map { |line| content_tag(:li, markdown_inline(line.lstrip.sub(/\A\d+\.\s+/, ""))) }
-        content_tag(:ol, safe_join(items), class: "list-decimal space-y-1 pl-5")
-      elsif lines.first.start_with?("### ")
-        content_tag(:h3, markdown_inline(lines.first.delete_prefix("### ")), class: "mt-3 text-sm font-bold text-slate-900")
-      elsif lines.first.start_with?("## ")
-        content_tag(:h2, markdown_inline(lines.first.delete_prefix("## ")), class: "mt-3 text-base font-bold text-slate-900")
-      elsif lines.first.start_with?("# ")
-        content_tag(:h1, markdown_inline(lines.first.delete_prefix("# ")), class: "mt-3 text-lg font-bold text-slate-900")
-      else
-        content_tag(:p, markdown_inline(lines.join("<br>").html_safe), class: "leading-7")
+    while index < lines.length
+      line = lines[index].rstrip
+
+      if line.blank?
+        index += 1
+        next
       end
+
+      if line.start_with?("```")
+        code_lines = [ line ]
+        index += 1
+        while index < lines.length
+          code_lines << lines[index].rstrip
+          break if lines[index].rstrip == "```"
+
+          index += 1
+        end
+        blocks << render_markdown_block(code_lines)
+        index += 1
+        next
+      end
+
+      if heading_line?(line)
+        blocks << render_markdown_block([ line ])
+        index += 1
+        next
+      end
+
+      group = [ line ]
+      index += 1
+      while index < lines.length
+        next_line = lines[index].rstrip
+        break if next_line.blank? || next_line.start_with?("```") || heading_line?(next_line)
+
+        if list_line?(group.first)
+          break unless list_line?(next_line) && ordered_list_line?(group.first) == ordered_list_line?(next_line)
+        end
+
+        group << next_line
+        index += 1
+      end
+
+      blocks << render_markdown_block(group)
     end
 
     safe_join(blocks)
   end
 
   private
+
+  def render_markdown_block(lines)
+    return if lines.empty?
+
+    if code_block?(lines)
+      code = lines[1..-2].join("\n")
+      content_tag(:pre, class: "overflow-x-auto rounded-2xl bg-slate-950 px-4 py-3 text-xs leading-6 text-slate-100") do
+        content_tag(:code, code)
+      end
+    elsif lines.all? { |line| unordered_list_line?(line) }
+      items = lines.map { |line| content_tag(:li, markdown_inline(line.lstrip[2..])) }
+      content_tag(:ul, safe_join(items), class: "list-disc space-y-1 pl-5")
+    elsif lines.all? { |line| ordered_list_line?(line) }
+      items = lines.map { |line| content_tag(:li, markdown_inline(line.lstrip.sub(/\A\d+\.\s+/, ""))) }
+      content_tag(:ol, safe_join(items), class: "list-decimal space-y-1 pl-5")
+    elsif lines.first.start_with?("### ")
+      content_tag(:h3, markdown_inline(lines.first.delete_prefix("### ")), class: "mt-3 text-sm font-bold text-slate-900")
+    elsif lines.first.start_with?("## ")
+      content_tag(:h2, markdown_inline(lines.first.delete_prefix("## ")), class: "mt-3 text-base font-bold text-slate-900")
+    elsif lines.first.start_with?("# ")
+      content_tag(:h1, markdown_inline(lines.first.delete_prefix("# ")), class: "mt-3 text-lg font-bold text-slate-900")
+    else
+      content_tag(:p, markdown_inline(lines.join("<br>").html_safe), class: "leading-7")
+    end
+  end
+
+  def heading_line?(line)
+    line.start_with?("# ", "## ", "### ")
+  end
+
+  def list_line?(line)
+    unordered_list_line?(line) || ordered_list_line?(line)
+  end
+
+  def unordered_list_line?(line)
+    line.lstrip.start_with?("- ", "* ")
+  end
+
+  def ordered_list_line?(line)
+    line.lstrip.match?(/\A\d+\.\s+/)
+  end
 
   def markdown_inline(text)
     escaped = ERB::Util.html_escape(text.to_s)

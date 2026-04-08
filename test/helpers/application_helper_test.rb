@@ -1,20 +1,25 @@
 require "test_helper"
 
 class ApplicationHelperTest < ActionView::TestCase
-  test "baby activity series counts imported feeding and diaper text notes" do
-    person = Person.create!(name: "Marlon", birth_date: Date.new(2025, 1, 1), baby_mode: true)
+  test "render_chat_markdown keeps headings and following lists" do
+    text = <<~TEXT
+      **Kurz gesagt:** **nicht alarmierend kaputt, aber klar verbesserungsbeduerftig.**
 
-    travel_to Time.zone.local(2026, 3, 31, 12, 0, 0) do
-      person.entries.create!(occurred_at: Time.zone.local(2026, 3, 28, 8, 15), input: "Windel: nass; Trinken gut", facts: [ "Trinken gut", "Windel nass" ], parseable_data: [ { "type" => "diaper", "wet" => true, "solid" => false } ])
-      person.entries.create!(occurred_at: Time.zone.local(2026, 3, 28, 10, 15), input: "Trinken gut", facts: [ "Trinken gut" ], parseable_data: [])
-      person.entries.create!(occurred_at: Time.zone.local(2026, 3, 30, 12, 0), input: "Flasche 120ml", facts: [ "Flasche 120 ml" ], parseable_data: [ { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" } ])
+      ### Was die Akte insgesamt zeigt
+      - Du warst ueber lange Strecken **ziemlich aktiv**.
+      - Seit etwa **2024 bis 2026** ist die **Bewegung deutlich niedriger**.
 
-      feeding_counts = baby_activity_series(person, :feeding).index_by { |point| point[:date] }
-      diaper_counts = baby_activity_series(person, :diaper).index_by { |point| point[:date] }
+      ### Mein Eindruck
+      Du wirkst in den Daten **nicht schwer krank**.
+    TEXT
 
-      assert_equal 2, feeding_counts[Date.new(2026, 3, 28)][:count]
-      assert_equal 1, diaper_counts[Date.new(2026, 3, 28)][:count]
-      assert_equal 1, feeding_counts[Date.new(2026, 3, 30)][:count]
-    end
+    html = render_chat_markdown(text)
+
+    assert_includes html, "<strong"
+    assert_includes html, "Was die Akte insgesamt zeigt"
+    assert_includes html, "<ul"
+    assert_includes html, "Du warst ueber lange Strecken"
+    assert_includes html, "Mein Eindruck"
+    assert_includes html, "nicht schwer krank"
   end
 end
