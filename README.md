@@ -77,8 +77,9 @@ Open `http://127.0.0.1:3000` after the container becomes healthy.
 
 Release image channels:
 
-- `ghcr.io/<repo-owner>/uncledoc:beta` updates from every push to `main`
+- `ghcr.io/<repo-owner>/uncledoc:edge` updates from every push to `main`
 - `ghcr.io/<repo-owner>/uncledoc:stable` updates on published GitHub releases
+- `ghcr.io/<repo-owner>/uncledoc:latest` points to the newest published stable release
 
 If you run behind a reverse proxy, also set these in `.env.docker`:
 
