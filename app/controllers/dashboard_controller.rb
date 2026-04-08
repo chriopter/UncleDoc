@@ -66,6 +66,23 @@ class DashboardController < ApplicationController
       disposition: "inline"
   end
 
+  def file_thumbnail
+    @person = Person.find_by!(name: params[:person_slug])
+    entry = @person.entries.with_documents.find(params[:entry_id])
+    document = entry.documents.first
+    raise ActiveRecord::RecordNotFound unless document&.representable?
+
+    thumbnail = if document.previewable?
+      document.preview(resize_to_limit: [ 360, 480 ])
+    else
+      document.variant(resize_to_limit: [ 360, 480 ])
+    end
+
+    redirect_to url_for(thumbnail.processed)
+  rescue ActiveStorage::UnpreviewableError, ActiveStorage::InvariableError
+    raise ActiveRecord::RecordNotFound
+  end
+
   def healthkit
     @person = Person.find_by!(name: params[:person_slug])
     @healthkit_syncs = @person.healthkit_syncs.order(updated_at: :desc)

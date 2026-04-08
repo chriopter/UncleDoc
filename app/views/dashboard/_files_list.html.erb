@@ -64,14 +64,13 @@
                   <div class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-5">
                     <% parsed_entries.each do |entry| %>
                       <% first_doc = entry.documents.first %>
+                      <% thumbnail_path = file_thumbnail_path_for(entry) %>
                       <div class="group relative flex flex-col rounded-xl border <%= params[:entry_id].to_i == entry.id ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-200' %> bg-white p-3 transition hover:border-amber-300 hover:shadow-sm">
                         <% if first_doc %>
                           <%= link_to person_file_path(person_slug: entry.person.name, entry_id: entry.id, year: params[:year], doc_type: params[:doc_type]), class: "mb-2 block", data: { turbo_frame: "_top" } do %>
                             <div class="flex aspect-[1/1.4142] items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-                              <% if first_doc.image? %>
-                                <%= image_tag person_file_content_path(person_slug: entry.person.name, entry_id: entry.id), class: "h-full w-full object-cover", loading: "lazy" %>
-                              <% elsif first_doc.content_type == "application/pdf" %>
-                                <iframe src="<%= person_file_content_path(person_slug: entry.person.name, entry_id: entry.id) %>#view=FitH" class="h-full w-full bg-white pointer-events-none" title="<%= first_doc.filename.to_s %>"></iframe>
+                              <% if thumbnail_path.present? %>
+                                <%= image_tag thumbnail_path, class: "h-full w-full object-cover", loading: "lazy", alt: entry.document_title.presence || first_doc.filename.to_s %>
                               <% else %>
                                 <div class="flex flex-col items-center gap-2 text-slate-400">
                                   <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">

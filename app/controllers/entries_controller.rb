@@ -20,6 +20,7 @@ class EntriesController < ApplicationController
 
     if save_created_entries(created_entries)
       enqueue_parse_jobs(created_entries)
+      enqueue_thumbnail_jobs(created_entries)
 
       respond_to do |format|
         format.html { redirect_to root_path(person_slug: @person.name, tab: "log"), notice: t("entries.flash.created") }
@@ -86,6 +87,7 @@ class EntriesController < ApplicationController
 
     if @entry.save
       EntryDataParseJob.perform_later(@entry.id) if should_enqueue_parse
+      DocumentThumbnailWarmJob.perform_later(@entry.id) if uploaded_documents_present?
       @entries = @person.entries.recent_first
 
       respond_to do |format|
@@ -219,6 +221,12 @@ class EntriesController < ApplicationController
   def enqueue_parse_jobs(entries)
     entries.each do |entry|
       EntryDataParseJob.perform_later(entry.id) if entry.pending_parse?
+    end
+  end
+
+  def enqueue_thumbnail_jobs(entries)
+    entries.each do |entry|
+      DocumentThumbnailWarmJob.perform_later(entry.id) if entry.documents_attached?
     end
   end
 
