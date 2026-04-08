@@ -49,6 +49,11 @@
     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 overflow-hidden break-all">
       <div class="grid gap-4 min-w-0">
         <section>
+          <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"><%= t("activerecord.attributes.entry.occurred_at") %></p>
+          <p class="text-sm leading-relaxed text-slate-700"><%= entry.occurred_at.present? ? l(entry.occurred_at, format: :long) : t("chat.unknown_date") %></p>
+        </section>
+
+        <section>
           <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"><%= t("entries.raw_input.title") %></p>
           <p class="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700 [overflow-wrap:anywhere]"><%= entry.input %></p>
         </section>

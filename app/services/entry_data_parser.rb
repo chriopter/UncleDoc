@@ -73,9 +73,6 @@ class EntryDataParser
     )
   rescue StandardError => error
     Rails.logger.warn("Entry parsing failed: #{error.class}: #{error.message}")
-    fallback = fallback_result_for(input)
-    return fallback if fallback
-
     Result.new(facts: [], occurred_at: nil, llm: {}, error: :request_failed)
   end
 
@@ -257,29 +254,6 @@ class EntryDataParser
     value.deep_stringify_keys.slice("status", "confidence", "note").transform_values do |entry|
       entry.to_s.strip.presence
     end.compact
-  end
-
-  def self.fallback_result_for(input)
-    return if input.blank?
-
-    normalized_input = input.to_s.strip
-    return if normalized_input.blank?
-
-    if todo_like?(normalized_input)
-      Result.new(
-        facts: [ { "text" => normalized_input, "kind" => "todo", "value" => normalized_input } ],
-        occurred_at: nil,
-        llm: {
-          "status" => "structured",
-          "confidence" => "low",
-          "note" => "Fallback parser mapped an actionable reminder to a todo fact after the LLM returned no usable response."
-        }
-      )
-    end
-  end
-
-  def self.todo_like?(input)
-    input.match?(/\A\s*(check|bring|call|ask|remember|book|schedule|buy|organize|todo|to do|pru?fe|checke|mitbringen|anrufen|fragen|merken|besorgen)\b/i)
   end
 
   def self.normalize_metric(metric)
