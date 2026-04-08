@@ -17,7 +17,7 @@ class LogSummaryGeneratorTest < ActiveSupport::TestCase
     assert_includes formatted, "Baby fed"
   end
 
-  test "stores raw summary llm logs" do
+  test "returns summary text" do
     preference = AppSetting.current
     preference.update!(llm_provider: "ollama", llm_model: "llama3")
     person = Person.create!(name: "Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
@@ -45,10 +45,6 @@ class LogSummaryGeneratorTest < ActiveSupport::TestCase
       http_singleton.remove_method :__original_start_for_test
     end
 
-    log = LlmLog.order(:created_at).last
     assert_equal "All good", result.summary
-    assert_equal "log_summary", log.request_kind
-    assert_equal person, log.person
-    assert_includes log.request_payload, "Baby fed"
   end
 end

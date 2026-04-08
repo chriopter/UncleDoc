@@ -41,28 +41,11 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
 
   test "deletes a person" do
     person = Person.create!(name: "Mila", birth_date: Date.new(2024, 3, 10))
-    entry = person.entries.create!(input: "Bottle 120ml", occurred_at: Time.current)
-    LlmLog.create!(
-      person: person,
-      entry: entry,
-      request_kind: "parse",
-      provider: "openai",
-      endpoint: "https://example.test/chat/completions",
-      request_payload: "{}"
-    )
-    LlmLog.create!(
-      person: person,
-      request_kind: "summary",
-      provider: "openai",
-      endpoint: "https://example.test/chat/completions",
-      request_payload: "{}"
-    )
+    person.entries.create!(input: "Bottle 120ml", occurred_at: Time.current)
 
     assert_difference("Person.count", -1) do
       assert_difference("Entry.count", -1) do
-        assert_difference("LlmLog.count", -2) do
-          delete person_url(person)
-        end
+        delete person_url(person)
       end
     end
 

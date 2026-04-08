@@ -1,7 +1,7 @@
 require "test_helper"
 
 class LlmChatRequestTest < ActiveSupport::TestCase
-  test "stores raw request and raw response" do
+  test "returns parsed content" do
     preference = AppSetting.current
     preference.update!(llm_provider: "ollama", llm_model: "llama3")
     person = Person.create!(name: "Peter", birth_date: Date.new(2020, 1, 1))
@@ -29,18 +29,10 @@ class LlmChatRequestTest < ActiveSupport::TestCase
       http_singleton.remove_method :__original_start_for_test
     end
 
-    log = LlmLog.order(:created_at).last
     assert_equal "[]", response.content
-    assert_equal "entry_parse", log.request_kind
-    assert_equal "ollama", log.provider
-    assert_equal "llama3", log.model
-    assert_equal 200, log.status_code
-    assert_includes log.request_payload, "hello"
-    assert_includes log.response_body, "choices"
-    assert_nil log.error_message
   end
 
-  test "stores raw error on failed response" do
+  test "raises on failed response" do
     preference = AppSetting.current
     preference.update!(llm_provider: "ollama", llm_model: "llama3")
 
@@ -66,10 +58,5 @@ class LlmChatRequestTest < ActiveSupport::TestCase
       http_singleton.alias_method :start, :__original_start_for_test
       http_singleton.remove_method :__original_start_for_test
     end
-
-    log = LlmLog.order(:created_at).last
-    assert_equal 500, log.status_code
-    assert_equal '{"error":"boom"}', log.response_body
-    assert_includes log.error_message, "status 500"
   end
 end

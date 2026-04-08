@@ -621,7 +621,7 @@ de:
     groups:
       data: "Benutzerdaten"
       health_data: "Gesundheitsdaten"
-      ruby_llm: "RubyLLM"
+      ruby_llm: "Ruby LLM"
       attachments: "Anhange"
       logs: "Protokolle"
       rails: "Rails"

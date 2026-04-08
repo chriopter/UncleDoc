@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_08_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_08_153000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -105,23 +105,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_150000) do
     t.datetime "updated_at", null: false
     t.index ["llm_model_id"], name: "index_llm_chats_on_llm_model_id"
     t.index ["person_id"], name: "index_llm_chats_on_person_id", unique: true
-  end
-
-  create_table "llm_logs", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "endpoint", null: false
-    t.integer "entry_id"
-    t.text "error_message"
-    t.string "model"
-    t.integer "person_id"
-    t.string "provider", null: false
-    t.string "request_kind", null: false
-    t.text "request_payload", null: false
-    t.text "response_body"
-    t.integer "status_code"
-    t.datetime "updated_at", null: false
-    t.index ["entry_id"], name: "index_llm_logs_on_entry_id"
-    t.index ["person_id"], name: "index_llm_logs_on_person_id"
   end
 
   create_table "llm_messages", force: :cascade do |t|
@@ -251,8 +234,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_150000) do
   add_foreign_key "healthkit_syncs", "people"
   add_foreign_key "llm_chats", "llm_models"
   add_foreign_key "llm_chats", "people"
-  add_foreign_key "llm_logs", "entries", on_delete: :cascade
-  add_foreign_key "llm_logs", "people", on_delete: :cascade
   add_foreign_key "llm_messages", "llm_chats"
   add_foreign_key "llm_messages", "llm_models"
   add_foreign_key "llm_messages", "llm_tool_calls"

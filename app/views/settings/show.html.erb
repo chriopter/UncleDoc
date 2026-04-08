@@ -5,7 +5,7 @@
     <%= render "dashboard/db_overview" %>
   <% elsif @section == "users" %>
     <%= render "settings/users", people: @people, person: @person %>
-  <% elsif @section.in?(["llm", "llm_prompt", "llm_prompt_preview", "llm_logs"]) %>
+  <% elsif @section.in?(["llm", "llm_prompt", "llm_prompt_preview"]) %>
     <%= render "settings/llm" %>
   <% end %>
 </section>

@@ -14,20 +14,9 @@ class LlmMultimodalRequest
     endpoint = "#{preference.llm_api_base.chomp('/')}/chat/completions"
     payload = build_payload(preference:, instructions:, prompt:, attachments:, temperature:, model:)
 
-    log = LlmLog.create!(
-      person: person,
-      entry: entry,
-      request_kind: request_kind,
-      provider: preference.llm_provider,
-      model: payload[:model],
-      endpoint: endpoint,
-      request_payload: JSON.pretty_generate(payload)
-    )
-
     response = perform_request(endpoint:, payload:, preference:)
 
     normalized_body = normalize_body(response.body)
-    log.update!(status_code: response.code.to_i, response_body: normalized_body)
 
     raise "LLM request failed with status #{response.code}" unless response.code.to_i.between?(200, 299)
 
@@ -36,8 +25,7 @@ class LlmMultimodalRequest
       status_code: response.code.to_i,
       body: normalized_body
     )
-  rescue StandardError => error
-    log&.update!(error_message: error.message, response_body: log.response_body.presence)
+  rescue StandardError
     raise
   end
 

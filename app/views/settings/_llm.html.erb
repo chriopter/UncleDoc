@@ -1,6 +1,4 @@
 <% llm_ready = app_setting.llm_model.present? && (app_setting.llm_api_key_configured? || app_setting.llm_provider == "ollama") %>
-<% open_logs = @section == "llm_logs" %>
-
 <section class="rounded-[2rem] border border-white/70 bg-white/90 p-5 ring-1 ring-black/5 backdrop-blur">
   <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
     <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("settings.llm.title") %></p>
@@ -165,46 +163,3 @@
     </section>
   <% end %>
 <% end %>
-
-<details class="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white ring-1 ring-black/5" <%= open_logs ? "open" : "" %>>
-  <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-3.5">
-    <div>
-      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"><%= t("settings.llm_logs.label") %></p>
-      <h3 class="mt-0.5 text-lg font-bold text-slate-950"><%= t("settings.llm_logs.title") %></h3>
-    </div>
-    <span class="text-slate-400 transition group-open:rotate-180">▾</span>
-  </summary>
-
-  <div class="border-t border-slate-200 px-5 py-4">
-    <% if @llm_logs.any? %>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead>
-            <tr class="border-b border-slate-200 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              <th class="pb-2 pr-3 font-semibold"><%= t("settings.llm_logs.col_time") %></th>
-              <th class="pb-2 pr-3 font-semibold"><%= t("settings.llm_logs.col_kind") %></th>
-              <th class="pb-2 pr-3 font-semibold"><%= t("settings.llm_logs.col_provider") %></th>
-              <th class="pb-2 pr-3 font-semibold"><%= t("settings.llm_logs.col_model") %></th>
-              <th class="pb-2 pr-3 font-semibold"><%= t("settings.llm_logs.col_status") %></th>
-              <th class="pb-2 font-semibold"><%= t("settings.llm_logs.response") %></th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <% @llm_logs.each do |log| %>
-              <tr class="group">
-                <td class="whitespace-nowrap py-2 pr-3 text-slate-500"><%= l(log.created_at, format: :short) %></td>
-                <td class="whitespace-nowrap py-2 pr-3 font-semibold text-slate-900"><%= log.request_kind %></td>
-                <td class="whitespace-nowrap py-2 pr-3 text-slate-600"><%= log.provider %></td>
-                <td class="whitespace-nowrap py-2 pr-3 text-slate-600"><%= log.model.presence || "-" %></td>
-                <td class="whitespace-nowrap py-2 pr-3"><%= log.status_code.present? ? log.status_code : "-" %></td>
-                <td class="max-w-xs truncate py-2 font-mono text-slate-500"><%= (log.response_body.presence || log.error_message.presence || "-").to_s.strip.truncate(80) %></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-    <% else %>
-      <p class="text-center text-sm text-slate-500"><%= t("settings.llm_logs.empty") %></p>
-    <% end %>
-  </div>
-</details>
