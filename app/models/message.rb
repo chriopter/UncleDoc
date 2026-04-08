@@ -1,4 +1,6 @@
 class Message < ApplicationRecord
+  attr_accessor :suppress_broadcast
+
   acts_as_message
   has_many_attached :attachments
 
@@ -14,7 +16,11 @@ class Message < ApplicationRecord
   end
 
   def skip_broadcast?
-    hidden? || role == "user"
+    suppress_broadcast || hidden? || role == "user"
+  end
+
+  def streaming_placeholder?
+    message_kind == "streaming"
   end
 
   private

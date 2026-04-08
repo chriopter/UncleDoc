@@ -9,13 +9,14 @@ class ResearchMessagesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "posting a chat message saves the user turn and enqueues the response job" do
-    assert_enqueued_with(job: ResearchChatResponseJob) do
+    assert_enqueued_with(job: ResearchChatResponseJob, args: ->(args) { args.first.is_a?(Integer) && args.second.is_a?(Integer) && args.third == I18n.locale.to_s }) do
       post person_chat_path(person_slug: @person.name), params: { message: { content: "How is she doing?" } }, as: :turbo_stream
     end
 
     assert_response :success
     assert_equal Mime[:turbo_stream].to_s, response.media_type
     assert_equal [ "How is she doing?" ], @person.chat.messages.visible.where(role: "user").pluck(:content)
+    assert_equal 1, @person.chat.messages.visible.where(role: "assistant", message_kind: "streaming").count
     assert_includes response.body, "research_chat_form"
     assert_includes response.body, "chat_welcome"
   end
@@ -51,22 +52,29 @@ class ResearchMessagesControllerTest < ActionDispatch::IntegrationTest
       @person.entries.create!(occurred_at: Time.zone.local(2026, 4, 8, 10, 0), input: "Fever 38.4", facts: [ "Fever 38.4 C" ], parseable_data: [ { "type" => "temperature", "value" => 38.4, "unit" => "C" } ])
     end
 
-    Chat.class_eval do
-      alias_method :__original_complete_for_research_test, :complete
+    assistant_message = chat.messages.create!(role: :assistant, content: "", message_kind: "streaming")
+    fake_llm_chat = Object.new
+    fake_llm_chat.define_singleton_method(:on_new_message) { |&block| @on_new = block }
+    fake_llm_chat.define_singleton_method(:on_end_message) { |&block| @on_end = block }
+    fake_llm_chat.define_singleton_method(:complete) do |&block|
+      block.call(Struct.new(:content).new("Latest data used.")) if block
+      Struct.new(:content, :input_tokens, :output_tokens, :cached_tokens, :cache_creation_tokens, :thinking, :thinking_tokens).new("Latest data used.", 10, 20, 0, 0, nil, 0)
+    end
 
-      def complete(...)
-        add_message(role: :assistant, content: "Latest data used.")
-      end
+    Chat.class_eval do
+      alias_method :__original_to_llm_for_research_test, :to_llm
+
+      define_method(:to_llm) { fake_llm_chat }
     end
 
     perform_enqueued_jobs do
-      ResearchChatResponseJob.perform_later(chat.id, "en")
+      ResearchChatResponseJob.perform_later(chat.id, assistant_message.id, "en")
     end
   ensure
-    if Chat.method_defined?(:__original_complete_for_research_test)
+    if Chat.method_defined?(:__original_to_llm_for_research_test)
       Chat.class_eval do
-        alias_method :complete, :__original_complete_for_research_test
-        remove_method :__original_complete_for_research_test
+        alias_method :to_llm, :__original_to_llm_for_research_test
+        remove_method :__original_to_llm_for_research_test
       end
     end
 
