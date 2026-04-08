@@ -196,6 +196,7 @@ en:
     welcome: "Hello! I have the complete health record for %{name}. Ask me anything — summaries, patterns, medication history, upcoming appointments, or anything else from the log."
     placeholder: "Ask a question about the health record…"
     send: "Send message"
+    assistant_thinking: "Thinking..."
     system_prompt_label: "System prompt & Patientenakte"
     context_refreshed: "Health record updated. Future replies use the latest data."
     empty_record: "No health entries are saved yet for %{name}."

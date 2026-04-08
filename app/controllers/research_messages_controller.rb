@@ -5,7 +5,6 @@ class ResearchMessagesController < ApplicationController
     @chat = @person.chat || @person.build_chat
     @message = Message.new
     @error_message = nil
-    @new_visible_messages = []
     content = params.dig(:message, :content).presence || params.dig(:llm_message, :content).presence
     content = content.to_s.strip
 
@@ -20,12 +19,12 @@ class ResearchMessagesController < ApplicationController
 
     ResearchChatRuntime.prepare!(@chat, setting: app_setting)
     first_visible_message = @chat.visible_messages.none?
-    latest_visible_id = @chat.visible_messages.maximum(:id) || 0
-    @chat.add_message(role: :user, content: content)
+    @user_message = @chat.add_message(role: :user, content: content)
+    @assistant_message = @chat.messages.build(role: :assistant, content: "", message_kind: "streaming")
+    @assistant_message.suppress_broadcast = true
+    @assistant_message.save!
 
-    ResearchChatResponseJob.perform_later(@chat.id, I18n.locale.to_s)
-
-    @new_visible_messages = @chat.visible_messages.where("id > ?", latest_visible_id)
+    ResearchChatResponseJob.perform_later(@chat.id, @assistant_message.id, I18n.locale.to_s)
 
     render turbo_stream: success_streams(first_visible_message)
   end
@@ -54,9 +53,8 @@ class ResearchMessagesController < ApplicationController
         locals: { person: @person, message: Message.new, error_message: nil }
       )
     ]
-    @new_visible_messages.each do |message|
-      streams << turbo_stream.append("chat_messages", partial: message.to_partial_path, locals: { message: message })
-    end
+    streams << turbo_stream.append("chat_messages", partial: @user_message.to_partial_path, locals: { message: @user_message })
+    streams << turbo_stream.append("chat_messages", partial: @assistant_message.to_partial_path, locals: { message: @assistant_message })
     streams << turbo_stream.remove("chat_welcome") if first_visible_message
     streams
   end
