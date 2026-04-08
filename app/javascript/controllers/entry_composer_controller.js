@@ -32,7 +32,9 @@ export default class extends Controller {
     this.inputTarget.classList.add("border-amber-400", "bg-amber-50")
   }
 
-  dragLeave() {
+  dragLeave(event) {
+    if (event?.currentTarget === this.element && this.element.contains(event.relatedTarget)) return
+
     this.inputTarget.classList.remove("border-amber-400", "bg-amber-50")
   }
 
@@ -70,7 +72,7 @@ export default class extends Controller {
     const items = Array.from(dataTransfer?.items || [])
     if (items.length === 0) return Array.from(dataTransfer?.files || [])
 
-    const files = []
+    const files = Array.from(dataTransfer?.files || [])
 
     for (const item of items) {
       if (item.kind !== "file") continue
@@ -95,7 +97,7 @@ export default class extends Controller {
       if (file) files.push(file)
     }
 
-    return files
+    return this.uniqueFiles(files)
   }
 
   async collectHandleFiles(handle, files) {
@@ -138,5 +140,17 @@ export default class extends Controller {
     }
 
     return entries
+  }
+
+  uniqueFiles(files) {
+    const seen = new Set()
+
+    return files.filter((file) => {
+      const key = [file.name, file.size, file.lastModified, file.webkitRelativePath || ""].join("::")
+      if (seen.has(key)) return false
+
+      seen.add(key)
+      return true
+    })
   }
 }

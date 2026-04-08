@@ -1,5 +1,5 @@
 <%= turbo_frame_tag "entry_form", class: "flex flex-1 flex-col" do %>
-  <%= form_with model: [person, entry], class: "flex flex-1 flex-col gap-3", data: { controller: "entry-composer" } do |f| %>
+  <%= form_with model: [person, entry], class: "flex flex-1 flex-col gap-3", data: { controller: "entry-composer", action: "dragover->entry-composer#dragOver dragleave->entry-composer#dragLeave drop->entry-composer#drop" } do |f| %>
     <% if entry.errors.any? %>
       <div class="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
         <% entry.errors.full_messages.each do |message| %>
@@ -13,7 +13,7 @@
         rows: 1,
         placeholder: t("entries.form.placeholder"),
         class: "block w-full flex-1 min-h-0 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-400 focus:ring-amber-200 resize-none",
-        data: { entry_composer_target: "input", action: "keydown->entry-composer#submitOnEnter dragover->entry-composer#dragOver dragleave->entry-composer#dragLeave drop->entry-composer#drop" } %>
+        data: { entry_composer_target: "input", action: "keydown->entry-composer#submitOnEnter" } %>
 
     <div data-entry-composer-target="timeFields" class="hidden rounded-xl border border-slate-200 bg-slate-50 p-3">
       <%= f.label :occurred_at, t("activerecord.attributes.entry.occurred_at"), class: "block text-xs font-semibold text-slate-600" %>
