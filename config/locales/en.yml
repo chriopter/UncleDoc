@@ -37,7 +37,6 @@ en:
     app_settings: "App Settings"
     home: "Home"
     overview: "Overview"
-    trends: "Trends"
     baby: "Baby"
     files: "Files"
     timeline: "Timeline"
@@ -176,6 +175,8 @@ en:
       stats_title: "Sync statistics"
       entries_label: "Entries"
       entries_title: "HealthKit entries in log"
+      browse_label: "Browse"
+      actions_label: "Actions"
       rebuild_button: "Rebuild summaries"
       reparse_button: "Re-parse HealthKit entries"
       rebuild_confirm: "Recreate all HealthKit summaries for this person?"
@@ -217,6 +218,7 @@ en:
     source:
       manual: "Manual"
       healthkit: "Healthkit"
+      healthkit_short: "HK"
       healthkit_day: "HK Daily"
       healthkit_month: "HK Monthly"
     tags:
@@ -493,6 +495,9 @@ en:
       label: "LLM logs"
       title: "Raw LLM request log"
       description: "Inspect exact requests and raw responses for note parsing and summaries."
+      http_status: "HTTP %{status}"
+      entry_id: "entry_id=%{id}"
+      person_id: "person_id=%{id}"
       request: "Request"
       response: "Response"
       raw_data:
@@ -565,6 +570,8 @@ en:
       delete_unavailable_short: "-"
     groups:
       data: "User data"
+      health_data: "Health data"
+      attachments: "Attachments"
       logs: "Logs"
       system: "System"
       other: "Other"

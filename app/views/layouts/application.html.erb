@@ -38,7 +38,7 @@
       <%= t("accessibility.skip_to_content") %>
     </a>
 
-    <main id="main-content" class="mx-auto min-h-screen w-full max-w-[96rem] px-4 pt-[max(1rem,calc(var(--uncledoc-safe-top)+0.75rem))] pb-4 md:px-6 md:pt-6 md:pb-6">
+    <main id="main-content" class="mx-auto min-h-screen w-full <%= on_db ? 'max-w-none px-4 md:px-6 xl:px-8' : 'max-w-[96rem] px-4 md:px-6' %> pt-[max(1rem,calc(var(--uncledoc-safe-top)+0.75rem))] pb-4 md:pt-6 md:pb-6">
       <div class="flex min-h-[calc(100vh-2rem)] flex-col gap-6 xl:flex-row">
 
         <%# ── Mobile / tablet top bar (below xl) ── %>

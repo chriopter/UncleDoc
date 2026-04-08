@@ -24,13 +24,13 @@
 
     <div class="flex justify-end">
       <% if entry.source_ref.to_s.start_with?("healthkit:month:") %>
-        <span class="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-rose-600">HK Monthly</span>
+        <span class="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-rose-600"><%= t("entries.source.healthkit_month") %></span>
       <% elsif entry.source_ref.to_s.start_with?("healthkit:day:") %>
-        <span class="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-rose-600">HK Daily</span>
+        <span class="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-rose-600"><%= t("entries.source.healthkit_day") %></span>
       <% elsif entry.healthkit_generated? %>
-        <span class="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-rose-600">HK</span>
+        <span class="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-rose-600"><%= t("entries.source.healthkit_short") %></span>
       <% else %>
-        <span class="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-amber-700">Manual</span>
+        <span class="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-amber-700"><%= t("entries.source.manual") %></span>
       <% end %>
     </div>
 
