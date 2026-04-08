@@ -52,7 +52,7 @@
                       <% unless entry.babywidget_generated? %>
                         <%= button_to reparse_person_entry_path(entry.person, entry), method: :patch,
                             class: "shrink-0 rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-800",
-                            form_class: "contents" do %>
+                            form_class: "contents", data: { turbo_frame: "_top" } do %>
                           <%= t("entries.reparse.trigger") %>
                         <% end %>
                       <% end %>
@@ -100,7 +100,7 @@
                           <% unless entry.babywidget_generated? %>
                             <%= button_to reparse_person_entry_path(entry.person, entry), method: :patch,
                                 class: "inline-flex items-center justify-center rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:border-amber-300 hover:text-amber-700",
-                                form_class: "contents" do %>
+                                form_class: "contents", data: { turbo_frame: "_top" } do %>
                               <%= t("entries.reparse.trigger") %>
                             <% end %>
                           <% end %>
