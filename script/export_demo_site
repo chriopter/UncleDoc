@@ -1,0 +1,1096 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "bundler/setup"
+require "cgi"
+require "digest/sha1"
+require "fileutils"
+require "net/http"
+require "nokogiri"
+require "pathname"
+require "set"
+require "uri"
+
+class DemoSiteExporter
+  HTML_CONTENT_TYPES = ["text/html", "application/xhtml+xml"].freeze
+  ASSET_EXTENSIONS = %w[
+    .css .gif .ico .jpeg .jpg .js .json .pdf .png .svg .txt .webp .woff .woff2
+  ].freeze
+  INLINE_HTML_FRAME_SELECTORS = "turbo-frame[src]".freeze
+
+  def initialize(base_url:, email:, password:, output_dir:, primary_person_name:)
+    @base_url = URI(base_url)
+    @email = email
+    @password = password
+    @output_dir = Pathname(output_dir)
+    @primary_person_name = primary_person_name
+    @cookies = {}
+    @queued_pages = []
+    @seen_pages = Set.new
+    @downloaded_assets = Set.new
+  end
+
+  def run
+    reset_output!
+    write_support_files
+    login!
+    enqueue_page(@base_url)
+
+    until @queued_pages.empty?
+      page_uri = @queued_pages.shift
+      next if @seen_pages.include?(page_key(page_uri))
+
+      @seen_pages << page_key(page_uri)
+      export_page(page_uri)
+    end
+
+    finalize_site!
+  end
+
+  private
+
+  def reset_output!
+    FileUtils.rm_rf(@output_dir)
+    FileUtils.mkdir_p(@output_dir)
+  end
+
+  def login!
+    login_uri = build_uri("/session/new")
+    response = request(:get, login_uri)
+    document = Nokogiri::HTML(response.body)
+    token = document.at_css("input[name='authenticity_token']")&.[]("value")
+    raise "Could not find authenticity token on #{login_uri}" if token.to_s.empty?
+
+    login_response = request(
+      :post,
+      build_uri("/session"),
+      form_data: {
+        "authenticity_token" => token,
+        "email_address" => @email,
+        "password" => @password
+      }
+    )
+
+    if redirect?(login_response)
+      follow_redirect(login_response, build_uri("/session"))
+    elsif login_response.code.to_i >= 400
+      raise "Login failed with HTTP #{login_response.code}"
+    end
+
+    root_response = request(:get, @base_url)
+    if root_response.uri.path == "/session/new"
+      raise "Login did not stick. Check UNCLEDOC_DEMO_EMAIL and UNCLEDOC_DEMO_PASSWORD."
+    end
+  end
+
+  def export_page(page_uri)
+    response = request(:get, page_uri)
+    content_type = response["content-type"].to_s.split(";").first
+    return unless HTML_CONTENT_TYPES.include?(content_type)
+
+    document = Nokogiri::HTML(response.body)
+    inline_remote_frames!(document, response.uri)
+    sanitize_document!(document, response.uri)
+    write_html(response.uri, document.to_html)
+  end
+
+  def inline_remote_frames!(document, page_uri)
+    document.css(INLINE_HTML_FRAME_SELECTORS).each do |frame|
+      frame_uri = absolutize_uri(frame["src"], page_uri)
+      next unless internal_uri?(frame_uri)
+
+      frame_response = request(:get, frame_uri)
+      next unless HTML_CONTENT_TYPES.include?(frame_response["content-type"].to_s.split(";").first)
+
+      frame_document = Nokogiri::HTML(frame_response.body)
+      nested_frame = frame_document.at_css("turbo-frame##{frame["id"]}") || frame_document.at_css("turbo-frame") || frame_document.at_css("body")
+      next unless nested_frame
+
+      frame.remove_attribute("src")
+      frame.inner_html = nested_frame.inner_html
+    end
+  end
+
+  def sanitize_document!(document, page_uri)
+    strip_server_only_nodes!(document)
+    strip_permission_warnings!(document)
+    rewrite_urls!(document, page_uri)
+    disable_live_forms!(document)
+    inject_demo_assets!(document, page_uri)
+    add_demo_banner!(document, page_uri)
+  end
+
+  def strip_server_only_nodes!(document)
+    document.css("meta[name='csrf-token'], meta[name='csrf-param'], meta[name='csp-nonce'], meta[name='uncledoc-native-app-token'], meta[name='uncledoc-native-app-email']").remove
+    document.css("script, turbo-cable-stream-source").remove
+  end
+
+  def strip_permission_warnings!(document)
+    document.css("div, p, section").each do |node|
+      text = node.text.strip
+      next unless text.include?("permission to access") || text.include?("access that area")
+
+      node.remove
+    end
+  end
+
+  def rewrite_urls!(document, page_uri)
+    document.css("a[href], link[href], img[src], source[src], iframe[src], object[data]").each do |node|
+      attr_name = node.key?("href") ? "href" : node.key?("src") ? "src" : "data"
+      rewrite_url_attribute!(node, attr_name, page_uri)
+    end
+
+    document.css("[srcset]").each do |node|
+      node["srcset"] = rewrite_srcset(node["srcset"], page_uri)
+    end
+
+    document.css("form[action]").each do |form|
+      form["action"] = "#"
+    end
+  end
+
+  def rewrite_url_attribute!(node, attr_name, page_uri)
+    original = node[attr_name].to_s.strip
+    return if original.empty? || original.start_with?("#", "mailto:", "tel:", "javascript:")
+
+    target_uri = absolutize_uri(original, page_uri)
+    return unless internal_uri?(target_uri)
+
+    local_path = if node.name == "a" && !asset_uri?(target_uri)
+      normalized_target = normalize_page_uri(target_uri)
+      enqueue_page(normalized_target)
+      html_output_path(normalized_target)
+    else
+      download_asset(target_uri)
+      asset_output_path(target_uri)
+    end
+
+    node[attr_name] = relative_reference(page_uri, local_path)
+  end
+
+  def rewrite_srcset(value, page_uri)
+    value.to_s.split(",").map do |entry|
+      url_part, descriptor = entry.strip.split(/\s+/, 2)
+      if url_part && !url_part.empty?
+        target_uri = absolutize_uri(url_part, page_uri)
+        if internal_uri?(target_uri)
+          download_asset(target_uri)
+          [relative_reference(page_uri, asset_output_path(target_uri)), descriptor].compact.join(" ")
+        else
+          entry.strip
+        end
+      else
+        entry.strip
+      end
+    end.join(", ")
+  end
+
+  def disable_live_forms!(document)
+    document.css("form").each do |form|
+      form["data-demo-disabled"] = "true"
+      form["onsubmit"] = "return false"
+    end
+
+    document.css("button[formaction], input[type='submit'], button[type='submit']").each do |control|
+      control["data-demo-disabled-control"] = "true"
+    end
+  end
+
+  def inject_demo_assets!(document, page_uri)
+    head = document.at_css("head") || document.root.add_child("<head></head>").first
+    body = document.at_css("body") || document.root.add_child("<body></body>").first
+
+    body["data-demo-path"] = page_uri.path
+
+    demo_css = Nokogiri::XML::Node.new("link", document)
+    demo_css["rel"] = "stylesheet"
+    demo_css["href"] = relative_reference(page_uri, Pathname("demo/demo.css"))
+    head.add_child(demo_css)
+
+    demo_script = Nokogiri::XML::Node.new("script", document)
+    demo_script["src"] = relative_reference(page_uri, Pathname("demo/demo.js"))
+    demo_script["defer"] = "defer"
+    head.add_child(demo_script)
+  end
+
+  def add_demo_banner!(document, page_uri)
+    main = document.at_css("main") || document.at_css("body")
+    return unless main
+
+    banner = Nokogiri::HTML::DocumentFragment.parse(<<~HTML)
+      <section class="uncledoc-demo-banner">
+        <div>
+          <strong>Offline demo mode</strong>
+          <span>Local sample mirror generated from #{CGI.escapeHTML(@base_url.to_s)}.</span>
+        </div>
+        <span class="uncledoc-demo-pill">#{CGI.escapeHTML(page_uri.path.to_s.empty? ? "/" : page_uri.path)}</span>
+      </section>
+    HTML
+    main.children.first ? main.children.first.add_previous_sibling(banner) : main.add_child(banner)
+  end
+
+  def download_asset(asset_uri)
+    key = page_key(asset_uri)
+    return if @downloaded_assets.include?(key)
+
+    @downloaded_assets << key
+    response = request(:get, asset_uri)
+    body = response.body
+
+    write_asset(asset_uri, body)
+    return unless response["content-type"].to_s.start_with?("text/css")
+
+    body.scan(/url\(([^)]+)\)/).flatten.each do |raw_reference|
+      cleaned = raw_reference.to_s.delete_prefix("'").delete_prefix('"').delete_suffix('"').delete_suffix("'").strip
+      next if cleaned.empty? || cleaned.start_with?("data:", "#")
+
+      nested_uri = absolutize_uri(cleaned, asset_uri)
+      next unless internal_uri?(nested_uri)
+
+      download_asset(nested_uri)
+    end
+  end
+
+  def write_html(page_uri, html)
+    destination = @output_dir.join(html_output_path(page_uri))
+    FileUtils.mkdir_p(destination.dirname)
+    destination.write(html)
+  end
+
+  def write_asset(asset_uri, body)
+    destination = @output_dir.join(asset_output_path(asset_uri))
+    FileUtils.mkdir_p(destination.dirname)
+    destination.binwrite(body)
+  end
+
+  def write_support_files
+    demo_dir = @output_dir.join("demo")
+    FileUtils.mkdir_p(demo_dir)
+    demo_dir.join("demo.css").write(demo_css)
+    demo_dir.join("demo.js").write(demo_js)
+  end
+
+  def finalize_site!
+    write_root_redirect
+  end
+
+  def write_root_redirect
+    destination = @output_dir.join("index.html")
+    url = url_path(primary_entry_relative_path)
+    destination.write(<<~HTML)
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+          <meta http-equiv="refresh" content="0; url=#{url}">
+          <title>UncleDoc Demo</title>
+          <script>
+            window.location.replace(#{url.inspect});
+          </script>
+        </head>
+        <body style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; padding:24px; background:#fffaf1; color:#0f172a;">
+          <p>Opening offline demo…</p>
+          <p><a href=#{url.inspect}>Continue</a></p>
+        </body>
+      </html>
+    HTML
+  end
+
+  def request(method, uri, form_data: nil, limit: 5)
+    raise "Too many redirects for #{uri}" if limit <= 0
+
+    request_uri = uri.dup
+    http = Net::HTTP.new(request_uri.host, request_uri.port)
+    http.use_ssl = request_uri.scheme == "https"
+
+    request = case method
+    when :get
+      Net::HTTP::Get.new(request_uri)
+    when :post
+      Net::HTTP::Post.new(request_uri)
+    else
+      raise ArgumentError, "Unsupported method: #{method}"
+    end
+
+    request["Cookie"] = cookie_header if @cookies.any?
+    request.set_form_data(form_data) if form_data
+
+    response = http.request(request)
+    store_cookies(response)
+    response.define_singleton_method(:uri) { request_uri }
+
+    return follow_redirect(response, request_uri, limit: limit - 1) if redirect?(response)
+
+    response
+  end
+
+  def follow_redirect(response, from_uri, limit: 4)
+    target = absolutize_uri(response["location"], from_uri)
+    request(:get, target, limit: limit)
+  end
+
+  def redirect?(response)
+    response.code.to_i.between?(300, 399) && response["location"].to_s != ""
+  end
+
+  def store_cookies(response)
+    Array(response.get_fields("set-cookie")).each do |cookie|
+      key, value = cookie.split(";", 2).first.split("=", 2)
+      @cookies[key] = value
+    end
+  end
+
+  def cookie_header
+    @cookies.map { |key, value| "#{key}=#{value}" }.join("; ")
+  end
+
+  def build_uri(path)
+    absolutize_uri(path, @base_url)
+  end
+
+  def absolutize_uri(reference, base_uri)
+    URI.join(base_uri.to_s.end_with?("/") ? base_uri.to_s : "#{base_uri}/", reference.to_s)
+  rescue URI::InvalidURIError
+    base_uri
+  end
+
+  def internal_uri?(uri)
+    uri.host == @base_url.host && uri.port == @base_url.port && %w[http https].include?(uri.scheme)
+  end
+
+  def enqueue_page(uri)
+    normalized = normalize_page_uri(uri)
+    return if @seen_pages.include?(page_key(normalized))
+
+    @queued_pages << normalized unless @queued_pages.any? { |queued| page_key(queued) == page_key(normalized) }
+  end
+
+  def normalize_uri(uri)
+    normalized = uri.dup
+    normalized.fragment = nil
+    normalized
+  end
+
+  def normalize_page_uri(uri)
+    normalized = normalize_uri(uri)
+    params = URI.decode_www_form(normalized.query.to_s).each_with_object({}) do |(key, value), hash|
+      hash[key] ||= []
+      hash[key] << value
+    end
+
+    kept = case normalized.path
+    when "/settings"
+      params.slice("section", "table")
+    else
+      {}
+    end
+
+    normalized.query = kept.empty? ? nil : URI.encode_www_form(kept.flat_map { |key, values| Array(values).map { |value| [key, value] } })
+    normalized
+  end
+
+  def page_key(uri)
+    normalized = normalize_page_uri(uri)
+    [(normalized.path.to_s.empty? ? "/" : normalized.path), normalized.query.to_s].join("?")
+  end
+
+  def asset_uri?(uri)
+    extension = File.extname(uri.path)
+    ASSET_EXTENSIONS.include?(extension.downcase)
+  end
+
+  def html_output_path(uri)
+    normalized = normalize_page_uri(uri)
+    path = CGI.unescape(normalized.path.to_s)
+    path = "/" if path.empty?
+    query_suffix = normalized.query.to_s.empty? ? "" : "--#{Digest::SHA1.hexdigest(normalized.query)[0, 10]}"
+
+    if path == "/"
+      Pathname("index#{query_suffix}.html")
+    elsif File.extname(path).empty?
+      trimmed = path.delete_prefix("/")
+      Pathname(trimmed).join("index#{query_suffix}.html")
+    else
+      directory = File.dirname(path).delete_prefix("/")
+      basename = File.basename(path, File.extname(path))
+      extension = File.extname(path)
+      Pathname(directory).join("#{basename}#{query_suffix}#{extension}")
+    end
+  end
+
+  def asset_output_path(uri)
+    path = CGI.unescape(uri.path.to_s).delete_prefix("/")
+    path = "asset-#{Digest::SHA1.hexdigest(uri.to_s)[0, 12]}" if path.empty?
+    if uri.query.to_s.empty?
+      Pathname(path)
+    else
+      directory = File.dirname(path)
+      basename = File.basename(path, File.extname(path))
+      extension = File.extname(path)
+      Pathname(directory).join("#{basename}--#{Digest::SHA1.hexdigest(uri.query)[0, 10]}#{extension}")
+    end
+  end
+
+  def relative_reference(from_uri, target_path)
+    from_file = @output_dir.join(html_output_path(from_uri))
+    target_file = @output_dir.join(target_path)
+    url_path(target_file.relative_path_from(from_file.dirname).to_s)
+  end
+
+  def primary_person_slug
+    @primary_person_name
+  end
+
+  def primary_entry_relative_path
+    "#{primary_person_slug}/overview/index.html"
+  end
+
+  def url_path(path)
+    path.split("/").map { |segment| CGI.escape(segment).gsub("+", "%20") }.join("/")
+  end
+
+  def demo_css
+    <<~CSS
+      .uncledoc-demo-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        background: rgba(255, 255, 255, 0.88);
+        border-radius: 1.25rem;
+        padding: 0.85rem 1rem;
+        box-shadow: 0 12px 32px -24px rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(12px);
+      }
+
+      .uncledoc-demo-banner strong {
+        display: block;
+        font-size: 0.875rem;
+        color: #0f172a;
+      }
+
+      .uncledoc-demo-banner span {
+        display: block;
+        font-size: 0.75rem;
+        color: #64748b;
+      }
+
+      .uncledoc-demo-pill {
+        white-space: nowrap;
+        border: 1px solid rgba(245, 158, 11, 0.24);
+        background: #fff7ed;
+        color: #b45309;
+        border-radius: 999px;
+        padding: 0.35rem 0.7rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .uncledoc-demo-panel {
+        margin-top: 1rem;
+        border: 1px solid rgba(14, 165, 233, 0.2);
+        background: linear-gradient(180deg, rgba(240, 249, 255, 0.92) 0%, rgba(236, 253, 245, 0.92) 100%);
+        border-radius: 1.5rem;
+        padding: 1rem;
+      }
+
+      .uncledoc-demo-panel h2 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0f172a;
+      }
+
+      .uncledoc-demo-panel p {
+        margin: 0.35rem 0 0;
+        font-size: 0.875rem;
+        color: #475569;
+      }
+
+      .uncledoc-demo-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+
+      .uncledoc-demo-actions button {
+        border: 0;
+        border-radius: 999px;
+        background: #0f172a;
+        color: white;
+        padding: 0.8rem 1.1rem;
+        font-size: 0.875rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .uncledoc-demo-note {
+        margin-top: 0.85rem;
+        font-size: 0.8rem;
+        color: #0f766e;
+      }
+
+      [data-demo-disabled="true"] {
+        position: relative;
+      }
+
+      [data-demo-disabled-control="true"] {
+        opacity: 0.65;
+      }
+
+      .uncledoc-demo-entry {
+        border-top: 1px solid #f1f5f9;
+      }
+
+      .uncledoc-demo-entry summary {
+        display: grid;
+        grid-template-columns: 5.5rem minmax(0, 1fr) 5.5rem 6rem 2.75rem 1rem;
+        gap: 0.5rem;
+        align-items: center;
+        cursor: pointer;
+        list-style: none;
+        padding: 0.875rem 1rem;
+        background: rgba(251, 146, 60, 0.1);
+      }
+
+      .uncledoc-demo-entry summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .uncledoc-demo-entry-body {
+        border-top: 1px solid #f1f5f9;
+        padding: 0.875rem 1rem 1rem 6.5rem;
+      }
+    CSS
+  end
+
+  def demo_js
+    <<~JAVASCRIPT
+      (function() {
+        const PRIMARY_PERSON_NAME = #{@primary_person_name.inspect};
+        const PRIMARY_PERSON_SLUG = #{primary_person_slug.inspect};
+        const STORAGE_KEY = "uncledoc.demo.state.v2";
+
+        window.UncleDocDemo = {
+          receiveNativeMessage: receiveNativeMessage
+        };
+
+        document.addEventListener("DOMContentLoaded", function() {
+          normalizeSingleUserChrome();
+          removePermissionWarnings();
+          wireDropdowns();
+          wireDisabledForms();
+          setupDemoComposer();
+          injectCalendarSamples();
+          injectResearchPlaceholder();
+          injectHealthDemoPanel();
+          renderStoredEntries();
+        });
+
+        function wireDropdowns() {
+          document.querySelectorAll('[data-controller="dropdown"]').forEach(function(container) {
+            const button = container.querySelector('[data-action="dropdown#toggle"]');
+            const menu = container.querySelector('[data-dropdown-target="menu"]');
+            if (!button || !menu) return;
+
+            button.addEventListener("click", function(event) {
+              event.preventDefault();
+              event.stopPropagation();
+              closeOtherMenus(menu);
+              menu.classList.toggle("hidden");
+            });
+          });
+
+          document.addEventListener("click", function(event) {
+            document.querySelectorAll('[data-dropdown-target="menu"]').forEach(function(menu) {
+              if (!menu.closest('[data-controller="dropdown"]')?.contains(event.target)) {
+                menu.classList.add("hidden");
+              }
+            });
+          });
+        }
+
+        function closeOtherMenus(activeMenu) {
+          document.querySelectorAll('[data-dropdown-target="menu"]').forEach(function(menu) {
+            if (menu !== activeMenu) menu.classList.add("hidden");
+          });
+        }
+
+        function wireDisabledForms() {
+          document.querySelectorAll('form[data-demo-disabled="true"]').forEach(function(form) {
+            form.addEventListener("submit", function(event) {
+              if (form.matches("#entry_form form")) {
+                return;
+              }
+              event.preventDefault();
+            });
+          });
+        }
+
+        function normalizeSingleUserChrome() {
+          document.querySelectorAll('[aria-label="Family"]').forEach(function(button) {
+            const container = button.closest('[data-controller="dropdown"]');
+            container?.removeAttribute("data-controller");
+            container?.querySelector('[data-dropdown-target="menu"]')?.remove();
+            button.querySelectorAll("svg").forEach(function(svg, index, all) {
+              if (index === all.length - 1) svg.remove();
+            });
+            const title = button.querySelector("span.truncate");
+            if (title) title.textContent = PRIMARY_PERSON_NAME;
+          });
+
+          document.querySelectorAll('aside [data-controller="dropdown"]').forEach(function(container) {
+            const button = container.querySelector('button.group.mx-auto');
+            if (!button) return;
+            container.removeAttribute("data-controller");
+            container.querySelector('[data-dropdown-target="menu"]')?.remove();
+            button.querySelectorAll("svg").forEach(function(svg) { svg.remove(); });
+            const title = button.querySelector("h1");
+            if (title) title.textContent = PRIMARY_PERSON_NAME;
+          });
+
+          document.querySelectorAll("p.truncate.text-sm.font-semibold.text-slate-900").forEach(function(node) {
+            node.textContent = PRIMARY_PERSON_NAME;
+          });
+          document.querySelectorAll("p.truncate.text-\[11px\].text-slate-400").forEach(function(node) {
+            if (node.textContent.includes("@")) {
+              node.textContent = "Offline sample";
+            }
+          });
+
+          document.querySelectorAll("form.button_to").forEach(function(form) {
+            const label = form.textContent || "";
+            if (label.includes("Sign out")) {
+              form.remove();
+            }
+          });
+        }
+
+        function removePermissionWarnings() {
+          document.querySelectorAll("div, p, section").forEach(function(node) {
+            const text = (node.textContent || "").trim();
+            if (text.includes("permission to access") || text.includes("access that area")) {
+              node.remove();
+            }
+          });
+        }
+
+        function setupDemoComposer() {
+          document.querySelectorAll("#entry_form form").forEach(function(form) {
+            form.dataset.demoComposer = "true";
+            form.removeAttribute("data-demo-disabled");
+            form.removeAttribute("onsubmit");
+            form.querySelectorAll("[data-demo-disabled-control]").forEach(function(control) {
+              control.removeAttribute("data-demo-disabled-control");
+            });
+
+            const toggleButton = form.querySelector('[data-action="entry-composer#toggleTime"]');
+            const timeFields = form.querySelector('[data-entry-composer-target="timeFields"]');
+            if (toggleButton && timeFields) {
+              toggleButton.addEventListener("click", function(event) {
+                event.preventDefault();
+                timeFields.classList.toggle("hidden");
+              });
+            }
+
+            const attachButton = form.querySelector('[data-action="entry-composer#openFilePicker"]');
+            if (attachButton) {
+              attachButton.addEventListener("click", function(event) {
+                event.preventDefault();
+                showComposerHint(form, "Attachments stay disabled in offline demo mode.");
+              });
+            }
+
+            form.addEventListener("submit", function(event) {
+              event.preventDefault();
+              submitDemoEntry(form);
+            });
+          });
+        }
+
+        function submitDemoEntry(form) {
+          const input = form.querySelector('textarea[name="entry[input]"]');
+          const occurredAtInput = form.querySelector('input[name="entry[occurred_at]"]');
+          const value = (input?.value || "").trim();
+          if (!value) {
+            showComposerHint(form, "Add a short note first.");
+            return;
+          }
+
+          const state = loadDemoState();
+          state.manualEntries.unshift({
+            id: demoID(),
+            title: value.length > 72 ? value.slice(0, 72) + "…" : value,
+            detail: value,
+            occurredAt: occurredAtInput?.value ? new Date(occurredAtInput.value).toISOString() : new Date().toISOString(),
+            source: "Manual",
+            kind: "manual"
+          });
+          saveDemoState(state);
+
+          input.value = "";
+          showComposerHint(form, "Saved to the offline demo protocol.");
+          renderStoredEntries();
+        }
+
+        function showComposerHint(form, message) {
+          const hint = form.querySelector('[data-entry-composer-target="files"]');
+          if (hint) {
+            hint.textContent = message;
+          }
+        }
+
+        function injectHealthDemoPanel() {
+          const path = demoPath();
+          if (!path.endsWith("/healthkit")) return;
+
+          const pageHeader = document.querySelector("section.space-y-5") || document.querySelector("main");
+          if (!pageHeader) return;
+
+          const panel = document.createElement("section");
+          panel.className = "uncledoc-demo-panel";
+          panel.innerHTML = [
+            "<h2>Demo Health access</h2>",
+            "<p>Ask iOS for Health access, then load recent records into the offline demo.</p>",
+            '<div class="uncledoc-demo-actions"><button type="button" id="uncledoc-demo-health-button">Allow Health access</button></div>',
+            '<div class="uncledoc-demo-note" id="uncledoc-demo-sync-note">No HealthKit records loaded yet.</div>',
+            '<div class="mt-4 space-y-3" id="uncledoc-demo-health-records"></div>'
+          ].join("");
+          pageHeader.insertBefore(panel, pageHeader.children[1] || null);
+
+          const button = panel.querySelector("#uncledoc-demo-health-button");
+          const note = panel.querySelector("#uncledoc-demo-sync-note");
+          const recordsContainer = panel.querySelector("#uncledoc-demo-health-records");
+          renderHealthNote(note, loadDemoState().healthRecords);
+          renderHealthRecords(recordsContainer, loadDemoState().healthRecords);
+
+          button.addEventListener("click", function() {
+            button.disabled = true;
+            note.textContent = "Waiting for iOS Health permissions…";
+            postNativeMessage({ type: "requestHealthAccess" });
+          });
+        }
+
+        function injectCalendarSamples() {
+          if (!demoPath().endsWith("/calendar")) return;
+
+          const cells = Array.from(document.querySelectorAll("#calendar-grid .grid.grid-cols-7 > div"))
+            .filter(function(cell) { return !cell.className.includes("opacity-20"); })
+            .slice(8, 14);
+          if (!cells.length) return;
+
+          const samples = [
+            "Pediatric follow-up 09:30",
+            "Bring vaccination card",
+            "School nurse note review"
+          ];
+
+          samples.forEach(function(sample, index) {
+            const cell = cells[index * 2] || cells[index] || cells[0];
+            if (!cell || cell.querySelector('[data-demo-calendar="true"]')) return;
+            const block = document.createElement("div");
+            block.dataset.demoCalendar = "true";
+            block.className = "mt-1 truncate rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900";
+            block.textContent = sample;
+            cell.appendChild(block);
+          });
+        }
+
+        function injectResearchPlaceholder() {
+          if (!demoPath().endsWith("/research")) return;
+
+          document.querySelector("#chat_context_preview")?.remove();
+
+          const messages = document.querySelector("#chat_messages");
+          if (messages) {
+            messages.innerHTML = [
+              '<div class="flex h-full items-center justify-center">',
+              '<div class="max-w-md rounded-3xl border border-slate-200 bg-white/80 px-5 py-5 text-center shadow-sm opacity-70">',
+              '<p class="text-sm font-semibold text-slate-900">Research needs your own LLM</p>',
+              '<p class="mt-2 text-sm text-slate-500">Configure your own LLM on your server to use Research in the live app.</p>',
+              '</div>',
+              '</div>'
+            ].join("");
+          }
+
+          const textarea = document.querySelector('#research_chat_form textarea');
+          if (textarea) {
+            textarea.disabled = true;
+            textarea.placeholder = "Configure your own LLM on your server to use Research.";
+            textarea.classList.add("opacity-60", "cursor-not-allowed");
+          }
+
+          const submit = document.querySelector('#research_chat_form button[type="submit"]');
+          if (submit) {
+            submit.disabled = true;
+            submit.classList.add("opacity-40");
+          }
+        }
+
+        function renderStoredEntries() {
+          renderOverviewEntries();
+          renderProtocolEntries();
+        }
+
+        function renderOverviewEntries() {
+          const card = document.querySelector("#overview_recent_activity");
+          if (!card) return;
+
+          card.querySelectorAll("[data-demo-entry='true']").forEach(function(node) { node.remove(); });
+          const entries = storedEntries();
+          if (!entries.length) return;
+
+          const container = card.querySelector(".space-y-0") || createOverviewList(card);
+          entries.slice(0, 5).reverse().forEach(function(entry) {
+            container.insertAdjacentHTML("afterbegin", compactEntryMarkup(entry));
+          });
+        }
+
+        function renderProtocolEntries() {
+          const frame = document.querySelector("#entries_list");
+          if (!frame) return;
+
+          frame.querySelectorAll("[data-demo-entry='true']").forEach(function(node) { node.remove(); });
+          const list = frame.querySelector(":scope > div") || frame;
+          const entries = storedEntries();
+          if (!entries.length) return;
+
+          entries.slice().reverse().forEach(function(entry) {
+            list.insertAdjacentHTML("afterbegin", protocolEntryMarkup(entry));
+          });
+          updateProtocolCount(entries.length);
+        }
+
+        function createOverviewList(card) {
+          const empty = card.querySelector("p.py-6.text-center.text-sm.text-slate-400");
+          empty?.remove();
+          const list = document.createElement("div");
+          list.className = "space-y-0";
+          card.appendChild(list);
+          return list;
+        }
+
+        function updateProtocolCount(extraEntries) {
+          const badge = document.querySelector("#log_header .rounded-full.border.border-amber-200");
+          if (!badge) return;
+          if (!badge.dataset.baseCount) {
+            const match = badge.textContent.match(/\d+/);
+            badge.dataset.baseCount = String(match ? Number(match[0]) : 0);
+          }
+          const baseCount = Number(badge.dataset.baseCount || 0);
+          badge.textContent = (baseCount + extraEntries) + " entries";
+        }
+
+        function storedEntries() {
+          const state = loadDemoState();
+          return state.manualEntries.concat(state.healthEntries).sort(function(a, b) {
+            return new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime();
+          });
+        }
+
+        function renderHealthNote(element, records) {
+          if (!element) return;
+          if (!records || !records.length) {
+            element.textContent = "No HealthKit records loaded yet.";
+            return;
+          }
+
+          const latest = new Date(records[0].startDate).toLocaleString();
+          element.textContent = "Loaded " + records.length + " recent HealthKit records. Latest sample: " + latest + ".";
+        }
+
+        function renderHealthRecords(container, records) {
+          if (!container) return;
+          container.innerHTML = "";
+          (records || []).slice(0, 8).forEach(function(record) {
+            const row = document.createElement("div");
+            row.className = "rounded-2xl border border-slate-200 bg-white/85 px-4 py-3";
+            row.innerHTML = [
+              '<div class="flex items-start justify-between gap-3">',
+              '<p class="text-sm font-semibold text-slate-900">' + escapeHTML(record.title) + '</p>',
+              '<span class="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700">Health</span>',
+              '</div>',
+              '<p class="mt-1 text-xs text-slate-500">' + escapeHTML(formatDate(record.startDate)) + '</p>',
+              '<p class="mt-2 text-sm text-slate-600 whitespace-pre-wrap">' + escapeHTML(record.rawText) + '</p>'
+            ].join("");
+            container.appendChild(row);
+          });
+        }
+
+        function receiveNativeMessage(payload) {
+          if (!payload || !payload.type) return;
+
+          if (payload.type === "healthkitRecords") {
+            const state = loadDemoState();
+            state.healthRecords = payload.records || [];
+            state.healthEntries = state.healthRecords.map(function(record) {
+              return {
+                id: demoID(),
+                title: record.title,
+                detail: record.rawText,
+                occurredAt: record.startDate,
+                source: "HealthKit",
+                kind: "health"
+              };
+            });
+            saveDemoState(state);
+            renderHealthNote(document.querySelector("#uncledoc-demo-sync-note"), state.healthRecords);
+            renderHealthRecords(document.querySelector("#uncledoc-demo-health-records"), state.healthRecords);
+            renderStoredEntries();
+            enableHealthButton();
+            return;
+          }
+
+          if (payload.type === "healthkitError") {
+            const note = document.querySelector("#uncledoc-demo-sync-note");
+            if (note) note.textContent = payload.message || "HealthKit demo failed.";
+            enableHealthButton();
+          }
+        }
+
+        function enableHealthButton() {
+          const button = document.querySelector("#uncledoc-demo-health-button");
+          if (button) button.disabled = false;
+        }
+
+        function postNativeMessage(payload) {
+          const handler = window.webkit?.messageHandlers?.uncledocDemo;
+          if (!handler) {
+            const note = document.querySelector("#uncledoc-demo-sync-note");
+            if (note) note.textContent = "Native HealthKit bridge unavailable in this build.";
+            enableHealthButton();
+            return;
+          }
+          handler.postMessage(payload);
+        }
+
+        function demoPath() {
+          return document.body?.dataset?.demoPath || window.location.pathname || "/";
+        }
+
+        function loadDemoState() {
+          try {
+            return Object.assign({ manualEntries: [], healthEntries: [], healthRecords: [] }, JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "{}"));
+          } catch (_error) {
+            return { manualEntries: [], healthEntries: [], healthRecords: [] };
+          }
+        }
+
+        function saveDemoState(state) {
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        function compactEntryMarkup(entry) {
+          return [
+            '<details class="group border-b border-slate-100 last:border-0" data-demo-entry="true">',
+            '<summary class="flex cursor-pointer items-start gap-3 rounded-2xl px-3 py-3 transition hover:bg-amber-50/70">',
+            '<div class="w-20 flex-shrink-0 text-[11px] text-slate-500">',
+            '<div>' + escapeHTML(formatShortDate(entry.occurredAt)) + '</div>',
+            '<div class="mt-0.5 text-[10px] text-slate-400">' + escapeHTML(formatShortTime(entry.occurredAt)) + '</div>',
+            '</div>',
+            '<div class="flex-1 min-w-0">',
+            '<div class="mb-1 flex items-start gap-2">',
+            '<p class="line-clamp-6 min-w-0 flex-1 break-words text-sm font-medium leading-snug text-slate-900 [overflow-wrap:anywhere]">' + escapeHTML(entry.title) + '</p>',
+            sourceBadge(entry),
+            '</div>',
+            '</div>',
+            '<div class="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition group-open:rotate-180">',
+            '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"></path></svg>',
+            '</div>',
+            '</summary>',
+            '<div class="px-3 pb-3 pt-1">',
+            '<div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 overflow-hidden break-all">',
+            '<p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Input</p>',
+            '<p class="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700 [overflow-wrap:anywhere]">' + escapeHTML(entry.detail) + '</p>',
+            '</div>',
+            '</div>',
+            '</details>'
+          ].join("");
+        }
+
+        function protocolEntryMarkup(entry) {
+          return [
+            '<div class="uncledoc-demo-entry" data-demo-entry="true">',
+            '<details class="group" open>',
+            '<summary>',
+            '<div class="shrink-0 text-right"><p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700">' + escapeHTML(formatLongDay(entry.occurredAt)) + '</p></div>',
+            '<p class="min-w-0 truncate text-sm"><span class="text-slate-800">' + escapeHTML(entry.title) + '</span></p>',
+            '<div class="flex justify-end">' + protocolSourceBadge(entry) + '</div>',
+            '<div class="flex justify-end"></div>',
+            '<div class="flex justify-end"></div>',
+            '<svg class="h-3.5 w-3.5 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"></path></svg>',
+            '</summary>',
+            '<div class="uncledoc-demo-entry-body">',
+            '<p class="text-xs text-slate-400">' + escapeHTML(formatDate(entry.occurredAt)) + '</p>',
+            '<div class="mt-3 space-y-3"><p class="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap">' + escapeHTML(entry.detail) + '</p></div>',
+            '</div>',
+            '</details>',
+            '</div>'
+          ].join("");
+        }
+
+        function sourceBadge(entry) {
+          if (entry.kind === "health") {
+            return '<span class="inline-flex shrink-0 rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-rose-600">Health</span>';
+          }
+          return '<span class="inline-flex shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-amber-700">Manual</span>';
+        }
+
+        function protocolSourceBadge(entry) {
+          if (entry.kind === "health") {
+            return '<span class="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-rose-600">Health</span>';
+          }
+          return '<span class="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-amber-700">Manual</span>';
+        }
+
+        function formatDate(value) {
+          return new Date(value).toLocaleString();
+        }
+
+        function formatShortDate(value) {
+          const date = new Date(value);
+          return String(date.getMonth() + 1).padStart(2, "0") + "/" + String(date.getDate()).padStart(2, "0");
+        }
+
+        function formatShortTime(value) {
+          const date = new Date(value);
+          return String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0");
+        }
+
+        function formatLongDay(value) {
+          return new Date(value).toLocaleDateString(undefined, { month: "long", day: "numeric" });
+        }
+
+        function escapeHTML(value) {
+          const div = document.createElement("div");
+          div.textContent = value || "";
+          return div.innerHTML;
+        }
+
+        function demoID() {
+          return (window.crypto?.randomUUID && window.crypto.randomUUID()) || String(Date.now()) + String(Math.random()).slice(2);
+        }
+      })();
+    JAVASCRIPT
+  end
+end
+
+base_url = ENV.fetch("UNCLEDOC_DEMO_BASE_URL", "http://localhost:3000")
+email = ENV.fetch("UNCLEDOC_DEMO_EMAIL", "test@test.com")
+password = ENV.fetch("UNCLEDOC_DEMO_PASSWORD", "testtesttest")
+output_dir = ENV.fetch("UNCLEDOC_DEMO_OUTPUT_DIR", File.expand_path("../ios/UncleDoc/DemoSite", __dir__))
+primary_person_name = ENV.fetch("UNCLEDOC_DEMO_PRIMARY_PERSON", "Demo Nora")
+
+DemoSiteExporter.new(
+  base_url: base_url,
+  email: email,
+  password: password,
+  output_dir: output_dir,
+  primary_person_name: primary_person_name
+).run
