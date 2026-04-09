@@ -1,7 +1,7 @@
 (function() {
   const PRIMARY_PERSON_NAME = "Demo Nora";
   const PRIMARY_PERSON_SLUG = "Demo Nora";
-  const STORAGE_KEY = "uncledoc.demo.state.v3";
+  const STORAGE_KEY = "uncledoc.demo.state.v6";
 
   window.UncleDocDemo = {
     receiveNativeMessage: receiveNativeMessage
@@ -17,7 +17,10 @@
     setupDemoComposer();
     injectCalendarSamples();
     injectResearchPlaceholder();
+    injectFileSamples();
     injectHealthDemoPanel();
+    injectOverviewMetricWidgets();
+    injectPlanningSamples();
     renderStoredEntries();
   });
 
@@ -64,6 +67,11 @@
   function normalizeSingleUserChrome() {
     const pagePill = document.querySelector(".uncledoc-demo-pill");
     if (pagePill) pagePill.textContent = demoPageLabel();
+
+    const demoBannerText = document.querySelector(".uncledoc-demo-banner span");
+    if (demoBannerText) {
+      demoBannerText.textContent = "Built-in local sample data. Works offline and mirrors the live app structure.";
+    }
 
     document.querySelectorAll('[aria-label="Family"]').forEach(function(button) {
       const container = button.closest('[data-controller="dropdown"]');
@@ -139,10 +147,37 @@
       return value;
     }
 
+    const directReplacements = {
+      "Â·": "·",
+      "â€“": "–",
+      "â€”": "—",
+      "â€œ": '"',
+      "â€": '"',
+      "â€˜": "'",
+      "â€™": "'",
+      "â€¦": "...",
+      "Ã¶": "ö",
+      "Ã¤": "ä",
+      "Ã¼": "ü",
+      "Ã–": "Ö",
+      "Ã„": "Ä",
+      "Ãœ": "Ü",
+      "Ã": "ß"
+    };
+
+    let repaired = value;
+    Object.entries(directReplacements).forEach(function(entry) {
+      repaired = repaired.split(entry[0]).join(entry[1]);
+    });
+
+    if (!/[ÃÂâ]/.test(repaired)) {
+      return repaired;
+    }
+
     try {
-      return decodeURIComponent(escape(value));
+      return decodeURIComponent(escape(repaired));
     } catch (_error) {
-      return value;
+      return repaired;
     }
   }
 
@@ -224,6 +259,8 @@
     const path = demoPath();
     if (!path.endsWith("/healthkit")) return;
 
+    updateHealthOverview(loadDemoState());
+
     const pageHeader = document.querySelector("section.space-y-5") || document.querySelector("main");
     if (!pageHeader) return;
 
@@ -243,6 +280,7 @@
     const recordsContainer = panel.querySelector("#uncledoc-demo-health-records");
     renderHealthNote(note, loadDemoState().healthRecords);
     renderHealthRecords(recordsContainer, loadDemoState().healthRecords);
+    renderHealthTable(loadDemoState().healthRecords);
 
     button.addEventListener("click", function() {
       button.disabled = true;
@@ -276,10 +314,157 @@
     });
   }
 
+  function injectFileSamples() {
+    if (!demoPath().endsWith("/files")) return;
+
+    const stats = document.querySelector("#files_stats");
+    if (stats) {
+      stats.innerHTML = '<span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-700">2 files</span><span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-700">2 entries</span>';
+    }
+
+    const list = document.querySelector("#files_list");
+    if (!list) return;
+
+    list.innerHTML = [
+      '<div class="space-y-3">',
+      fileCard("Pediatrician summary.pdf", "PDF", "April 08, 2026", "Follow-up note with temperature and medication guidance."),
+      fileCard("School nurse note.txt", "TXT", "April 07, 2026", "Short school observation about mild headache and early pickup."),
+      '</div>'
+    ].join("");
+  }
+
+  function injectOverviewMetricWidgets() {
+    if (!demoPath().endsWith("/overview")) return;
+
+    injectMetricWidget("overview_weight_activity", {
+      unitLabel: "kg",
+      latestLabel: "Latest",
+      latestValue: "29.4 kg",
+      changeLabel: "+0.4 kg in 1M",
+      tintClass: "text-violet-700",
+      bars: [82, 84, 86, 87, 89, 92],
+      values: [
+        { label: "Apr 06", value: "29.4 kg" },
+        { label: "Mar 22", value: "29.2 kg" },
+        { label: "Mar 08", value: "29.1 kg" }
+      ]
+    });
+
+    injectMetricWidget("overview_temperature_activity", {
+      unitLabel: "C",
+      latestLabel: "Latest",
+      latestValue: "36.8 C",
+      changeLabel: "Range 36.7-37.0 C",
+      tintClass: "text-rose-700",
+      bars: [78, 82, 80, 84, 79, 81, 77],
+      values: [
+        { label: "Today", value: "36.8 C" },
+        { label: "Yesterday", value: "37.0 C" },
+        { label: "Apr 07", value: "36.9 C" }
+      ]
+    });
+
+    injectMetricWidget("overview_pulse_activity", {
+      unitLabel: "bpm",
+      latestLabel: "Latest",
+      latestValue: "76 bpm",
+      changeLabel: "Resting trend improved",
+      tintClass: "text-orange-700",
+      bars: [92, 88, 84, 81, 79, 77, 76],
+      values: [
+        { label: "Today", value: "76 bpm" },
+        { label: "Yesterday", value: "82 bpm" },
+        { label: "Apr 07", value: "78 bpm" }
+      ]
+    });
+
+    injectMetricWidget("overview_blood_pressure_activity", {
+      unitLabel: "mmHg",
+      latestLabel: "Latest",
+      latestValue: "118/76",
+      changeLabel: "Stable after school",
+      tintClass: "text-sky-700",
+      bars: [78, 82, 80, 84, 82, 83],
+      values: [
+        { label: "Apr 09", value: "118/76" },
+        { label: "Apr 04", value: "120/78" },
+        { label: "Mar 29", value: "116/74" }
+      ]
+    });
+  }
+
+  function injectMetricWidget(id, metric) {
+    const card = document.getElementById(id);
+    if (!card) return;
+
+    const empty = card.querySelector(".border-dashed");
+    if (!empty) return;
+
+    empty.className = "rounded-2xl border border-slate-200 bg-slate-50/70 p-4";
+    empty.innerHTML = [
+      '<div class="flex items-start justify-between gap-3">',
+      '<div>',
+      '<p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">' + escapeHTML(metric.latestLabel) + '</p>',
+      '<p class="mt-1 text-xl font-black text-slate-950">' + escapeHTML(metric.latestValue) + '</p>',
+      '<p class="mt-1 text-xs font-medium ' + metric.tintClass + '">' + escapeHTML(metric.changeLabel) + '</p>',
+      '</div>',
+      '<span class="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-500 shadow-sm ring-1 ring-slate-200">' + escapeHTML(metric.unitLabel) + '</span>',
+      '</div>',
+      '<div class="mt-4 flex h-24 items-end gap-2">',
+      metric.bars.map(function(height) {
+        return '<div class="flex-1 rounded-t-2xl bg-white shadow-sm ring-1 ring-slate-200" style="height:' + height + '%"></div>';
+      }).join(""),
+      '</div>',
+      '<div class="mt-4 space-y-2">',
+      metric.values.map(function(item) {
+        return '<div class="flex items-center justify-between rounded-xl bg-white px-3 py-2 text-sm shadow-sm ring-1 ring-slate-200"><span class="text-slate-500">' + escapeHTML(item.label) + '</span><span class="font-semibold text-slate-900">' + escapeHTML(item.value) + '</span></div>';
+      }).join(""),
+      '</div>'
+    ].join("");
+  }
+
+  function injectPlanningSamples() {
+    if (!demoPath().endsWith("/overview")) return;
+
+    const planning = document.getElementById("overview_planning");
+    if (!planning) return;
+
+    const emptyStates = Array.from(planning.querySelectorAll("p.py-4.text-center.text-xs.text-slate-400"));
+    const appointmentEmpty = emptyStates[0];
+    const todoEmpty = emptyStates[1];
+
+    if (appointmentEmpty) {
+      appointmentEmpty.outerHTML = '<div class="space-y-2"><div class="rounded-xl bg-amber-50 px-3 py-2 text-sm text-slate-700 ring-1 ring-amber-200"><p class="font-semibold text-slate-900">Pediatrician follow-up</p><p class="text-xs text-slate-500">Friday 10:30 · bring vaccination card</p></div></div>';
+    }
+
+    if (todoEmpty) {
+      todoEmpty.outerHTML = '<div class="space-y-2"><div class="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-slate-700 ring-1 ring-emerald-200"><p class="font-semibold text-slate-900">Pack school medication note</p><p class="text-xs text-slate-500">Due tomorrow morning</p></div><div class="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-slate-700 ring-1 ring-emerald-200"><p class="font-semibold text-slate-900">Buy children\'s fever reducer</p><p class="text-xs text-slate-500">Low stock at home</p></div></div>';
+    }
+  }
+
+  function fileCard(name, type, date, detail) {
+    return [
+      '<div class="rounded-[1.5rem] border border-slate-200 bg-slate-50/60 px-4 py-4">',
+      '<div class="flex items-start justify-between gap-3">',
+      '<div>',
+      '<p class="text-sm font-semibold text-slate-900">' + escapeHTML(name) + '</p>',
+      '<p class="mt-1 text-xs text-slate-500">' + escapeHTML(date) + '</p>',
+      '</div>',
+      '<span class="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold text-amber-800">' + escapeHTML(type) + '</span>',
+      '</div>',
+      '<p class="mt-3 text-sm text-slate-600">' + escapeHTML(detail) + '</p>',
+      '</div>'
+    ].join("");
+  }
+
   function injectResearchPlaceholder() {
     if (!demoPath().endsWith("/research")) return;
 
-    const panel = document.querySelector("section.flex.w-full.flex-col.rounded-\[2rem\]");
+    const panel = Array.from(document.querySelectorAll("section")).find(function(section) {
+      const className = section.className || "";
+      return className.includes("min-h-[32rem]") && className.includes("flex-col");
+    });
+
     if (panel) {
       panel.className = "w-full rounded-[2rem] border border-slate-200 bg-white ring-1 ring-black/5";
       panel.innerHTML = [
@@ -396,25 +581,48 @@
     });
   }
 
+  function renderHealthTable(records) {
+    const rows = document.querySelector("#db_table_rows");
+    if (!rows) return;
+
+    if (!records || !records.length) {
+      rows.innerHTML = '<tr><td colspan="11" class="px-4 py-8 text-center text-sm text-slate-500">No rows yet.</td></tr>';
+      return;
+    }
+
+    rows.innerHTML = records.slice(0, 8).map(function(record, index) {
+      return [
+        '<tr class="border-t border-slate-100">',
+        '<td class="px-4 py-3 text-xs text-slate-600">demo-' + (index + 1) + '</td>',
+        '<td class="px-4 py-3 text-xs text-slate-600">demo-nora</td>',
+        '<td class="px-4 py-3 text-xs text-slate-600">iphone-demo</td>',
+        '<td class="px-4 py-3 text-xs text-slate-600">health-' + (index + 1) + '</td>',
+        '<td class="px-4 py-3 text-xs text-slate-600">' + escapeHTML(record.title) + '</td>',
+        '<td class="px-4 py-3 text-xs text-slate-600">Apple Health</td>',
+        '<td class="px-4 py-3 text-xs text-slate-600">' + escapeHTML(formatDate(record.startDate)) + '</td>',
+        '<td class="px-4 py-3 text-xs text-slate-600">' + escapeHTML(formatDate(record.startDate)) + '</td>',
+        '<td class="px-4 py-3 text-xs text-slate-600 max-w-[14rem] truncate">' + escapeHTML(record.rawText) + '</td>',
+        '<td class="px-4 py-3 text-xs text-slate-600">' + escapeHTML(formatDate(record.startDate)) + '</td>',
+        '<td class="px-4 py-3 text-xs text-slate-600">' + escapeHTML(formatDate(record.startDate)) + '</td>',
+        '</tr>'
+      ].join("");
+    }).join("");
+  }
+
   function receiveNativeMessage(payload) {
     if (!payload || !payload.type) return;
 
     if (payload.type === "healthkitRecords") {
       const state = loadDemoState();
-      state.healthRecords = payload.records || [];
-      state.healthEntries = state.healthRecords.map(function(record) {
-        return {
-          id: demoID(),
-          title: record.title,
-          detail: record.rawText,
-          occurredAt: record.startDate,
-          source: "HealthKit",
-          kind: "health"
-        };
+      state.healthRecords = (payload.records || []).slice(0, 8).map(function(record, index) {
+        return normalizeHealthRecord(record, index);
       });
+      state.healthEntries = buildTimelineEntriesFromHealthRecords(state.healthRecords);
       saveDemoState(state);
+      updateHealthOverview(state);
       renderHealthNote(document.querySelector("#uncledoc-demo-sync-note"), state.healthRecords);
       renderHealthRecords(document.querySelector("#uncledoc-demo-health-records"), state.healthRecords);
+      renderHealthTable(state.healthRecords);
       renderStoredEntries();
       enableHealthButton();
       return;
@@ -449,7 +657,12 @@
 
   function loadDemoState() {
     try {
-      return Object.assign(defaultDemoState(), JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "{}"));
+      const state = Object.assign(defaultDemoState(), JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "{}"));
+      state.healthRecords = (state.healthRecords || []).map(function(record, index) {
+        return normalizeHealthRecord(record, index);
+      });
+      state.healthEntries = buildTimelineEntriesFromHealthRecords(state.healthRecords);
+      return state;
     } catch (_error) {
       return defaultDemoState();
     }
@@ -457,6 +670,25 @@
 
   function saveDemoState(state) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function updateHealthOverview(state) {
+    if (!demoPath().endsWith("/healthkit")) return;
+
+    const records = state.healthRecords || [];
+    const values = document.querySelectorAll('section.rounded-\\[2rem\\].border.border-slate-200.bg-white.p-5.ring-1.ring-black\\/5.xl\\:col-span-1 .space-y-2\\.5 > div span:last-child');
+    if (values.length >= 5) {
+      values[0].textContent = records.length ? "Demo synced" : "Ready for demo";
+      values[1].textContent = records.length ? formatDate(records[0].startDate) : "No native sync yet";
+      values[2].textContent = records.length + " raw records";
+      values[3].textContent = records.length + " summaries (demo)";
+      values[4].textContent = records.length ? "1 device" : "0 devices";
+    }
+
+    const metadata = document.querySelector('#healthkit_records_table_frame p.mt-1.text-xs.text-slate-300');
+    if (metadata) {
+      metadata.textContent = records.length ? (records.length + ' loaded · Sorted by start_at · payload preview only') : '0 loaded · Sorted by start_at · payload preview only';
+    }
   }
 
   function seedDemoState() {
@@ -504,6 +736,117 @@
       healthEntries: [],
       healthRecords: []
     };
+  }
+
+  function normalizeHealthRecord(record, index) {
+    const originalTitle = (record.title || "Health sample").trim();
+    const title = humanizeHealthTitle(originalTitle);
+    let rawText = (record.rawText || "Imported from Apple Health.").trim();
+
+    if (originalTitle.startsWith("characteristic.")) {
+      rawText = characteristicSummary(originalTitle, rawText);
+    } else if (/^<HK/.test(rawText)) {
+      rawText = "Imported Apple Health sample available in offline demo mode.";
+    }
+
+    let date = new Date(record.startDate);
+    if (Number.isNaN(date.getTime()) || date.getFullYear() <= 1971) {
+      date = new Date(Date.now() - (index * 3_600_000));
+    }
+
+    return {
+      title: title,
+      rawText: rawText,
+      startDate: date.toISOString()
+    };
+  }
+
+  function humanizeHealthTitle(title) {
+    const map = {
+      "characteristic.biologicalSex": "Biological Sex",
+      "characteristic.bloodType": "Blood Type",
+      "characteristic.fitzpatrickSkinType": "Skin Type",
+      "characteristic.wheelchairUse": "Wheelchair Use",
+      "characteristic.activityMoveMode": "Activity Move Mode"
+    };
+
+    if (map[title]) {
+      return map[title];
+    }
+
+    return title
+      .replace(/^quantity\./, "")
+      .replace(/^category\./, "")
+      .replace(/^workout\./, "")
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/[._]/g, " ")
+      .replace(/\b\w/g, function(match) { return match.toUpperCase(); });
+  }
+
+  function characteristicSummary(title, rawText) {
+    if (title === "characteristic.biologicalSex") {
+      return "Profile characteristic imported from Apple Health.";
+    }
+    if (title === "characteristic.bloodType") {
+      return "Blood type available through Apple Health permissions.";
+    }
+    if (title === "characteristic.fitzpatrickSkinType") {
+      return "Skin type setting available through Apple Health permissions.";
+    }
+    if (title === "characteristic.wheelchairUse") {
+      return "Mobility accessibility preference imported from Apple Health.";
+    }
+    if (title === "characteristic.activityMoveMode") {
+      return "Move goal preference imported from Apple Health.";
+    }
+    return rawText;
+  }
+
+  function buildTimelineEntriesFromHealthRecords(records) {
+    const metadataRecords = [];
+    const sampleRecords = [];
+
+    (records || []).forEach(function(record) {
+      if (isProfileHealthRecord(record.title)) {
+        metadataRecords.push(record);
+      } else {
+        sampleRecords.push(record);
+      }
+    });
+
+    const entries = sampleRecords.slice(0, 4).map(function(record) {
+      return {
+        id: demoID(),
+        title: record.title,
+        detail: record.rawText,
+        occurredAt: record.startDate,
+        source: "HealthKit",
+        kind: "health"
+      };
+    });
+
+    if (metadataRecords.length) {
+      entries.push({
+        id: demoID(),
+        title: "Apple Health profile synced",
+        detail: metadataRecords.length + " profile records imported for demo mode.",
+        occurredAt: metadataRecords[0].startDate,
+        source: "HealthKit",
+        kind: "health"
+      });
+    }
+
+    return entries;
+  }
+
+  function isProfileHealthRecord(title) {
+    return [
+      "Biological Sex",
+      "Blood Type",
+      "Skin Type",
+      "Wheelchair Use",
+      "Activity Move Mode"
+    ].includes((title || "").trim());
   }
 
   function compactEntryMarkup(entry) {

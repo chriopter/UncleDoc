@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<!-- BEGIN app/views/layouts/application.html.erb
+--><html>
+  <head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+    <title>UncleDoc</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="UncleDoc">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+
+    
+
+    
+
+    <link rel="manifest" href="../../manifest.json">
+
+    <link rel="icon" href="../../favicon.ico" sizes="any">
+    <link rel="icon" href="../../icon-192.png" type="image/png" sizes="192x192">
+    <link rel="icon" href="../../icon-512.png" type="image/png" sizes="512x512">
+    <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+
+    <link rel="stylesheet" href="../../assets/application-2f1edd40.css" data-turbo-track="reload">
+<link rel="stylesheet" href="../../assets/tailwind-4e57894a.css" data-turbo-track="reload">
+    <style>
+      :root {
+        --uncledoc-safe-top: env(safe-area-inset-top, 0px);
+      }
+    </style>
+    
+<link rel="modulepreload" href="../../assets/application-0c54349d.js">
+<link rel="modulepreload" href="../../assets/turbo.min-9fd88cd5.js">
+<link rel="modulepreload" href="../../assets/stimulus.min-4b1e420e.js">
+<link rel="modulepreload" href="../../assets/stimulus-loading-1fc53fe7.js">
+<link rel="modulepreload" href="../../assets/controllers/application-3affb389.js">
+<link rel="modulepreload" href="../../assets/controllers/auto_submit_controller-eca1a01a.js">
+<link rel="modulepreload" href="../../assets/controllers/chat_feed_controller-c2d066e6.js">
+<link rel="modulepreload" href="../../assets/controllers/chat_input_controller-7310d21b.js">
+<link rel="modulepreload" href="../../assets/controllers/db_filter_controller-f773bcc9.js">
+<link rel="modulepreload" href="../../assets/controllers/dropdown_controller-037e96f7.js">
+<link rel="modulepreload" href="../../assets/controllers/entry_composer_controller-be3ba2a3.js">
+<link rel="modulepreload" href="../../assets/controllers/feeding_mode_controller-dbb2cb6e.js">
+<link rel="modulepreload" href="../../assets/controllers/hello_controller-708796bd.js">
+<link rel="modulepreload" href="../../assets/controllers/index-ee64e1f1.js">
+<link rel="modulepreload" href="../../assets/controllers/llm_settings_controller-4fcf7d54.js">
+<link rel="modulepreload" href="../../assets/controllers/log_view_controller-73f55fb5.js">
+<link rel="modulepreload" href="../../assets/controllers/quick_submit_controller-f331c294.js">
+<link rel="modulepreload" href="../../assets/controllers/streaming_markdown_controller-2550bb33.js">
+
+  <link rel="stylesheet" href="../../demo/demo.css">
+<script src="../../demo/demo.js" defer></script>
+</head>
+
+
+  <body class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.20),_transparent_22%),radial-gradient(circle_at_bottom_right,_rgba(244,114,182,0.12),_transparent_24%),linear-gradient(180deg,_#fffaf1_0%,_#f4efe4_100%)] text-slate-900 antialiased " data-demo-path="/Demo%20Mila/research">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:rounded-xl focus:bg-amber-500 focus:px-4 focus:py-3 focus:text-white focus:text-sm focus:font-semibold focus:shadow-lg">
+      Skip to content
+    </a>
+
+    <main id="main-content" class="mx-auto min-h-screen w-full max-w-[96rem] px-4 md:px-6 pt-[max(1rem,calc(var(--uncledoc-safe-top)+0.75rem))] pb-4 md:pt-6 md:pb-6"><section class="uncledoc-demo-banner">
+  <div>
+    <strong>Offline demo mode</strong>
+    <span>Local sample mirror generated from http://localhost:3000.</span>
+  </div>
+  <span class="uncledoc-demo-pill">/Demo%20Mila/research</span>
+</section>
+
+      <div class="flex min-h-[calc(100vh-2rem)] flex-col gap-6 xl:flex-row">
+
+        <header class="sticky z-40 pb-3 xl:hidden" style="top: calc(var(--uncledoc-safe-top) + 0.5rem);">
+          <div class="relative flex items-start justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-3">
+              <div class="relative" data-controller="dropdown">
+                <button type="button" data-action="dropdown#toggle" class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border border-white/80 bg-white/90 text-slate-700 shadow-[0_14px_40px_-24px_rgba(15,23,42,0.42)] ring-1 ring-black/5 backdrop-blur transition hover:bg-white hover:text-slate-950" aria-label="Menu">
+                  <svg class="h-5 w-5" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path>
+                  </svg>
+                </button>
+
+                <div data-dropdown-target="menu" class="absolute left-0 top-full z-[9999] mt-3 hidden max-h-[calc(100dvh-var(--uncledoc-safe-top)-5.5rem)] w-[min(25rem,calc(100vw-1.5rem))] overflow-x-hidden overflow-y-auto overscroll-contain rounded-[2rem] border border-white/80 bg-[linear-gradient(180deg,_rgba(255,255,255,0.98)_0%,_rgba(255,248,235,0.94)_100%)] p-3 shadow-[0_28px_80px_-34px_rgba(15,23,42,0.42)] ring-1 ring-black/5 backdrop-blur">
+                  <div class="space-y-1">
+                      <div class="rounded-[1.5rem] bg-amber-50/70 px-2 py-2">
+                        <a class="flex items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-white/80" href="../overview/index.html">
+                          <span class="flex h-9 w-9 items-center justify-center rounded-2xl #{group[:active] ? 'bg-white text-amber-700 shadow-sm ring-1 ring-amber-200/80' : 'bg-white text-amber-700 shadow-sm ring-1 ring-black/5'}">
+                            <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h7V3H3zm11 9h7v-7h-7zm0-18v7h7V3zM3 21h7v-7H3z"></path>
+                            </svg>
+                          </span>
+                          <span>Overview</span>
+</a>
+                          <div class="mt-1 border-l border-amber-200/80 pl-7">
+                              <a class="block rounded-xl px-3 py-2 text-sm font-medium text-slate-500 hover:bg-white/80 hover:text-slate-900" href="../baby/index.html">
+                                Baby
+</a>                              <a class="block rounded-xl px-3 py-2 text-sm font-medium text-slate-500 hover:bg-white/80 hover:text-slate-900" href="../calendar/index.html">
+                                Calendar
+</a>                          </div>
+                      </div>
+                      <div class="rounded-[1.5rem] ">
+                        <a class="flex items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold bg-amber-100 text-amber-900 shadow-sm ring-1 ring-amber-200/80" href="index.html">
+                          <span class="flex h-9 w-9 items-center justify-center rounded-2xl #{group[:active] ? 'bg-white text-amber-700 shadow-sm ring-1 ring-amber-200/80' : 'bg-white text-amber-700 shadow-sm ring-1 ring-black/5'}">
+                            <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"></path>
+                            </svg>
+                          </span>
+                          <span>Research</span>
+</a>
+                      </div>
+                      <div class="rounded-[1.5rem] bg-amber-50/70 px-2 py-2">
+                        <a class="flex items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-white/80" href="../log/index.html">
+                          <span class="flex h-9 w-9 items-center justify-center rounded-2xl #{group[:active] ? 'bg-white text-amber-700 shadow-sm ring-1 ring-amber-200/80' : 'bg-white text-amber-700 shadow-sm ring-1 ring-black/5'}">
+                            <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                          </span>
+                          <span>Data</span>
+</a>
+                          <div class="mt-1 border-l border-amber-200/80 pl-7">
+                              <a class="block rounded-xl px-3 py-2 text-sm font-medium text-slate-500 hover:bg-white/80 hover:text-slate-900" href="../files/index.html">
+                                Files
+</a>                              <a class="block rounded-xl px-3 py-2 text-sm font-medium text-slate-500 hover:bg-white/80 hover:text-slate-900" href="../healthkit/index.html">
+                                HealthKit
+</a>                          </div>
+                      </div>
+                  </div>
+
+                  <div class="mt-2 border-t border-amber-100/80 pt-3 space-y-0.5">
+
+                      <div class="mt-2 border-t border-amber-100/80 pt-3">
+                        <div class="flex items-center gap-2.5 px-3 py-2">
+                          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-xs font-black text-amber-800">T</span>
+                          <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold text-slate-900">Test User</p>
+                            <p class="truncate text-[11px] text-slate-400">test@test.com</p>
+                          </div>
+                        </div>
+                        <form class="button_to" method="post" action="#" data-demo-disabled="true" onsubmit="return false">
+<input type="hidden" name="_method" value="delete"><button class="flex w-full items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-white/80" type="submit" data-demo-disabled-control="true">
+                          <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-amber-700 shadow-sm ring-1 ring-black/5">
+                            <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3h9m0 0-3-3m3 3-3 3"></path></svg>
+                          </span>
+                          <span>Sign out</span>
+</button><input type="hidden" name="authenticity_token" value="1y-fVY-FGnQwhcB_PBA6UR-eVVsgtzXGk8epp3stDgVsC9lCG8iO0vWsZGw2C-2btFJHGP_x35IyLxGy-pofng">
+</form>                      </div>
+
+                  </div>
+
+                </div>
+              </div>
+
+              <div class="relative min-w-0 flex-1" data-controller="dropdown">
+                  <button type="button" data-action="dropdown#toggle" class="flex min-w-0 max-w-full items-center gap-3 rounded-full border border-white/80 bg-white/90 px-2.5 py-2 pr-4 text-left shadow-[0_14px_40px_-24px_rgba(15,23,42,0.42)] ring-1 ring-black/5 backdrop-blur transition hover:bg-white" aria-label="Family">
+                    <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-black text-amber-800 ring-1 ring-amber-200/80">
+                      D
+                    </div>
+                    <span class="truncate text-[1.05rem] font-semibold tracking-tight text-slate-950">Demo Mila</span>
+                    <svg class="h-4 w-4 flex-shrink-0 text-slate-400" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"></path>
+                    </svg>
+                  </button>
+
+                  <div data-dropdown-target="menu" class="absolute left-0 top-full z-[9999] mt-3 hidden min-w-full overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/95 p-2.5 shadow-[0_28px_80px_-34px_rgba(15,23,42,0.42)] ring-1 ring-black/5 backdrop-blur">
+                    <div class="space-y-1">
+                        <a class="flex items-center justify-between rounded-[1.15rem] px-3 py-3 text-sm font-medium text-slate-700 hover:bg-amber-50/70" href="../../Test%20User/overview/index.html">
+                          <span class="truncate">Test User</span>
+</a>                        <a class="flex items-center justify-between rounded-[1.15rem] px-3 py-3 text-sm font-medium bg-amber-100 text-amber-900 shadow-sm ring-1 ring-amber-200/80" href="../overview/index.html">
+                          <span class="truncate">Demo Mila</span>
+                            <span class="ml-2 text-xs text-amber-600">●</span>
+</a>                        <a class="flex items-center justify-between rounded-[1.15rem] px-3 py-3 text-sm font-medium text-slate-700 hover:bg-amber-50/70" href="../../Demo%20Theo/overview/index.html">
+                          <span class="truncate">Demo Theo</span>
+</a>                        <a class="flex items-center justify-between rounded-[1.15rem] px-3 py-3 text-sm font-medium text-slate-700 hover:bg-amber-50/70" href="../../Demo%20Nora/overview/index.html">
+                          <span class="truncate">Demo Nora</span>
+</a>                    </div>
+                  </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <aside class="hidden xl:sticky xl:top-6 xl:block xl:h-[calc(100vh-3rem)] xl:w-[18rem] xl:flex-shrink-0">
+          <div class="flex h-full flex-col rounded-[2rem] border border-amber-100/80 bg-[linear-gradient(180deg,_rgba(255,255,255,0.96)_0%,_rgba(255,248,235,0.92)_100%)] p-5 shadow-[0_24px_70px_-32px_rgba(120,53,15,0.28)] ring-1 ring-amber-100/80">
+
+            <div class="flex flex-1 flex-col ">
+              <div class="relative mb-6" data-controller="dropdown">
+                <button type="button" data-action="dropdown#toggle" class="group mx-auto flex items-center gap-3 text-left">
+                  <h1 class="max-w-[13rem] break-words text-xl font-black tracking-tight text-slate-950 transition-colors group-hover:text-amber-700">Demo Mila</h1>
+                  <svg class="h-5 w-5 text-slate-400 group-hover:text-amber-600" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"></path>
+                  </svg>
+                </button>
+
+                <div data-dropdown-target="menu" class="absolute left-1/2 top-full z-[9999] mt-3 hidden w-48 -translate-x-1/2 rounded-2xl border border-amber-200 bg-white p-2 shadow-xl ring-1 ring-black/5">
+                    <div class="space-y-0.5">
+                        <a class="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-amber-50" href="../../Test%20User/overview/index.html">
+                          <span class="truncate">Test User</span>
+</a>                        <a class="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium bg-amber-100 text-amber-900" href="../overview/index.html">
+                          <span class="truncate">Demo Mila</span>
+                            <span class="ml-2 text-xs text-amber-600">●</span>
+</a>                        <a class="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-amber-50" href="../../Demo%20Theo/overview/index.html">
+                          <span class="truncate">Demo Theo</span>
+</a>                        <a class="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-amber-50" href="../../Demo%20Nora/overview/index.html">
+                          <span class="truncate">Demo Nora</span>
+</a>                    </div>
+                </div>
+              </div>
+
+              <nav class="flex-1 space-y-0.5 overflow-y-auto">
+                    <a class="flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition text-slate-700 hover:bg-white hover:text-slate-950" href="../overview/index.html">
+                      <span class="flex items-center gap-3">
+                        <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+                          <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h7V3H3zm11 9h7v-7h-7zm0-18v7h7V3zM3 21h7v-7H3z"></path>
+                          </svg>
+                        </span>
+                        <span>Overview</span>
+                      </span>
+</a>
+                    <a class="ml-11 block rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-500 hover:text-slate-900 hover:bg-white" href="../baby/index.html">
+                      Baby
+</a>                    <a class="ml-11 block rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-500 hover:text-slate-900 hover:bg-white" href="../calendar/index.html">
+                      Calendar
+</a>                    <a class="flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition bg-amber-100 text-amber-900 shadow-sm ring-1 ring-amber-200/80" href="index.html">
+                      <span class="flex items-center gap-3">
+                        <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-amber-700 shadow-sm ring-1 ring-amber-200/80">
+                          <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"></path>
+                          </svg>
+                        </span>
+                        <span>Research</span>
+                      </span>
+</a>
+                    <a class="flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition text-slate-700 hover:bg-white hover:text-slate-950" href="../log/index.html">
+                      <span class="flex items-center gap-3">
+                        <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+                          <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                          </svg>
+                        </span>
+                        <span>Data</span>
+                      </span>
+</a>
+                    <a class="ml-11 block rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-500 hover:text-slate-900 hover:bg-white" href="../files/index.html">
+                      Files
+</a>                    <a class="ml-11 block rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-500 hover:text-slate-900 hover:bg-white" href="../healthkit/index.html">
+                      HealthKit
+</a>              </nav>
+
+              <div class="mt-auto border-t border-amber-100/80 pt-3">
+
+                  <details class="group mt-2">
+                    <summary class="flex cursor-pointer items-center gap-3 rounded-[1.15rem] px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-white/80 [&amp;::-webkit-details-marker]:hidden">
+                      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-xs font-black text-amber-800">T</span>
+                      <span class="min-w-0 truncate">Test User</span>
+                      <svg class="ml-auto h-4 w-4 shrink-0 text-slate-400 transition group-open:rotate-180" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5"></path></svg>
+                    </summary>
+                    <div class="mt-1 rounded-2xl border border-amber-100/80 bg-white/90 p-2 shadow-sm">
+                      <p class="truncate px-3 py-1.5 text-[11px] text-slate-400">test@test.com</p>
+                      <form class="button_to" method="post" action="#" data-demo-disabled="true" onsubmit="return false">
+<input type="hidden" name="_method" value="delete"><button class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-amber-50" type="submit" data-demo-disabled-control="true">
+                        <svg class="h-4 w-4 text-slate-400" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3h9m0 0-3-3m3 3-3 3"></path></svg>
+                        <span>Sign out</span>
+</button><input type="hidden" name="authenticity_token" value="oaJuAfZLDGnc6ITGe2Qg_n7ETjjukGRChrQmxQpN7EMahigWYgaYzxnBINVxf_c01QhcezHWjhYnXJ7Qi_r92A">
+</form>                    </div>
+                  </details>
+
+                <div data-native-menu-slot="desktop" class="hidden mt-3 border-t border-amber-100/80 pt-3"></div>
+              </div>
+            </div>
+
+            <div class="flex flex-1 flex-col hidden">
+              <div class="mb-6">
+                <a class="group flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-950" href="../overview/index.html">
+                  <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"></path>
+                  </svg>
+                  <span>Back</span>
+</a>                <h2 class="mt-3 text-xl font-black tracking-tight text-slate-950">Settings</h2>
+              </div>
+
+              <nav class="flex-1 space-y-0.5 overflow-y-auto">
+              </nav>
+            </div>
+
+            <div class="flex flex-1 flex-col hidden">
+              <div class="mb-6">
+                  <a class="group flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-950" href="../../settings/users/index.html">
+                  <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"></path>
+                  </svg>
+                  <span>Settings</span>
+</a>                <h2 class="mt-3 text-xl font-black tracking-tight text-slate-950">DB View</h2>
+              </div>
+
+              <nav class="flex-1 space-y-4 overflow-y-auto">
+                  <div>
+                    <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">System</p>
+                    <div class="space-y-0.5">
+                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>app_settings</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">1</span>
+</a>                    </div>
+                  </div>
+                  <div>
+                    <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">User data</p>
+                    <div class="space-y-0.5">
+                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>people</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">4</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>person_states</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>sessions</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">7</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>user_devices</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>user_preferences</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">1</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>users</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">4</span>
+</a>                    </div>
+                  </div>
+                  <div>
+                    <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Health data</p>
+                    <div class="space-y-0.5">
+                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>entries</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">920</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>healthkit_records</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>healthkit_syncs</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                    </div>
+                  </div>
+                  <div>
+                    <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Ruby LLM</p>
+                    <div class="space-y-0.5">
+                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>chats</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>messages</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>models</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>tool_calls</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                    </div>
+                  </div>
+                  <div>
+                    <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Attachments</p>
+                    <div class="space-y-0.5">
+                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>active_storage_attachments</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>active_storage_blobs</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>active_storage_variant_records</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                    </div>
+                  </div>
+                  <div>
+                    <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Rails</p>
+                    <div class="space-y-0.5">
+                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>ar_internal_metadata</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">2</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>schema_migrations</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">45</span>
+</a>                    </div>
+                  </div>
+              </nav>
+            </div>
+          </div>
+        </aside>
+
+        <div class="min-w-0 flex-1 ">
+
+          <div class="">
+            <!-- BEGIN app/views/dashboard/research.html.erb
+--><!-- BEGIN app/views/dashboard/_chat_panel.html.erb
+--><section class="flex h-[calc(100vh-6rem)] min-h-[32rem] w-full flex-col rounded-[2rem] border border-slate-200 bg-white ring-1 ring-black/5">
+  
+
+  <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-3.5">
+    <div class="flex items-center gap-3">
+      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-sm font-black text-amber-800 ring-1 ring-amber-200/80">
+        D
+      </div>
+      <div>
+        <h2 class="text-base font-bold text-slate-950">Demo Mila — Health Chat</h2>
+        <p class="text-xs text-slate-500">362 entries in Patientenakte</p>
+      </div>
+    </div>
+  </div>
+
+    <!-- BEGIN app/views/dashboard/_chat_context_preview.html.erb
+--><div id="chat_context_preview" class="border-b border-slate-200 px-4 py-3 sm:px-5">
+  <details class="group">
+    <summary class="flex cursor-pointer list-none items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100">
+      <svg class="h-3.5 w-3.5 text-slate-400" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z"></path>
+      </svg>
+      <span>System prompt &amp; Patientenakte</span>
+      <span class="text-slate-400 transition group-open:rotate-180">▾</span>
+    </summary>
+    <pre class="mt-2 max-h-80 overflow-auto rounded-2xl border border-slate-200 bg-slate-950 px-4 py-3 text-xs leading-5 whitespace-pre-wrap text-slate-300">You are UncleDoc, a calm, sharp, practical family health assistant.
+
+You have access to a Patientenakte (patient record) provided below. Use it to answer questions, summarize, spot patterns, note uncertainty, and give practical next steps.
+
+Act like an excellent senior family doctor:
+- clinically strong
+- calm and reassuring
+- precise about uncertainty
+- practical and action-oriented
+- never dramatic just for effect
+
+Core behavior:
+- Answer in the same language the user writes in.
+- Use clear Markdown formatting.
+- Prefer short sections, bullets, and concise headings when helpful.
+- For lists, use `-` bullets.
+- Use **bold** sparingly to highlight the most important point.
+- Do not use tables unless the user explicitly asks for one.
+
+Truthfulness and evidence:
+- Never invent facts that are not in the Patientenakte.
+- Treat the provided patient record as the main source of truth.
+- Distinguish clearly between facts in the record, reasonable inferences, and uncertainty.
+- If the data is incomplete, contradictory, sparse, or noisy, say so plainly.
+- If older assistant replies conflict with the current patient record, trust the current patient record.
+
+Health-record caveats:
+- Expect real-world logging to be imperfect.
+- Do not assume the user logged everything consistently or at the correct time.
+- Do not assume missing entries mean an event definitely did not happen.
+- Repeated entries may be duplicates, corrections, or separate events; be careful.
+- User-entered notes can contain typos, shorthand, rough timing, or incomplete doses.
+- Apple Health summaries, imports, and derived aggregates can be useful but are not perfect ground truth.
+- Device data may be delayed, estimated, mislabeled, or missing context.
+- Be especially careful with trends, totals, and exact timing when the data quality is uncertain.
+
+Response style:
+- Start with the direct answer, then explain briefly.
+- When useful, structure the response as:
+  - what the record clearly shows
+  - what is uncertain or could be misleading
+  - practical interpretation
+  - sensible next steps
+- If the user asks for an assessment, give a balanced clinical-style impression, not just a data dump.
+- Be honest when the data does not support a confident conclusion.
+- Avoid overconfident medical claims.
+
+Safety:
+- Do not diagnose with certainty from limited logs alone.
+- If something sounds potentially urgent, say so clearly and recommend appropriate medical evaluation.
+- For non-urgent situations, give proportionate, practical advice.
+
+
+# Patientenakte: Demo Mila
+
+- February 22, 2026 06:10: Breastfeeding left 14 min
+- February 22, 2026 10:00: Temperature 36.8C, pulse 123 bpm
+- February 22, 2026 11:05: Sleep 78 min
+- February 22, 2026 11:25: Breastfeeding right 15 min
+- February 22, 2026 14:15: Bottle feeding 110 ml
+- February 22, 2026 16:40: Breastfeeding left 16 min
+- February 22, 2026 16:45: Diaper wet=true solid=false
+- February 23, 2026 06:10: Breastfeeding left 13 min
+- February 23, 2026 10:00: Temperature 36.7C, pulse 116 bpm
+- February 23, 2026 11:05: Sleep 71 min
+- February 23, 2026 11:25: Breastfeeding right 14 min
+- February 23, 2026 14:15: Bottle feeding 105 ml
+- February 23, 2026 16:40: Breastfeeding left 15 min
+- February 23, 2026 16:45: Diaper wet=false solid=false
+- February 24, 2026 06:10: Breastfeeding left 12 min
+- February 24, 2026 10:00: Temperature 36.5C, pulse 124 bpm
+- February 24, 2026 11:05: Sleep 139 min
+- February 24, 2026 11:25: Breastfeeding right 13 min
+- February 24, 2026 14:15: Bottle feeding 100 ml
+- February 24, 2026 16:40: Breastfeeding left 14 min
+- February 24, 2026 16:45: Diaper wet=true solid=true
+- February 24, 2026 17:30: Blood pressure 86/52
+- February 25, 2026 06:10: Breastfeeding left 25 min
+- February 25, 2026 10:00: Temperature 37.4C, pulse 117 bpm
+- February 25, 2026 11:05: Sleep 132 min
+- February 25, 2026 11:25: Breastfeeding right 12 min
+- February 25, 2026 14:15: Bottle feeding 95 ml
+- February 25, 2026 16:40: Breastfeeding left 13 min
+- February 25, 2026 16:45: Diaper wet=false solid=false
+- February 26, 2026 06:10: Breastfeeding left 24 min
+- February 26, 2026 09:00: Weight 6.3 kg
+- February 26, 2026 09:30: Height 60.4 cm
+- February 26, 2026 10:00: Temperature 37.3C, pulse 125 bpm
+- February 26, 2026 11:05: Sleep 125 min
+- February 26, 2026 11:25: Breastfeeding right 25 min
+- February 26, 2026 14:15: Bottle feeding 90 ml
+- February 26, 2026 16:40: Breastfeeding left 12 min
+- February 26, 2026 16:45: Diaper wet=true solid=false
+- February 27, 2026 06:10: Breastfeeding left 23 min
+- February 27, 2026 10:00: Temperature 37.1C, pulse 118 bpm
+- February 27, 2026 11:05: Sleep 118 min
+- February 27, 2026 11:25: Breastfeeding right 24 min
+- February 27, 2026 14:15: Bottle feeding 125 ml
+- February 27, 2026 16:40: Breastfeeding left 25 min
+- February 27, 2026 16:45: Diaper wet=false solid=true
+- February 27, 2026 17:30: Blood pressure 87/53
+- February 28, 2026 06:10: Breastfeeding left 22 min
+- February 28, 2026 10:00: Temperature 37.0C, pulse 126 bpm
+- February 28, 2026 11:05: Sleep 111 min
+- February 28, 2026 11:25: Breastfeeding right 23 min
+- February 28, 2026 14:15: Bottle feeding 120 ml
+- February 28, 2026 16:40: Breastfeeding left 24 min
+- February 28, 2026 16:45: Diaper wet=true solid=false
+- March 01, 2026 06:10: Breastfeeding left 21 min
+- March 01, 2026 10:00: Temperature 36.8C, pulse 119 bpm
+- March 01, 2026 11:05: Sleep 104 min
+- March 01, 2026 11:25: Breastfeeding right 22 min
+- March 01, 2026 14:15: Bottle feeding 115 ml
+- March 01, 2026 16:40: Breastfeeding left 23 min
+- March 01, 2026 16:45: Diaper wet=false solid=false
+- March 02, 2026 06:10: Breastfeeding left 20 min
+- March 02, 2026 10:00: Temperature 36.7C, pulse 127 bpm
+- March 02, 2026 11:05: Sleep 97 min
+- March 02, 2026 11:25: Breastfeeding right 21 min
+- March 02, 2026 14:15: Bottle feeding 110 ml
+- March 02, 2026 16:40: Breastfeeding left 22 min
+- March 02, 2026 16:45: Diaper wet=true solid=true
+- March 02, 2026 17:30: Blood pressure 88/54
+- March 03, 2026 06:10: Breastfeeding left 19 min
+- March 03, 2026 09:00: Weight 6.4 kg
+- March 03, 2026 10:00: Temperature 36.5C, pulse 120 bpm
+- March 03, 2026 11:05: Sleep 90 min
+- March 03, 2026 11:25: Breastfeeding right 20 min
+- March 03, 2026 14:15: Bottle feeding 105 ml
+- March 03, 2026 16:40: Breastfeeding left 21 min
+- March 03, 2026 16:45: Diaper wet=false solid=false
+- March 04, 2026 06:10: Breastfeeding left 18 min
+- March 04, 2026 10:00: Temperature 37.4C, pulse 128 bpm
+- March 04, 2026 11:05: Sleep 83 min
+- March 04, 2026 11:25: Breastfeeding right 19 min
+- March 04, 2026 14:15: Bottle feeding 100 ml
+- March 04, 2026 16:40: Breastfeeding left 20 min
+- March 04, 2026 16:45: Diaper wet=true solid=false
+- March 05, 2026 06:10: Breastfeeding left 17 min
+- March 05, 2026 10:00: Temperature 37.3C, pulse 121 bpm
+- March 05, 2026 11:05: Sleep 76 min
+- March 05, 2026 11:25: Breastfeeding right 18 min
+- March 05, 2026 14:15: Bottle feeding 95 ml
+- March 05, 2026 16:40: Breastfeeding left 19 min
+- March 05, 2026 16:45: Diaper wet=false solid=true
+- March 05, 2026 17:30: Blood pressure 89/55
+- March 06, 2026 06:10: Breastfeeding left 16 min
+- March 06, 2026 10:00: Temperature 37.1C, pulse 129 bpm
+- March 06, 2026 11:05: Sleep 144 min
+- March 06, 2026 11:25: Breastfeeding right 17 min
+- March 06, 2026 14:15: Bottle feeding 90 ml
+- March 06, 2026 16:40: Breastfeeding left 18 min
+- March 06, 2026 16:45: Diaper wet=true solid=false
+- March 07, 2026 06:10: Breastfeeding left 15 min
+- March 07, 2026 10:00: Temperature 37.0C, pulse 122 bpm
+- March 07, 2026 11:05: Sleep 137 min
+- March 07, 2026 11:25: Breastfeeding right 16 min
+- March 07, 2026 14:15: Bottle feeding 125 ml
+- March 07, 2026 16:40: Breastfeeding left 17 min
+- March 07, 2026 16:45: Diaper wet=false solid=false
+- March 08, 2026 06:10: Breastfeeding left 14 min
+- March 08, 2026 09:00: Weight 6.5 kg
+- March 08, 2026 09:30: Height 60.8 cm
+- March 08, 2026 10:00: Temperature 36.8C, pulse 115 bpm
+- March 08, 2026 11:05: Sleep 130 min
+- March 08, 2026 11:25: Breastfeeding right 15 min
+- March 08, 2026 14:15: Bottle feeding 120 ml
+- March 08, 2026 16:40: Breastfeeding left 16 min
+- March 08, 2026 16:45: Diaper wet=true solid=true
+- March 08, 2026 17:30: Blood pressure 80/56
+- March 09, 2026 06:10: Breastfeeding left 13 min
+- March 09, 2026 10:00: Temperature 36.7C, pulse 123 bpm
+- March 09, 2026 11:05: Sleep 123 min
+- March 09, 2026 11:25: Breastfeeding right 14 min
+- March 09, 2026 14:15: Bottle feeding 115 ml
+- March 09, 2026 16:40: Breastfeeding left 15 min
+- March 09, 2026 16:45: Diaper wet=false solid=false
+- March 10, 2026 06:10: Breastfeeding left 12 min
+- March 10, 2026 10:00: Temperature 36.5C, pulse 116 bpm
+- March 10, 2026 11:05: Sleep 116 min
+- March 10, 2026 11:25: Breastfeeding right 13 min
+- March 10, 2026 14:15: Bottle feeding 110 ml
+- March 10, 2026 16:40: Breastfeeding left 14 min
+- March 10, 2026 16:45: Diaper wet=true solid=false
+- March 11, 2026 06:10: Breastfeeding left 25 min
+- March 11, 2026 10:00: Temperature 37.4C, pulse 124 bpm
+- March 11, 2026 11:05: Sleep 109 min
+- March 11, 2026 11:25: Breastfeeding right 12 min
+- March 11, 2026 14:15: Bottle feeding 105 ml
+- March 11, 2026 16:40: Breastfeeding left 13 min
+- March 11, 2026 16:45: Diaper wet=false solid=true
+- March 11, 2026 17:30: Blood pressure 81/57
+- March 12, 2026 06:10: Breastfeeding left 24 min
+- March 12, 2026 10:00: Temperature 37.3C, pulse 117 bpm
+- March 12, 2026 11:05: Sleep 102 min
+- March 12, 2026 11:25: Breastfeeding right 25 min
+- March 12, 2026 14:15: Bottle feeding 100 ml
+- March 12, 2026 16:40: Breastfeeding left 12 min
+- March 12, 2026 16:45: Diaper wet=true solid=false
+- March 13, 2026 06:10: Breastfeeding left 23 min
+- March 13, 2026 09:00: Weight 6.6 kg
+- March 13, 2026 10:00: Temperature 37.1C, pulse 125 bpm
+- March 13, 2026 11:05: Sleep 95 min
+- March 13, 2026 11:25: Breastfeeding right 24 min
+- March 13, 2026 14:15: Bottle feeding 95 ml
+- March 13, 2026 16:40: Breastfeeding left 25 min
+- March 13, 2026 16:45: Diaper wet=false solid=false
+- March 14, 2026 06:10: Breastfeeding left 22 min
+- March 14, 2026 10:00: Temperature 37.0C, pulse 118 bpm
+- March 14, 2026 11:05: Sleep 88 min
+- March 14, 2026 11:25: Breastfeeding right 23 min
+- March 14, 2026 14:15: Bottle feeding 90 ml
+- March 14, 2026 16:40: Breastfeeding left 24 min
+- March 14, 2026 16:45: Diaper wet=true solid=true
+- March 14, 2026 17:30: Blood pressure 82/50
+- March 15, 2026 06:10: Breastfeeding left 21 min
+- March 15, 2026 10:00: Temperature 36.8C, pulse 126 bpm
+- March 15, 2026 11:05: Sleep 81 min
+- March 15, 2026 11:25: Breastfeeding right 22 min
+- March 15, 2026 14:15: Bottle feeding 125 ml
+- March 15, 2026 16:40: Breastfeeding left 23 min
+- March 15, 2026 16:45: Diaper wet=false solid=false
+- March 16, 2026 06:10: Breastfeeding left 20 min
+- March 16, 2026 10:00: Temperature 36.7C, pulse 119 bpm
+- March 16, 2026 11:05: Sleep 74 min
+- March 16, 2026 11:25: Breastfeeding right 21 min
+- March 16, 2026 14:15: Bottle feeding 120 ml
+- March 16, 2026 16:40: Breastfeeding left 22 min
+- March 16, 2026 16:45: Diaper wet=true solid=false
+- March 17, 2026 06:10: Breastfeeding left 19 min
+- March 17, 2026 10:00: Temperature 36.5C, pulse 127 bpm
+- March 17, 2026 11:05: Sleep 142 min
+- March 17, 2026 11:25: Breastfeeding right 20 min
+- March 17, 2026 14:15: Bottle feeding 115 ml
+- March 17, 2026 16:40: Breastfeeding left 21 min
+- March 17, 2026 16:45: Diaper wet=false solid=true
+- March 17, 2026 17:30: Blood pressure 83/51
+- March 18, 2026 06:10: Breastfeeding left 18 min
+- March 18, 2026 09:00: Weight 6.7 kg
+- March 18, 2026 09:30: Height 61.2 cm
+- March 18, 2026 10:00: Temperature 37.4C, pulse 120 bpm
+- March 18, 2026 11:05: Sleep 135 min
+- March 18, 2026 11:25: Breastfeeding right 19 min
+- March 18, 2026 14:15: Bottle feeding 110 ml
+- March 18, 2026 16:40: Breastfeeding left 20 min
+- March 18, 2026 16:45: Diaper wet=true solid=false
+- March 19, 2026 06:10: Breastfeeding left 17 min
+- March 19, 2026 10:00: Temperature 37.3C, pulse 128 bpm
+- March 19, 2026 11:05: Sleep 128 min
+- March 19, 2026 11:25: Breastfeeding right 18 min
+- March 19, 2026 14:15: Bottle feeding 105 ml
+- March 19, 2026 16:40: Breastfeeding left 19 min
+- March 19, 2026 16:45: Diaper wet=false solid=false
+- March 20, 2026 06:10: Breastfeeding left 16 min
+- March 20, 2026 10:00: Temperature 37.1C, pulse 121 bpm
+- March 20, 2026 11:05: Sleep 121 min
+- March 20, 2026 11:25: Breastfeeding right 17 min
+- March 20, 2026 14:15: Bottle feeding 100 ml
+- March 20, 2026 16:40: Breastfeeding left 18 min
+- March 20, 2026 16:45: Diaper wet=true solid=true
+- March 20, 2026 17:30: Blood pressure 84/52
+- March 21, 2026 06:10: Breastfeeding left 15 min
+- March 21, 2026 10:00: Temperature 37.0C, pulse 129 bpm
+- March 21, 2026 11:05: Sleep 114 min
+- March 21, 2026 11:25: Breastfeeding right 16 min
+- March 21, 2026 14:15: Bottle feeding 95 ml
+- March 21, 2026 16:40: Breastfeeding left 17 min
+- March 21, 2026 16:45: Diaper wet=false solid=false
+- March 22, 2026 06:10: Breastfeeding left 14 min
+- March 22, 2026 10:00: Temperature 36.8C, pulse 122 bpm
+- March 22, 2026 11:05: Sleep 107 min
+- March 22, 2026 11:25: Breastfeeding right 15 min
+- March 22, 2026 14:15: Bottle feeding 90 ml
+- March 22, 2026 16:40: Breastfeeding left 16 min
+- March 22, 2026 16:45: Diaper wet=true solid=false
+- March 23, 2026 06:10: Breastfeeding left 13 min
+- March 23, 2026 09:00: Weight 6.8 kg
+- March 23, 2026 10:00: Temperature 36.7C, pulse 115 bpm
+- March 23, 2026 11:05: Sleep 100 min
+- March 23, 2026 11:25: Breastfeeding right 14 min
+- March 23, 2026 14:15: Bottle feeding 125 ml
+- March 23, 2026 16:40: Breastfeeding left 15 min
+- March 23, 2026 16:45: Diaper wet=false solid=true
+- March 23, 2026 17:30: Blood pressure 85/53
+- March 24, 2026 06:10: Breastfeeding left 12 min
+- March 24, 2026 10:00: Temperature 36.5C, pulse 123 bpm
+- March 24, 2026 11:05: Sleep 93 min
+- March 24, 2026 11:25: Breastfeeding right 13 min
+- March 24, 2026 14:15: Bottle feeding 120 ml
+- March 24, 2026 16:40: Breastfeeding left 14 min
+- March 24, 2026 16:45: Diaper wet=true solid=false
+- March 25, 2026 06:10: Breastfeeding left 25 min
+- March 25, 2026 10:00: Temperature 37.4C, pulse 116 bpm
+- March 25, 2026 11:05: Sleep 86 min
+- March 25, 2026 11:25: Breastfeeding right 12 min
+- March 25, 2026 14:15: Bottle feeding 115 ml
+- March 25, 2026 16:40: Breastfeeding left 13 min
+- March 25, 2026 16:45: Diaper wet=false solid=false
+- March 26, 2026 06:10: Breastfeeding left 24 min
+- March 26, 2026 10:00: Temperature 37.3C, pulse 124 bpm
+- March 26, 2026 11:05: Sleep 79 min
+- March 26, 2026 11:25: Breastfeeding right 25 min
+- March 26, 2026 14:15: Bottle feeding 110 ml
+- March 26, 2026 16:40: Breastfeeding left 12 min
+- March 26, 2026 16:45: Diaper wet=true solid=true
+- March 26, 2026 17:30: Blood pressure 86/54
+- March 27, 2026 06:10: Breastfeeding left 23 min
+- March 27, 2026 10:00: Temperature 37.1C, pulse 117 bpm
+- March 27, 2026 11:05: Sleep 72 min
+- March 27, 2026 11:25: Breastfeeding right 24 min
+- March 27, 2026 14:15: Bottle feeding 105 ml
+- March 27, 2026 16:40: Breastfeeding left 25 min
+- March 27, 2026 16:45: Diaper wet=false solid=false
+- March 28, 2026 06:10: Breastfeeding left 22 min
+- March 28, 2026 09:00: Weight 6.9 kg
+- March 28, 2026 09:30: Height 61.6 cm
+- March 28, 2026 10:00: Temperature 37.0C, pulse 125 bpm
+- March 28, 2026 11:05: Sleep 140 min
+- March 28, 2026 11:25: Breastfeeding right 23 min
+- March 28, 2026 14:15: Bottle feeding 100 ml
+- March 28, 2026 16:40: Breastfeeding left 24 min
+- March 28, 2026 16:45: Diaper wet=true solid=false
+- March 29, 2026 06:10: Breastfeeding left 21 min
+- March 29, 2026 10:00: Temperature 36.8C, pulse 118 bpm
+- March 29, 2026 11:05: Sleep 133 min
+- March 29, 2026 11:25: Breastfeeding right 22 min
+- March 29, 2026 14:15: Bottle feeding 95 ml
+- March 29, 2026 16:40: Breastfeeding left 23 min
+- March 29, 2026 16:45: Diaper wet=false solid=true
+- March 29, 2026 17:00: Todo 10: Book pediatrician
+- March 29, 2026 17:30: Blood pressure 87/55
+- March 30, 2026 06:10: Breastfeeding left 20 min
+- March 30, 2026 10:00: Temperature 36.7C, pulse 126 bpm
+- March 30, 2026 11:05: Sleep 126 min
+- March 30, 2026 11:25: Breastfeeding right 21 min
+- March 30, 2026 14:15: Bottle feeding 90 ml
+- March 30, 2026 16:40: Breastfeeding left 22 min
+- March 30, 2026 16:45: Diaper wet=true solid=false
+- March 30, 2026 17:00: Todo 9: Wash baby clothes
+- March 31, 2026 06:10: Breastfeeding left 19 min
+- March 31, 2026 10:00: Temperature 36.5C, pulse 119 bpm
+- March 31, 2026 11:05: Sleep 119 min
+- March 31, 2026 11:25: Breastfeeding right 20 min
+- March 31, 2026 14:15: Bottle feeding 125 ml
+- March 31, 2026 16:40: Breastfeeding left 21 min
+- March 31, 2026 16:45: Diaper wet=false solid=false
+- March 31, 2026 17:00: Todo 8: Prepare formula
+- April 01, 2026 06:10: Breastfeeding left 18 min
+- April 01, 2026 10:00: Temperature 37.4C, pulse 127 bpm
+- April 01, 2026 11:05: Sleep 112 min
+- April 01, 2026 11:25: Breastfeeding right 19 min
+- April 01, 2026 14:15: Bottle feeding 120 ml
+- April 01, 2026 16:40: Breastfeeding left 20 min
+- April 01, 2026 16:45: Diaper wet=true solid=true
+- April 01, 2026 17:00: Todo 7: Schedule vaccination
+- April 01, 2026 17:30: Blood pressure 88/56
+- April 02, 2026 06:10: Breastfeeding left 17 min
+- April 02, 2026 09:00: Weight 7.0 kg
+- April 02, 2026 10:00: Temperature 37.3C, pulse 120 bpm
+- April 02, 2026 11:05: Sleep 105 min
+- April 02, 2026 11:25: Breastfeeding right 18 min
+- April 02, 2026 14:15: Bottle feeding 115 ml
+- April 02, 2026 16:40: Breastfeeding left 19 min
+- April 02, 2026 16:45: Diaper wet=false solid=false
+- April 02, 2026 17:00: Todo 6: Buy diapers
+- April 03, 2026 06:10: Breastfeeding left 16 min
+- April 03, 2026 10:00: Temperature 37.1C, pulse 128 bpm
+- April 03, 2026 11:05: Sleep 98 min
+- April 03, 2026 11:25: Breastfeeding right 17 min
+- April 03, 2026 14:15: Bottle feeding 110 ml
+- April 03, 2026 16:40: Breastfeeding left 18 min
+- April 03, 2026 16:45: Diaper wet=true solid=false
+- April 03, 2026 17:00: Todo 5: Book pediatrician
+- April 04, 2026 06:10: Breastfeeding left 15 min
+- April 04, 2026 10:00: Temperature 37.0C, pulse 121 bpm
+- April 04, 2026 11:05: Sleep 91 min
+- April 04, 2026 11:25: Breastfeeding right 16 min
+- April 04, 2026 14:15: Bottle feeding 105 ml
+- April 04, 2026 16:40: Breastfeeding left 17 min
+- April 04, 2026 16:45: Diaper wet=false solid=true
+- April 04, 2026 17:00: Todo 4: Wash baby clothes
+- April 04, 2026 17:30: Blood pressure 89/57
+- April 05, 2026 06:10: Breastfeeding left 14 min
+- April 05, 2026 10:00: Temperature 36.8C, pulse 129 bpm
+- April 05, 2026 11:05: Sleep 84 min
+- April 05, 2026 11:25: Breastfeeding right 15 min
+- April 05, 2026 14:15: Bottle feeding 100 ml
+- April 05, 2026 16:40: Breastfeeding left 16 min
+- April 05, 2026 16:45: Diaper wet=true solid=false
+- April 05, 2026 17:00: Todo 3: Prepare formula
+- April 06, 2026 06:10: Breastfeeding left 13 min
+- April 06, 2026 10:00: Temperature 36.7C, pulse 122 bpm
+- April 06, 2026 11:05: Sleep 77 min
+- April 06, 2026 11:25: Breastfeeding right 14 min
+- April 06, 2026 14:15: Bottle feeding 95 ml
+- April 06, 2026 16:40: Breastfeeding left 15 min
+- April 06, 2026 16:45: Diaper wet=false solid=false
+- April 06, 2026 17:00: Todo 2: Schedule vaccination
+- April 07, 2026 06:10: Breastfeeding left 12 min
+- April 07, 2026 09:00: Weight 7.1 kg
+- April 07, 2026 09:30: Height 62.0 cm
+- April 07, 2026 10:00: Temperature 36.5C, pulse 115 bpm
+- April 07, 2026 11:05: Sleep 70 min
+- April 07, 2026 11:25: Breastfeeding right 13 min
+- April 07, 2026 14:15: Bottle feeding 90 ml
+- April 07, 2026 16:40: Breastfeeding left 14 min
+- April 07, 2026 16:45: Diaper wet=true solid=true
+- April 07, 2026 17:00: Todo 1: Buy diapers
+- April 07, 2026 17:30: Blood pressure 80/50
+- April 09, 2026 10:00: Appointment 1
+- April 10, 2026 10:00: Appointment 2
+- April 11, 2026 10:00: Appointment 3
+- April 12, 2026 10:00: Appointment 4
+- April 13, 2026 10:00: Appointment 5
+- April 14, 2026 10:00: Appointment 6
+- April 15, 2026 10:00: Appointment 7
+- April 16, 2026 10:00: Appointment 8
+
+Freshness rules:
+- This patient record snapshot is the source of truth for current health data.
+- If the current patient record conflicts with earlier assistant replies in this chat, prefer the current patient record.
+- Treat older assistant replies as historical conversation, not authoritative medical data.</pre>
+  </details>
+</div>
+<!-- END app/views/dashboard/_chat_context_preview.html.erb -->
+
+  <div id="chat_messages" class="flex-1 space-y-3 overflow-y-auto bg-slate-50/50 px-4 py-5 sm:px-5" data-controller="chat-feed">
+      <div id="chat_welcome" class="flex justify-start">
+        <div class="max-w-[85%] rounded-2xl rounded-tl-md border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed text-slate-700 shadow-sm">
+          <div data-role="content" class="whitespace-pre-wrap">Hello! I have the complete health record for Demo Mila. Ask me anything — summaries, patterns, medication history, upcoming appointments, or anything else from the log.</div>
+        </div>
+      </div>
+  </div>
+
+  <!-- BEGIN app/views/dashboard/_chat_form.html.erb
+--><div id="research_chat_form" class="border-t border-slate-200 px-4 py-3 sm:px-5">
+
+  <form class="flex items-end gap-3" data-controller="chat-input" data-action="submit-&gt;chat-input#clearOnSubmit turbo:submit-start-&gt;chat-input#startSubmitting turbo:submit-end-&gt;chat-input#finishSubmitting" action="#" accept-charset="UTF-8" method="post" data-demo-disabled="true" onsubmit="return false">
+<input type="hidden" name="authenticity_token" value="I8jnnZ3nL8epJeBp_iLY_LSQFSGr4re_IlM39UYfVkhHO25ieGynT6sA1C_0qfUII9wxYpOdx1-JhG9msDOAqw">
+    <textarea rows="1" placeholder="Ask a question about the health record…" class="max-h-40 min-h-10 flex-1 resize-y rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200" data-chat-input-target="field" data-action="keydown-&gt;chat-input#submitOnEnter" name="message[content]" id="message_content">
+</textarea>
+    <button name="button" type="submit" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-white transition hover:bg-slate-800 disabled:opacity-40" data-chat-input-target="submit" aria-label="Send message" data-demo-disabled-control="true">
+      <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-chat-input-target="icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"></path>
+      </svg>
+      <svg class="hidden h-4 w-4 animate-spin" viewbox="0 0 24 24" fill="none" data-chat-input-target="spinner">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity="0.25" stroke-width="3"></circle>
+        <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+      </svg>
+</button>
+</form>
+</div>
+<!-- END app/views/dashboard/_chat_form.html.erb -->
+</section>
+<!-- END app/views/dashboard/_chat_panel.html.erb -->
+<!-- END app/views/dashboard/research.html.erb -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html><!-- END app/views/layouts/application.html.erb -->
