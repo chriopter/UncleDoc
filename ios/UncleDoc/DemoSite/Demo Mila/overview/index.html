@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<!-- BEGIN app/views/layouts/application.html.erb
+--><html>
+  <head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+    <title>UncleDoc</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="UncleDoc">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+
+    
+
+    
+
+    <link rel="manifest" href="../../manifest.json">
+
+    <link rel="icon" href="../../favicon.ico" sizes="any">
+    <link rel="icon" href="../../icon-192.png" type="image/png" sizes="192x192">
+    <link rel="icon" href="../../icon-512.png" type="image/png" sizes="512x512">
+    <link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+
+    <link rel="stylesheet" href="../../assets/application-2f1edd40.css" data-turbo-track="reload">
+<link rel="stylesheet" href="../../assets/tailwind-4e57894a.css" data-turbo-track="reload">
+    <style>
+      :root {
+        --uncledoc-safe-top: env(safe-area-inset-top, 0px);
+      }
+    </style>
+    
+<link rel="modulepreload" href="../../assets/application-0c54349d.js">
+<link rel="modulepreload" href="../../assets/turbo.min-9fd88cd5.js">
+<link rel="modulepreload" href="../../assets/stimulus.min-4b1e420e.js">
+<link rel="modulepreload" href="../../assets/stimulus-loading-1fc53fe7.js">
+<link rel="modulepreload" href="../../assets/controllers/application-3affb389.js">
+<link rel="modulepreload" href="../../assets/controllers/auto_submit_controller-eca1a01a.js">
+<link rel="modulepreload" href="../../assets/controllers/chat_feed_controller-c2d066e6.js">
+<link rel="modulepreload" href="../../assets/controllers/chat_input_controller-7310d21b.js">
+<link rel="modulepreload" href="../../assets/controllers/db_filter_controller-f773bcc9.js">
+<link rel="modulepreload" href="../../assets/controllers/dropdown_controller-037e96f7.js">
+<link rel="modulepreload" href="../../assets/controllers/entry_composer_controller-be3ba2a3.js">
+<link rel="modulepreload" href="../../assets/controllers/feeding_mode_controller-dbb2cb6e.js">
+<link rel="modulepreload" href="../../assets/controllers/hello_controller-708796bd.js">
+<link rel="modulepreload" href="../../assets/controllers/index-ee64e1f1.js">
+<link rel="modulepreload" href="../../assets/controllers/llm_settings_controller-4fcf7d54.js">
+<link rel="modulepreload" href="../../assets/controllers/log_view_controller-73f55fb5.js">
+<link rel="modulepreload" href="../../assets/controllers/quick_submit_controller-f331c294.js">
+<link rel="modulepreload" href="../../assets/controllers/streaming_markdown_controller-2550bb33.js">
+
+  <link rel="stylesheet" href="../../demo/demo.css">
+<script src="../../demo/demo.js" defer></script>
+</head>
+
+
+  <body class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.20),_transparent_22%),radial-gradient(circle_at_bottom_right,_rgba(244,114,182,0.12),_transparent_24%),linear-gradient(180deg,_#fffaf1_0%,_#f4efe4_100%)] text-slate-900 antialiased " data-demo-path="/Demo%20Mila/overview">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:rounded-xl focus:bg-amber-500 focus:px-4 focus:py-3 focus:text-white focus:text-sm focus:font-semibold focus:shadow-lg">
+      Skip to content
+    </a>
+
+    <main id="main-content" class="mx-auto min-h-screen w-full max-w-[96rem] px-4 md:px-6 pt-[max(1rem,calc(var(--uncledoc-safe-top)+0.75rem))] pb-4 md:pt-6 md:pb-6"><section class="uncledoc-demo-banner">
+  <div>
+    <strong>Offline demo mode</strong>
+    <span>Local sample mirror generated from http://localhost:3000.</span>
+  </div>
+  <span class="uncledoc-demo-pill">/Demo%20Mila/overview</span>
+</section>
+
+      <div class="flex min-h-[calc(100vh-2rem)] flex-col gap-6 xl:flex-row">
+
+        <header class="sticky z-40 pb-3 xl:hidden" style="top: calc(var(--uncledoc-safe-top) + 0.5rem);">
+          <div class="relative flex items-start justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-3">
+              <div class="relative" data-controller="dropdown">
+                <button type="button" data-action="dropdown#toggle" class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border border-white/80 bg-white/90 text-slate-700 shadow-[0_14px_40px_-24px_rgba(15,23,42,0.42)] ring-1 ring-black/5 backdrop-blur transition hover:bg-white hover:text-slate-950" aria-label="Menu">
+                  <svg class="h-5 w-5" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path>
+                  </svg>
+                </button>
+
+                <div data-dropdown-target="menu" class="absolute left-0 top-full z-[9999] mt-3 hidden max-h-[calc(100dvh-var(--uncledoc-safe-top)-5.5rem)] w-[min(25rem,calc(100vw-1.5rem))] overflow-x-hidden overflow-y-auto overscroll-contain rounded-[2rem] border border-white/80 bg-[linear-gradient(180deg,_rgba(255,255,255,0.98)_0%,_rgba(255,248,235,0.94)_100%)] p-3 shadow-[0_28px_80px_-34px_rgba(15,23,42,0.42)] ring-1 ring-black/5 backdrop-blur">
+                  <div class="space-y-1">
+                      <div class="rounded-[1.5rem] bg-amber-50/70 px-2 py-2">
+                        <a class="flex items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold bg-amber-100 text-amber-900 shadow-sm ring-1 ring-amber-200/80" href="index.html">
+                          <span class="flex h-9 w-9 items-center justify-center rounded-2xl #{group[:active] ? 'bg-white text-amber-700 shadow-sm ring-1 ring-amber-200/80' : 'bg-white text-amber-700 shadow-sm ring-1 ring-black/5'}">
+                            <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h7V3H3zm11 9h7v-7h-7zm0-18v7h7V3zM3 21h7v-7H3z"></path>
+                            </svg>
+                          </span>
+                          <span>Overview</span>
+</a>
+                          <div class="mt-1 border-l border-amber-200/80 pl-7">
+                              <a class="block rounded-xl px-3 py-2 text-sm font-medium text-slate-500 hover:bg-white/80 hover:text-slate-900" href="../baby/index.html">
+                                Baby
+</a>                              <a class="block rounded-xl px-3 py-2 text-sm font-medium text-slate-500 hover:bg-white/80 hover:text-slate-900" href="../calendar/index.html">
+                                Calendar
+</a>                          </div>
+                      </div>
+                      <div class="rounded-[1.5rem] ">
+                        <a class="flex items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-white/80" href="../research/index.html">
+                          <span class="flex h-9 w-9 items-center justify-center rounded-2xl #{group[:active] ? 'bg-white text-amber-700 shadow-sm ring-1 ring-amber-200/80' : 'bg-white text-amber-700 shadow-sm ring-1 ring-black/5'}">
+                            <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"></path>
+                            </svg>
+                          </span>
+                          <span>Research</span>
+</a>
+                      </div>
+                      <div class="rounded-[1.5rem] bg-amber-50/70 px-2 py-2">
+                        <a class="flex items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-white/80" href="../log/index.html">
+                          <span class="flex h-9 w-9 items-center justify-center rounded-2xl #{group[:active] ? 'bg-white text-amber-700 shadow-sm ring-1 ring-amber-200/80' : 'bg-white text-amber-700 shadow-sm ring-1 ring-black/5'}">
+                            <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                          </span>
+                          <span>Data</span>
+</a>
+                          <div class="mt-1 border-l border-amber-200/80 pl-7">
+                              <a class="block rounded-xl px-3 py-2 text-sm font-medium text-slate-500 hover:bg-white/80 hover:text-slate-900" href="../files/index.html">
+                                Files
+</a>                              <a class="block rounded-xl px-3 py-2 text-sm font-medium text-slate-500 hover:bg-white/80 hover:text-slate-900" href="../healthkit/index.html">
+                                HealthKit
+</a>                          </div>
+                      </div>
+                  </div>
+
+                  <div class="mt-2 border-t border-amber-100/80 pt-3 space-y-0.5">
+
+                      <div class="mt-2 border-t border-amber-100/80 pt-3">
+                        <div class="flex items-center gap-2.5 px-3 py-2">
+                          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-xs font-black text-amber-800">T</span>
+                          <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold text-slate-900">Test User</p>
+                            <p class="truncate text-[11px] text-slate-400">test@test.com</p>
+                          </div>
+                        </div>
+                        <form class="button_to" method="post" action="#" data-demo-disabled="true" onsubmit="return false">
+<input type="hidden" name="_method" value="delete"><button class="flex w-full items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-white/80" type="submit" data-demo-disabled-control="true">
+                          <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-amber-700 shadow-sm ring-1 ring-black/5">
+                            <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3h9m0 0-3-3m3 3-3 3"></path></svg>
+                          </span>
+                          <span>Sign out</span>
+</button><input type="hidden" name="authenticity_token" value="NqukaOet-aXZIW6CYIv-RVrU44Ymh4j-caoOmuWuAr6Nj-J_c-BtAxwIypFqkCmP8RjxxfnBYqrQQraPZBkTJQ">
+</form>                      </div>
+
+                  </div>
+
+                </div>
+              </div>
+
+              <div class="relative min-w-0 flex-1" data-controller="dropdown">
+                  <button type="button" data-action="dropdown#toggle" class="flex min-w-0 max-w-full items-center gap-3 rounded-full border border-white/80 bg-white/90 px-2.5 py-2 pr-4 text-left shadow-[0_14px_40px_-24px_rgba(15,23,42,0.42)] ring-1 ring-black/5 backdrop-blur transition hover:bg-white" aria-label="Family">
+                    <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-black text-amber-800 ring-1 ring-amber-200/80">
+                      D
+                    </div>
+                    <span class="truncate text-[1.05rem] font-semibold tracking-tight text-slate-950">Demo Mila</span>
+                    <svg class="h-4 w-4 flex-shrink-0 text-slate-400" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"></path>
+                    </svg>
+                  </button>
+
+                  <div data-dropdown-target="menu" class="absolute left-0 top-full z-[9999] mt-3 hidden min-w-full overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/95 p-2.5 shadow-[0_28px_80px_-34px_rgba(15,23,42,0.42)] ring-1 ring-black/5 backdrop-blur">
+                    <div class="space-y-1">
+                        <a class="flex items-center justify-between rounded-[1.15rem] px-3 py-3 text-sm font-medium text-slate-700 hover:bg-amber-50/70" href="../../Test%20User/overview/index.html">
+                          <span class="truncate">Test User</span>
+</a>                        <a class="flex items-center justify-between rounded-[1.15rem] px-3 py-3 text-sm font-medium bg-amber-100 text-amber-900 shadow-sm ring-1 ring-amber-200/80" href="index.html">
+                          <span class="truncate">Demo Mila</span>
+                            <span class="ml-2 text-xs text-amber-600">●</span>
+</a>                        <a class="flex items-center justify-between rounded-[1.15rem] px-3 py-3 text-sm font-medium text-slate-700 hover:bg-amber-50/70" href="../../Demo%20Theo/overview/index.html">
+                          <span class="truncate">Demo Theo</span>
+</a>                        <a class="flex items-center justify-between rounded-[1.15rem] px-3 py-3 text-sm font-medium text-slate-700 hover:bg-amber-50/70" href="../../Demo%20Nora/overview/index.html">
+                          <span class="truncate">Demo Nora</span>
+</a>                    </div>
+                  </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <aside class="hidden xl:sticky xl:top-6 xl:block xl:h-[calc(100vh-3rem)] xl:w-[18rem] xl:flex-shrink-0">
+          <div class="flex h-full flex-col rounded-[2rem] border border-amber-100/80 bg-[linear-gradient(180deg,_rgba(255,255,255,0.96)_0%,_rgba(255,248,235,0.92)_100%)] p-5 shadow-[0_24px_70px_-32px_rgba(120,53,15,0.28)] ring-1 ring-amber-100/80">
+
+            <div class="flex flex-1 flex-col ">
+              <div class="relative mb-6" data-controller="dropdown">
+                <button type="button" data-action="dropdown#toggle" class="group mx-auto flex items-center gap-3 text-left">
+                  <h1 class="max-w-[13rem] break-words text-xl font-black tracking-tight text-slate-950 transition-colors group-hover:text-amber-700">Demo Mila</h1>
+                  <svg class="h-5 w-5 text-slate-400 group-hover:text-amber-600" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"></path>
+                  </svg>
+                </button>
+
+                <div data-dropdown-target="menu" class="absolute left-1/2 top-full z-[9999] mt-3 hidden w-48 -translate-x-1/2 rounded-2xl border border-amber-200 bg-white p-2 shadow-xl ring-1 ring-black/5">
+                    <div class="space-y-0.5">
+                        <a class="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-amber-50" href="../../Test%20User/overview/index.html">
+                          <span class="truncate">Test User</span>
+</a>                        <a class="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium bg-amber-100 text-amber-900" href="index.html">
+                          <span class="truncate">Demo Mila</span>
+                            <span class="ml-2 text-xs text-amber-600">●</span>
+</a>                        <a class="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-amber-50" href="../../Demo%20Theo/overview/index.html">
+                          <span class="truncate">Demo Theo</span>
+</a>                        <a class="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-amber-50" href="../../Demo%20Nora/overview/index.html">
+                          <span class="truncate">Demo Nora</span>
+</a>                    </div>
+                </div>
+              </div>
+
+              <nav class="flex-1 space-y-0.5 overflow-y-auto">
+                    <a class="flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition bg-amber-100 text-amber-900 shadow-sm ring-1 ring-amber-200/80" href="index.html">
+                      <span class="flex items-center gap-3">
+                        <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-amber-700 shadow-sm ring-1 ring-amber-200/80">
+                          <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h7V3H3zm11 9h7v-7h-7zm0-18v7h7V3zM3 21h7v-7H3z"></path>
+                          </svg>
+                        </span>
+                        <span>Overview</span>
+                      </span>
+</a>
+                    <a class="ml-11 block rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-500 hover:text-slate-900 hover:bg-white" href="../baby/index.html">
+                      Baby
+</a>                    <a class="ml-11 block rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-500 hover:text-slate-900 hover:bg-white" href="../calendar/index.html">
+                      Calendar
+</a>                    <a class="flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition text-slate-700 hover:bg-white hover:text-slate-950" href="../research/index.html">
+                      <span class="flex items-center gap-3">
+                        <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+                          <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"></path>
+                          </svg>
+                        </span>
+                        <span>Research</span>
+                      </span>
+</a>
+                    <a class="flex items-center rounded-xl px-3 py-2 text-sm font-semibold transition text-slate-700 hover:bg-white hover:text-slate-950" href="../log/index.html">
+                      <span class="flex items-center gap-3">
+                        <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+                          <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                          </svg>
+                        </span>
+                        <span>Data</span>
+                      </span>
+</a>
+                    <a class="ml-11 block rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-500 hover:text-slate-900 hover:bg-white" href="../files/index.html">
+                      Files
+</a>                    <a class="ml-11 block rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-500 hover:text-slate-900 hover:bg-white" href="../healthkit/index.html">
+                      HealthKit
+</a>              </nav>
+
+              <div class="mt-auto border-t border-amber-100/80 pt-3">
+
+                  <details class="group mt-2">
+                    <summary class="flex cursor-pointer items-center gap-3 rounded-[1.15rem] px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-white/80 [&amp;::-webkit-details-marker]:hidden">
+                      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-xs font-black text-amber-800">T</span>
+                      <span class="min-w-0 truncate">Test User</span>
+                      <svg class="ml-auto h-4 w-4 shrink-0 text-slate-400 transition group-open:rotate-180" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5"></path></svg>
+                    </summary>
+                    <div class="mt-1 rounded-2xl border border-amber-100/80 bg-white/90 p-2 shadow-sm">
+                      <p class="truncate px-3 py-1.5 text-[11px] text-slate-400">test@test.com</p>
+                      <form class="button_to" method="post" action="#" data-demo-disabled="true" onsubmit="return false">
+<input type="hidden" name="_method" value="delete"><button class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-amber-50" type="submit" data-demo-disabled-control="true">
+                        <svg class="h-4 w-4 text-slate-400" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3h9m0 0-3-3m3 3-3 3"></path></svg>
+                        <span>Sign out</span>
+</button><input type="hidden" name="authenticity_token" value="vjMkpM31SGZKDWjFdh9QIkwUnXVmJLCx5HwTmnZ6hToFF2KzWbjcwI8kzNZ8BIfo59iPNrliWuVFlKuP982UoQ">
+</form>                    </div>
+                  </details>
+
+                <div data-native-menu-slot="desktop" class="hidden mt-3 border-t border-amber-100/80 pt-3"></div>
+              </div>
+            </div>
+
+            <div class="flex flex-1 flex-col hidden">
+              <div class="mb-6">
+                <a class="group flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-950" href="index.html">
+                  <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"></path>
+                  </svg>
+                  <span>Back</span>
+</a>                <h2 class="mt-3 text-xl font-black tracking-tight text-slate-950">Settings</h2>
+              </div>
+
+              <nav class="flex-1 space-y-0.5 overflow-y-auto">
+              </nav>
+            </div>
+
+            <div class="flex flex-1 flex-col hidden">
+              <div class="mb-6">
+                  <a class="group flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-950" href="../../settings/users/index.html">
+                  <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"></path>
+                  </svg>
+                  <span>Settings</span>
+</a>                <h2 class="mt-3 text-xl font-black tracking-tight text-slate-950">DB View</h2>
+              </div>
+
+              <nav class="flex-1 space-y-4 overflow-y-auto">
+                  <div>
+                    <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">System</p>
+                    <div class="space-y-0.5">
+                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>app_settings</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">1</span>
+</a>                    </div>
+                  </div>
+                  <div>
+                    <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">User data</p>
+                    <div class="space-y-0.5">
+                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>people</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">4</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>person_states</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>sessions</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">7</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>user_devices</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>user_preferences</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">1</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>users</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">4</span>
+</a>                    </div>
+                  </div>
+                  <div>
+                    <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Health data</p>
+                    <div class="space-y-0.5">
+                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>entries</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">920</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>healthkit_records</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>healthkit_syncs</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                    </div>
+                  </div>
+                  <div>
+                    <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Ruby LLM</p>
+                    <div class="space-y-0.5">
+                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>chats</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>messages</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>models</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>tool_calls</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                    </div>
+                  </div>
+                  <div>
+                    <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Attachments</p>
+                    <div class="space-y-0.5">
+                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>active_storage_attachments</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>active_storage_blobs</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>active_storage_variant_records</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">0</span>
+</a>                    </div>
+                  </div>
+                  <div>
+                    <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Rails</p>
+                    <div class="space-y-0.5">
+                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>ar_internal_metadata</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">2</span>
+</a>                        <a class="flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition text-slate-600 hover:text-slate-900 hover:bg-white" href="../../settings/db_table/index.html">
+                          <span>schema_migrations</span>
+                          <span class="text-[10px] tabular-nums text-slate-400">45</span>
+</a>                    </div>
+                  </div>
+              </nav>
+            </div>
+          </div>
+        </aside>
+
+        <div class="min-w-0 flex-1 ">
+
+          <div class="">
+            <!-- BEGIN app/views/people/show.html.erb
+--><section class="w-full space-y-6">
+  <!-- BEGIN app/views/shared/_overview_grid.html.erb
+--><section class="space-y-6">
+  
+
+  <div class="grid grid-cols-1 items-stretch gap-6 md:grid-cols-3">
+    <!-- BEGIN app/views/shared/_overview_composer.html.erb
+-->
+<!-- BEGIN app/views/shared/_widget.html.erb
+-->
+<div id="overview_composer" class="rounded-[2rem] border p-6 shadow-sm ring-1 overflow-hidden
+            border-amber-200 bg-white text-slate-900 ring-amber-100
+             flex flex-col md:col-span-1">
+  
+  <div class="mb-3 flex items-center gap-2">
+    <h2 class="text-lg font-black tracking-tight text-slate-950">Demo Mila</h2>
+      <span class="text-xs font-medium text-slate-400">6 months old</span>
+      <span class="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-semibold text-pink-700">Baby mode</span>
+  </div>
+  <!-- BEGIN app/views/shared/_overview_person_meta.html.erb
+--><div id="overview_person_meta">
+</div>
+<!-- END app/views/shared/_overview_person_meta.html.erb -->
+  <div class="flex flex-1 flex-col">
+    <!-- BEGIN app/views/entries/_form.html.erb
+--><!-- BEGIN app/views/entries/_composer.html.erb
+--><turbo-frame class="flex flex-1 flex-col" id="entry_form">
+  <form class="flex flex-1 flex-col gap-3" data-controller="entry-composer" data-action="dragover-&gt;entry-composer#dragOver dragleave-&gt;entry-composer#dragLeave drop-&gt;entry-composer#drop" enctype="multipart/form-data" action="#" accept-charset="UTF-8" method="post" data-demo-disabled="true" onsubmit="return false">
+<input type="hidden" name="authenticity_token" value="GM0AdGRinIq5XFw-MSaWA92ZQ69BU8-zIio0TCT6CYVrG3mNWTAP5rZfOv3bJDIbxPBQoGlpaYwlit-58KhMzg">
+
+    <textarea rows="1" placeholder="What happened today?" class="block w-full flex-1 min-h-0 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-amber-400 focus:ring-amber-200 resize-none" data-entry-composer-target="input" data-action="keydown-&gt;entry-composer#submitOnEnter" name="entry[input]" id="entry_input">
+</textarea>
+
+    <div data-entry-composer-target="timeFields" class="hidden rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <label class="block text-xs font-semibold text-slate-600" for="entry_occurred_at">When it happened</label>
+      <input value="2026-04-09T11:27" class="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-amber-500 focus:ring-amber-500" type="datetime-local" name="entry[occurred_at]" id="entry_occurred_at">
+    </div>
+
+    <input name="entry[documents][]" type="hidden" value=""><input multiple accept=".pdf,.png,.jpg,.jpeg,.txt,text/plain,application/pdf,image/png,image/jpeg" class="hidden" data-entry-composer-target="fileInput" data-action="change-&gt;entry-composer#filesChanged" type="file" name="entry[documents][]" id="entry_documents">
+    <div data-entry-composer-target="files" class="text-[11px] text-slate-400">Drop files or folders into the input field or use the clip</div>
+
+    <div class="mt-auto flex items-center gap-2">
+      <button type="button" class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100" data-action="entry-composer#toggleTime">
+        <svg class="h-3.5 w-3.5" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path>
+        </svg>
+        <span>Now</span>
+      </button>
+
+      <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:bg-slate-100" data-action="entry-composer#openFilePicker" aria-label="Attach">
+        <svg class="h-3.5 w-3.5" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21.44 11.05 12.25 20.24a6 6 0 1 1-8.49-8.49l9.2-9.19a4 4 0 0 1 5.65 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+        </svg>
+      </button>
+
+      <input type="submit" name="commit" value="Add" class="ml-auto inline-flex items-center rounded-full bg-slate-950 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800" data-disable-with="Add" data-demo-disabled-control="true">
+    </div>
+</form></turbo-frame><!-- END app/views/entries/_composer.html.erb -->
+<!-- END app/views/entries/_form.html.erb -->
+  </div>
+
+</div>
+<!-- END app/views/shared/_widget.html.erb --><!-- END app/views/shared/_overview_composer.html.erb -->
+    <!-- BEGIN app/views/shared/_overview_recent_activity.html.erb
+-->
+<!-- BEGIN app/views/shared/_widget.html.erb
+-->
+<div id="overview_recent_activity" class="rounded-[2rem] border p-6 shadow-sm ring-1 overflow-hidden
+            border-amber-200 bg-white text-slate-900 ring-amber-100
+             md:col-span-2">
+  
+  <div class="mb-2 flex items-center justify-between">
+    <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">Recent Activity</p>
+    <a class="text-[11px] font-semibold text-amber-700 hover:text-amber-900" href="../log/index.html">View Log</a>
+  </div>
+
+    <div class="space-y-0">
+        <!-- BEGIN app/views/entries/_compact_entry.html.erb
+-->
+<details class="group border-b border-slate-100 last:border-0">
+  <summary class="flex cursor-pointer items-start gap-3 rounded-2xl px-3 py-3 transition hover:bg-amber-50/70">
+    <div class="w-20 flex-shrink-0 text-[11px] text-slate-500">
+      <div>03/29</div>
+      <div class="mt-0.5 text-[10px] text-slate-400">17:00</div>
+    </div>
+
+    <div class="flex-1 min-w-0">
+      <div class="mb-1 flex items-start gap-2">
+        <p class="line-clamp-6 min-w-0 flex-1 break-words text-sm font-medium leading-snug text-slate-900 [overflow-wrap:anywhere]">Todo 10: Book pediatrician</p>
+          <span class="inline-flex shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-amber-700">Manual</span>
+      </div>
+      <div class="mt-2">
+        <!-- BEGIN app/views/entries/_documents.html.erb
+--><!-- END app/views/entries/_documents.html.erb -->
+      </div>
+    </div>
+
+    <div class="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition group-open:rotate-180">
+      <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"></path>
+      </svg>
+    </div>
+  </summary>
+
+  <div class="px-3 pb-3 pt-1">
+    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 overflow-hidden break-all">
+      <div class="grid gap-4 min-w-0">
+
+        <section>
+          <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">When it happened</p>
+          <p class="text-sm leading-relaxed text-slate-700">March 29, 2026 17:00</p>
+        </section>
+
+        <section>
+          <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Input</p>
+          <p class="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700 [overflow-wrap:anywhere]">Todo 10: Book pediatrician</p>
+        </section>
+
+
+        <section>
+          <div class="mt-2">
+            <!-- BEGIN app/views/entries/_documents.html.erb
+--><!-- END app/views/entries/_documents.html.erb -->
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</details>
+<!-- END app/views/entries/_compact_entry.html.erb -->
+        <!-- BEGIN app/views/entries/_compact_entry.html.erb
+-->
+<details class="group border-b border-slate-100 last:border-0">
+  <summary class="flex cursor-pointer items-start gap-3 rounded-2xl px-3 py-3 transition hover:bg-amber-50/70">
+    <div class="w-20 flex-shrink-0 text-[11px] text-slate-500">
+      <div>03/30</div>
+      <div class="mt-0.5 text-[10px] text-slate-400">17:00</div>
+    </div>
+
+    <div class="flex-1 min-w-0">
+      <div class="mb-1 flex items-start gap-2">
+        <p class="line-clamp-6 min-w-0 flex-1 break-words text-sm font-medium leading-snug text-slate-900 [overflow-wrap:anywhere]">Todo 9: Wash baby clothes</p>
+          <span class="inline-flex shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-amber-700">Manual</span>
+      </div>
+      <div class="mt-2">
+        <!-- BEGIN app/views/entries/_documents.html.erb
+--><!-- END app/views/entries/_documents.html.erb -->
+      </div>
+    </div>
+
+    <div class="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition group-open:rotate-180">
+      <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"></path>
+      </svg>
+    </div>
+  </summary>
+
+  <div class="px-3 pb-3 pt-1">
+    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 overflow-hidden break-all">
+      <div class="grid gap-4 min-w-0">
+
+        <section>
+          <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">When it happened</p>
+          <p class="text-sm leading-relaxed text-slate-700">March 30, 2026 17:00</p>
+        </section>
+
+        <section>
+          <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Input</p>
+          <p class="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700 [overflow-wrap:anywhere]">Todo 9: Wash baby clothes</p>
+        </section>
+
+
+        <section>
+          <div class="mt-2">
+            <!-- BEGIN app/views/entries/_documents.html.erb
+--><!-- END app/views/entries/_documents.html.erb -->
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</details>
+<!-- END app/views/entries/_compact_entry.html.erb -->
+        <!-- BEGIN app/views/entries/_compact_entry.html.erb
+-->
+<details class="group border-b border-slate-100 last:border-0">
+  <summary class="flex cursor-pointer items-start gap-3 rounded-2xl px-3 py-3 transition hover:bg-amber-50/70">
+    <div class="w-20 flex-shrink-0 text-[11px] text-slate-500">
+      <div>03/31</div>
+      <div class="mt-0.5 text-[10px] text-slate-400">17:00</div>
+    </div>
+
+    <div class="flex-1 min-w-0">
+      <div class="mb-1 flex items-start gap-2">
+        <p class="line-clamp-6 min-w-0 flex-1 break-words text-sm font-medium leading-snug text-slate-900 [overflow-wrap:anywhere]">Todo 8: Prepare formula</p>
+          <span class="inline-flex shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold leading-none text-amber-700">Manual</span>
+      </div>
+      <div class="mt-2">
+        <!-- BEGIN app/views/entries/_documents.html.erb
+--><!-- END app/views/entries/_documents.html.erb -->
+      </div>
+    </div>
+
+    <div class="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition group-open:rotate-180">
+      <svg class="h-4 w-4" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"></path>
+      </svg>
+    </div>
+  </summary>
+
+  <div class="px-3 pb-3 pt-1">
+    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 overflow-hidden break-all">
+      <div class="grid gap-4 min-w-0">
+
+        <section>
+          <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">When it happened</p>
+          <p class="text-sm leading-relaxed text-slate-700">March 31, 2026 17:00</p>
+        </section>
+
+        <section>
+          <p class="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Input</p>
+          <p class="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700 [overflow-wrap:anywhere]">Todo 8: Prepare formula</p>
+        </section>
+
+
+        <section>
+          <div class="mt-2">
+            <!-- BEGIN app/views/entries/_documents.html.erb
+--><!-- END app/views/entries/_documents.html.erb -->
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</details>
+<!-- END app/views/entries/_compact_entry.html.erb -->
+    </div>
+
+</div>
+<!-- END app/views/shared/_widget.html.erb --><!-- END app/views/shared/_overview_recent_activity.html.erb -->
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 xl:items-start">
+    <!-- BEGIN app/views/shared/_planning_widget.html.erb
+--><!-- BEGIN app/views/shared/_widget.html.erb
+-->
+<div id="overview_planning" class="rounded-[2rem] border p-6 shadow-sm ring-1 overflow-hidden
+            border-amber-200 bg-white text-slate-900 ring-amber-100
+             md:col-span-2 xl:col-span-4">
+    <div class="mb-4">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">Planning</p>
+        <h3 class="mt-1 text-lg font-bold text-slate-950">Appointments &amp; todos</h3>
+    </div>
+  
+  <div class="grid gap-4 lg:grid-cols-2">
+    <div>
+      <p class="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700">Appointment</p>
+        <p class="py-4 text-center text-xs text-slate-400">No appointments yet.</p>
+    </div>
+
+    <div>
+      <p class="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Todo</p>
+        <p class="py-4 text-center text-xs text-slate-400">No todos yet.</p>
+    </div>
+  </div>
+
+</div>
+<!-- END app/views/shared/_widget.html.erb --><!-- END app/views/shared/_planning_widget.html.erb -->
+    <!-- BEGIN app/views/shared/_weight_activity_widget.html.erb
+--><!-- BEGIN app/views/shared/_widget.html.erb
+-->
+<div id="overview_weight_activity" class="rounded-[2rem] border p-6 shadow-sm ring-1 overflow-hidden
+            border-violet-200 bg-white text-slate-900 ring-violet-100
+             xl:col-span-1">
+    <div class="mb-4">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-700">Weight</p>
+        <h3 class="mt-1 text-lg font-bold text-slate-950">Weight trend</h3>
+    </div>
+  
+  <div class="mb-3 flex items-center justify-between">
+    <div class="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1 text-[11px] font-semibold text-slate-600">
+        <a class="rounded-full px-3 py-1 transition hover:bg-white" data-turbo-preserve-scroll="true" href="index.html">1W</a>
+        <a class="rounded-full px-3 py-1 transition bg-white text-slate-950 shadow-sm" data-turbo-preserve-scroll="true" href="index.html">1M</a>
+        <a class="rounded-full px-3 py-1 transition hover:bg-white" data-turbo-preserve-scroll="true" href="index.html">1J</a>
+    </div>
+  </div>
+    <div class="flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-violet-200 bg-violet-50/50 px-4 py-10 text-center text-sm text-slate-500">
+      No weight entries yet.
+    </div>
+
+</div>
+<!-- END app/views/shared/_widget.html.erb --><!-- END app/views/shared/_weight_activity_widget.html.erb -->
+    <!-- BEGIN app/views/shared/_vital_activity_widget.html.erb
+--><!-- BEGIN app/views/shared/_widget.html.erb
+-->
+<div id="overview_temperature_activity" class="rounded-[2rem] border p-6 shadow-sm ring-1 overflow-hidden
+            border-rose-200 bg-white text-slate-900 ring-rose-100
+             ">
+    <div class="mb-4">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-700">Temperature</p>
+        <h3 class="mt-1 text-lg font-bold text-slate-950">Temperature</h3>
+    </div>
+  
+  <div class="mb-3 flex items-center justify-between">
+    <div class="inline-flex rounded-full border border-slate-200 bg-white/80 p-1 text-[11px] font-semibold text-slate-600">
+        <a class="rounded-full px-3 py-1 transition hover:bg-white" data-turbo-preserve-scroll="true" href="index.html">1W</a>
+        <a class="rounded-full px-3 py-1 transition bg-white text-slate-950 shadow-sm" data-turbo-preserve-scroll="true" href="index.html">1M</a>
+        <a class="rounded-full px-3 py-1 transition hover:bg-white" data-turbo-preserve-scroll="true" href="index.html">1J</a>
+    </div>
+  </div>
+    <div class="flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-rose-200 bg-rose-50/50 px-4 py-10 text-center text-sm text-slate-500">No entries in this range.</div>
+
+</div>
+<!-- END app/views/shared/_widget.html.erb --><!-- END app/views/shared/_vital_activity_widget.html.erb -->
+    <!-- BEGIN app/views/shared/_vital_activity_widget.html.erb
+--><!-- BEGIN app/views/shared/_widget.html.erb
+-->
+<div id="overview_pulse_activity" class="rounded-[2rem] border p-6 shadow-sm ring-1 overflow-hidden
+            border-orange-200 bg-white text-slate-900 ring-orange-100
+             ">
+    <div class="mb-4">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-700">Pulse</p>
+        <h3 class="mt-1 text-lg font-bold text-slate-950">Pulse</h3>
+    </div>
+  
+  <div class="mb-3 flex items-center justify-between">
+    <div class="inline-flex rounded-full border border-slate-200 bg-white/80 p-1 text-[11px] font-semibold text-slate-600">
+        <a class="rounded-full px-3 py-1 transition hover:bg-white" data-turbo-preserve-scroll="true" href="index.html">1W</a>
+        <a class="rounded-full px-3 py-1 transition bg-white text-slate-950 shadow-sm" data-turbo-preserve-scroll="true" href="index.html">1M</a>
+        <a class="rounded-full px-3 py-1 transition hover:bg-white" data-turbo-preserve-scroll="true" href="index.html">1J</a>
+    </div>
+  </div>
+    <div class="flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-orange-200 bg-orange-50/50 px-4 py-10 text-center text-sm text-slate-500">No entries in this range.</div>
+
+</div>
+<!-- END app/views/shared/_widget.html.erb --><!-- END app/views/shared/_vital_activity_widget.html.erb -->
+    <!-- BEGIN app/views/shared/_vital_activity_widget.html.erb
+--><!-- BEGIN app/views/shared/_widget.html.erb
+-->
+<div id="overview_blood_pressure_activity" class="rounded-[2rem] border p-6 shadow-sm ring-1 overflow-hidden
+            border-sky-200 bg-white text-slate-900 ring-sky-100
+             ">
+    <div class="mb-4">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700">Blood pressure</p>
+        <h3 class="mt-1 text-lg font-bold text-slate-950">Blood pressure</h3>
+    </div>
+  
+  <div class="mb-3 flex items-center justify-between">
+    <div class="inline-flex rounded-full border border-slate-200 bg-white/80 p-1 text-[11px] font-semibold text-slate-600">
+        <a class="rounded-full px-3 py-1 transition hover:bg-white" data-turbo-preserve-scroll="true" href="index.html">1W</a>
+        <a class="rounded-full px-3 py-1 transition bg-white text-slate-950 shadow-sm" data-turbo-preserve-scroll="true" href="index.html">1M</a>
+        <a class="rounded-full px-3 py-1 transition hover:bg-white" data-turbo-preserve-scroll="true" href="index.html">1J</a>
+    </div>
+  </div>
+    <div class="flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-sky-200 bg-sky-50/50 px-4 py-10 text-center text-sm text-slate-500">No entries in this range.</div>
+
+</div>
+<!-- END app/views/shared/_widget.html.erb --><!-- END app/views/shared/_vital_activity_widget.html.erb -->
+  </div>
+</section>
+<!-- END app/views/shared/_overview_grid.html.erb -->
+</section>
+<!-- END app/views/people/show.html.erb -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html><!-- END app/views/layouts/application.html.erb -->

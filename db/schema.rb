@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_08_173000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_08_212000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -87,6 +87,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_08_173000) do
     t.datetime "updated_at", null: false
     t.index ["person_id", "external_id"], name: "index_healthkit_records_on_person_id_and_external_id", unique: true
     t.index ["person_id", "record_type", "start_at"], name: "idx_on_person_id_record_type_start_at_6a6717a011"
+    t.index ["person_id", "start_at", "created_at"], name: "index_healthkit_records_on_person_id_start_at_created_at"
     t.index ["person_id"], name: "index_healthkit_records_on_person_id"
   end
 
