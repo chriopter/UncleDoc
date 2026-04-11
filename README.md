@@ -22,11 +22,10 @@
 
 ## 1. Features
 
-- Multi-person health records
-- Fast timeline logging with file uploads
-- Optional LLM parsing for notes, appointments, to-dos, and document content
+- Log Measurements, fitness activite or upload documents & your LLM will parse them to extract key information
+- Chat with your health record with the LLM of your choice
 - Baby mode for feeding, diapers, sleep, and growth
-- HealthKit sync through the iOS app
+- HealthKit sync through the iOS app (soon)
 
 **Key principe** is to enter data (e.g. a note, a uploaded PDF) that will then be parsed by your LLM to be condensed to key facts. The resulting health record (sum of all "facts") is what you can then chat with.
 
