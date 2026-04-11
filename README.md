@@ -22,7 +22,7 @@
 
 ## 1. Features
 
-- Log Measurements, fitness activite or upload documents & your LLM will parse them to extract key information
+- Log Measurements, fitness activities or upload documents & your LLM will parse them to extract key information
 - Chat with your health record with the LLM of your choice
 - Baby mode for feeding, diapers, sleep, and growth
 - HealthKit sync through the iOS app (soon)
