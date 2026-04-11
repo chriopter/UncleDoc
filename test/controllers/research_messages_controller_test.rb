@@ -4,7 +4,7 @@ class ResearchMessagesControllerTest < ActionDispatch::IntegrationTest
   include ActiveJob::TestHelper
 
   setup do
-    @person = Person.create!(name: "Research Nora", birth_date: Date.new(2024, 1, 1))
+    @person = Person.create!(name: "Demo Nora", birth_date: Date.new(2024, 1, 1))
     AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
   end
 

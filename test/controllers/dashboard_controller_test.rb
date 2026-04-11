@@ -124,7 +124,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows baby dashboard and ai summary on baby log page" do
-    person = Person.create!(name: "Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
+    person = Person.create!(name: "Demo Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 9, 0), input: "Bottle 120ml", facts: [ "Bottle feeding 120 ml" ], parseable_data: [ { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" } ])
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 10, 0), input: "Peter has fever 39.2", parseable_data: [], parse_status: "pending")
 
@@ -139,7 +139,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "overview keeps weight but moves baby-specific widgets to baby tab" do
-    person = Person.create!(name: "Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
+    person = Person.create!(name: "Demo Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 27, 9, 0), input: "Bottle 120ml", facts: [ "Bottle feeding 120 ml" ], parseable_data: [ { "type" => "bottle_feeding", "value" => 120, "unit" => "ml" } ])
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 28, 10, 0), input: "Diaper: wet", facts: [ "Diaper wet" ], parseable_data: [ { "type" => "diaper", "wet" => true, "solid" => false } ])
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 6, 0), input: "Sleep 95 min", facts: [ "Sleep 95 min" ], parseable_data: [ { "type" => "sleep", "value" => 95, "unit" => "min" } ])
@@ -158,7 +158,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_select "#overview_baby_activity_sleep", 0
     assert_select "#overview_baby_activity_diaper", 0
     assert_select "#overview_height_activity", 0
-    assert_select "h2", text: /Protocol - Mila/, count: 0
+    assert_select "h2", text: /Protocol - Demo Mila/, count: 0
   end
 
   test "shows skipped parse entry in log" do
@@ -193,7 +193,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "recent activity rows expand with input facts and parseable data" do
-    person = Person.create!(name: "Theo", birth_date: Date.new(2024, 1, 1))
+    person = Person.create!(name: "Demo Theo", birth_date: Date.new(2024, 1, 1))
     person.entries.create!(
       occurred_at: Time.zone.local(2026, 3, 31, 10, 0),
       input: "breastfed left side for 18 minutes",
@@ -284,7 +284,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows dedicated baby page when baby mode enabled" do
-    person = Person.create!(name: "Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
+    person = Person.create!(name: "Demo Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 6, 0), input: "Sleep 95 min", facts: [ "Sleep 95 min" ], parseable_data: [ { "type" => "sleep", "value" => 95, "unit" => "min" } ])
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 30, 15, 0), input: "Gewicht 3356g", facts: [ "Gewicht 3356 g" ], parseable_data: [ { "type" => "weight", "value" => 3356, "unit" => "g" } ])
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 31, 9, 0), input: "53cm Körpergröße", facts: [ "Körpergröße 53 cm" ], parseable_data: [ { "type" => "height", "value" => 53, "unit" => "cm" } ])
@@ -535,7 +535,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "baby log can filter by exact parseable type" do
-    person = Person.create!(name: "Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
+    person = Person.create!(name: "Demo Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 12, 0), input: "Stillen links 12 min; Windel: nass + fest", facts: [ "Stillen links 12 min", "Windel nass und fest" ], parseable_data: [ { "type" => "breast_feeding", "value" => 12, "unit" => "min", "side" => "left" }, { "type" => "diaper", "wet" => true, "solid" => true } ])
     person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 19, 30), input: "Windel: nass + fest", facts: [ "Windel nass und fest" ], parseable_data: [ { "type" => "diaper", "wet" => true, "solid" => true } ])
 

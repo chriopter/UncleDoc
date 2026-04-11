@@ -254,18 +254,6 @@ def create_baby_timeline(person, now:)
   end
 end
 
-legacy_demo_names = {
-  "Demo Nora" => "Demo Nora"
-}
-
-legacy_demo_names.each do |old_name, new_name|
-  person = Person.find_by(name: old_name)
-  next unless person
-  next if Person.exists?(name: new_name)
-
-  person.update!(name: new_name)
-end
-
 people = [
   { name: "Demo Nora", birth_date: 6.years.ago, baby_mode: false, timeline: :general },
   { name: "Demo Theo", birth_date: 34.years.ago, baby_mode: false, timeline: :general },

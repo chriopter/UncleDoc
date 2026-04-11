@@ -2,7 +2,7 @@ require "test_helper"
 
 class LogSummaryGeneratorTest < ActiveSupport::TestCase
   test "formats structured baby entries for llm prompts" do
-    person = Person.create!(name: "Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
+    person = Person.create!(name: "Demo Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
     entry = person.entries.create!(
       occurred_at: Time.zone.local(2026, 3, 29, 9, 0),
       input: "Baby fed",
@@ -20,7 +20,7 @@ class LogSummaryGeneratorTest < ActiveSupport::TestCase
   test "returns summary text" do
     preference = AppSetting.current
     preference.update!(llm_provider: "ollama", llm_model: "llama3")
-    person = Person.create!(name: "Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
+    person = Person.create!(name: "Demo Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
     entry = person.entries.create!(
       occurred_at: Time.zone.local(2026, 3, 29, 9, 0),
       input: "Baby fed",
