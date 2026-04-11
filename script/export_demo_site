@@ -12,7 +12,7 @@ require "set"
 require "uri"
 
 class DemoSiteExporter
-  HTML_CONTENT_TYPES = ["text/html", "application/xhtml+xml"].freeze
+  HTML_CONTENT_TYPES = [ "text/html", "application/xhtml+xml" ].freeze
   ASSET_EXTENSIONS = %w[
     .css .gif .ico .jpeg .jpg .js .json .pdf .png .svg .txt .webp .woff .woff2
   ].freeze
@@ -175,7 +175,7 @@ class DemoSiteExporter
         target_uri = absolutize_uri(url_part, page_uri)
         if internal_uri?(target_uri)
           download_asset(target_uri)
-          [relative_reference(page_uri, asset_output_path(target_uri)), descriptor].compact.join(" ")
+          [ relative_reference(page_uri, asset_output_path(target_uri)), descriptor ].compact.join(" ")
         else
           entry.strip
         end
@@ -386,13 +386,13 @@ class DemoSiteExporter
       {}
     end
 
-    normalized.query = kept.empty? ? nil : URI.encode_www_form(kept.flat_map { |key, values| Array(values).map { |value| [key, value] } })
+    normalized.query = kept.empty? ? nil : URI.encode_www_form(kept.flat_map { |key, values| Array(values).map { |value| [ key, value ] } })
     normalized
   end
 
   def page_key(uri)
     normalized = normalize_page_uri(uri)
-    [(normalized.path.to_s.empty? ? "/" : normalized.path), normalized.query.to_s].join("?")
+    [ (normalized.path.to_s.empty? ? "/" : normalized.path), normalized.query.to_s ].join("?")
   end
 
   def asset_uri?(uri)
