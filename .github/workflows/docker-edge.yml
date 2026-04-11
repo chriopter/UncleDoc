@@ -38,7 +38,7 @@ jobs:
             org.opencontainers.image.title=UncleDoc
             org.opencontainers.image.description=Self-hosted family health tracker
 
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
