@@ -88,20 +88,11 @@ volumes:
 
 </details>
 
-Create `.env.docker`:
+Create `.env.docker` (optional, for API keys and overrides):
 
 ```bash
-printf "RAILS_MASTER_KEY=PASTE_YOURS\n" > .env.docker
+touch .env.docker
 ```
-
-<details>
-<summary>.env.docker</summary>
-
-```dotenv
-RAILS_MASTER_KEY=replace_with_config_master_key
-```
-
-</details>
 
 Run:
 
