@@ -10,10 +10,8 @@
 # Ignore all environment files.
 /.env*
 
-# Ignore all default key and credentials files.
+# Ignore key files (credentials are not used; app is configured via env vars).
 /config/master.key
-/config/credentials/*.key
-/config/credentials.yml.enc
 /config/credentials/
 
 # Ignore all logfiles and tempfiles.
