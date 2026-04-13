@@ -30,8 +30,10 @@
 
 /public/assets
 
-# Ignore key files for decrypting credentials and more.
+# Ignore credentials and key files.
 /config/*.key
+/config/credentials.yml.enc
+/config/credentials/
 /.kamal/secrets.lan
 
 
