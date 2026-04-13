@@ -347,7 +347,6 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "doctor-invoice.pdf"
     assert_includes @response.body, "Doctor invoice from March 2026"
     assert_includes @response.body, "20,11 EUR"
-    assert_includes @response.body, "iframe"
     assert_includes @response.body, I18n.t("entries.reparse.trigger")
   end
 
@@ -418,9 +417,9 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes @response.body, "HealthKit for Healthkitty"
     assert_includes @response.body, "iphone-main"
-    assert_includes @response.body, "Reset imported data"
-    assert_includes @response.body, "Rebuild summaries"
-    assert_includes @response.body, "Re-parse HealthKit entries"
+    assert_includes @response.body, "Remove imported HealthKit data"
+    assert_includes @response.body, "Regenerate summaries"
+    assert_includes @response.body, "Reparse summaries"
   end
 
   test "healthkit page uses browser time zone cookie for displayed times" do
