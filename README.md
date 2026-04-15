@@ -25,14 +25,18 @@
 - Log Measurements, fitness activities or upload documents & your LLM will parse them to extract key information
 - Chat with your health record with the LLM of your choice
 - Baby mode for feeding, diapers, sleep, and growth
-- HealthKit sync through the iOS app (soon)
+- HealthKit sync through the [iOS app](https://apps.apple.com/us/app/uncledoc/id6761766435)
 
 **Key principe** is to enter data (e.g. a note, a uploaded PDF) that will then be parsed by your LLM to be condensed to key facts. The resulting health record (sum of all "facts") is what you can then chat with.
 
 ## 2. iOS App
 
-UncleDoc also includes an iOS app so the same household health record feels at home on iPhone.
-It can sync HealthKit data into UncleDoc, so measurements collected on your device can live alongside manual notes and uploaded documents.
+<a href="https://apps.apple.com/us/app/uncledoc/id6761766435">
+  <img src="https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/9b/92/2e/9b922e65-826d-71f7-7102-d01e63561765/Simulator_Screenshot_-_iPhone_17_Pro_Max_-_2026-04-07_at_16.35.15-appstore.png/460x996bb.webp" alt="UncleDoc iOS app" width="200" align="right" />
+</a>
+
+UncleDoc has an [iOS app](https://apps.apple.com/us/app/uncledoc/id6761766435) so the same household health record feels at home on iPhone.
+It syncs HealthKit data into UncleDoc, so measurements collected on your device live alongside manual notes and uploaded documents.
 The app stays intentionally thin, with the main product experience and your data remaining on your own UncleDoc server.
 
 ## 3. Prompts
