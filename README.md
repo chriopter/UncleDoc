@@ -31,13 +31,15 @@
 
 ## 2. iOS App
 
-<a href="https://apps.apple.com/us/app/uncledoc/id6761766435">
-  <img src="https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/9b/92/2e/9b922e65-826d-71f7-7102-d01e63561765/Simulator_Screenshot_-_iPhone_17_Pro_Max_-_2026-04-07_at_16.35.15-appstore.png/460x996bb.webp" alt="UncleDoc iOS app" width="200" align="right" />
-</a>
-
 UncleDoc has an [iOS app](https://apps.apple.com/us/app/uncledoc/id6761766435) so the same household health record feels at home on iPhone.
 It syncs HealthKit data into UncleDoc, so measurements collected on your device live alongside manual notes and uploaded documents.
 The app stays intentionally thin, with the main product experience and your data remaining on your own UncleDoc server.
+
+<p align="center">
+  <a href="https://apps.apple.com/us/app/uncledoc/id6761766435">
+    <img src="https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/9b/92/2e/9b922e65-826d-71f7-7102-d01e63561765/Simulator_Screenshot_-_iPhone_17_Pro_Max_-_2026-04-07_at_16.35.15-appstore.png/460x996bb.webp" alt="UncleDoc iOS app" width="180" />
+  </a>
+</p>
 
 ## 3. Prompts
 
