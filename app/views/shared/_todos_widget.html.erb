@@ -2,7 +2,7 @@
 <%= render "shared/widget", id: "overview_todos", label: t("entries.data_labels.todo"), title: t("person.overview.todos.title"), color: "emerald", dark: true, card_classes: local_assigns[:card_classes] do %>
   <section class="flex h-full flex-col rounded-[1.5rem] border border-emerald-300/20 bg-emerald-400/10 p-4">
     <% if todos.present? %>
-      <div class="space-y-2">
+      <div class="max-h-[22rem] space-y-2 overflow-y-auto pr-1">
         <% todos.each do |entry| %>
           <div class="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-3 <%= entry.todo_done? ? 'opacity-60' : '' %>">
             <%= button_to toggle_todo_person_entry_path(entry.person, entry), method: :patch, class: "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border #{entry.todo_done? ? 'border-emerald-300 bg-emerald-300 text-slate-950' : 'border-white/20 bg-transparent text-white'}" do %>

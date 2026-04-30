@@ -69,4 +69,20 @@ class EntryReparseBatchJobTest < ActiveJob::TestCase
     assert_equal 0, enqueued_jobs.count { |job| job[:job] == EntryDataParseJob }
     assert_equal 1, enqueued_jobs.count { |job| job[:job] == EntryReparseBatchJob }
   end
+
+  test "can limit reparsing to one person's document entries" do
+    person = Person.create!(name: "Document Batch Person", birth_date: Date.new(2020, 1, 1))
+    other_person = Person.create!(name: "Other Document Batch Person", birth_date: Date.new(2020, 1, 1))
+    document_entry = person.entries.create!(input: "document", occurred_at: Time.current, parse_status: "pending", extracted_data: { "facts" => [], "document" => {}, "llm" => {} })
+    document_entry.documents.attach(io: StringIO.new("document text"), filename: "document.txt", content_type: "text/plain")
+    person.entries.create!(input: "plain", occurred_at: Time.current, parse_status: "pending", extracted_data: { "facts" => [], "document" => {}, "llm" => {} })
+    other_document_entry = other_person.entries.create!(input: "other document", occurred_at: Time.current, parse_status: "pending", extracted_data: { "facts" => [], "document" => {}, "llm" => {} })
+    other_document_entry.documents.attach(io: StringIO.new("other document text"), filename: "other-document.txt", content_type: "text/plain")
+
+    assert_enqueued_jobs 1, only: EntryDataParseJob do
+      EntryReparseBatchJob.perform_now(person_id: person.id, documents_only: true)
+    end
+
+    assert_equal [ document_entry.id ], enqueued_jobs.select { |job| job[:job] == EntryDataParseJob }.map { |job| job[:args].first }
+  end
 end

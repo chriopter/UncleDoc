@@ -34,6 +34,13 @@ class EntryTest < ActiveSupport::TestCase
     assert_equal "Bottle feeding 120 ml. Diaper wet", entry.fact_summary
   end
 
+  test "document metadata can expose multiple document types" do
+    entry = Entry.new(input: "raw", extracted_data: { "facts" => [], "document" => { "type" => "lab_report", "types" => [ "lab_report", "invoice" ] }, "llm" => {} })
+
+    assert_equal [ "lab_report", "invoice" ], entry.document_types
+    assert_equal "lab_report", entry.document_type
+  end
+
   test "entry changes enqueue a research context refresh when chat exists" do
     person = Person.create!(name: "Chat Mila", birth_date: Date.new(2024, 3, 10))
     AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")

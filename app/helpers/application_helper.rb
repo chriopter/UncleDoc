@@ -330,21 +330,23 @@ module ApplicationHelper
     end
   end
 
-  def appointment_entries(person, limit: 6)
-    person.entries
+  def appointment_entries(person, limit: nil)
+    entries = person.entries
       .merge(Entry.by_parseable_data_type("appointment"))
       .to_a
       .select { |entry| (entry.appointment_calendar_time || entry.appointment_logged_at) >= Time.zone.now.beginning_of_day }
       .sort_by { |entry| [ entry.appointment_calendar_time || entry.appointment_logged_at, entry.created_at ] }
-      .first(limit)
+
+    limit.present? ? entries.first(limit) : entries
   end
 
   def appointment_activity_available?(person)
     person.entries.merge(Entry.by_parseable_data_type("appointment")).exists?
   end
 
-  def todo_entries(person, limit: 6)
-    person.entries.merge(Entry.by_parseable_data_type("todo")).recent_first.limit(limit)
+  def todo_entries(person, limit: nil)
+    entries = person.entries.merge(Entry.by_parseable_data_type("todo")).recent_first
+    limit.present? ? entries.limit(limit) : entries
   end
 
   def todo_activity_available?(person)

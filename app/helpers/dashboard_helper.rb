@@ -28,6 +28,10 @@ module DashboardHelper
       .transform_values { |type_entries| type_entries.group_by { |entry| entry.display_time.year } }
   end
 
+  def document_type_labels(entry)
+    entry.document_types.map { |type| t("files.document_types.#{type}", default: type.humanize) }
+  end
+
   def shell_mobile_nav_groups(current_person, request_path)
     shell_nav_items(current_person, request_path).each_with_object([]) do |item, groups|
       if item[:child] && groups.last.present?

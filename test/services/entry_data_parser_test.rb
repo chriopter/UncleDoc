@@ -102,14 +102,16 @@ class EntryDataParserTest < ActiveSupport::TestCase
 
     assert_includes prompt, "extract the medically relevant content too, not just the document purpose"
     assert_includes prompt, "If a document mentions a diagnosis, symptom, reason for visit, or reason for work incapacity"
+    assert_includes prompt, "A single attached document can have multiple roles"
+    assert_includes prompt, '"types": ["lab_report", "invoice"]'
     assert_includes prompt, "2022-01 Erkältung AU.pdf"
     assert_includes prompt, '"kind": "symptom"'
   end
 
   test "sanitizes document metadata" do
-    result = EntryDataParser.sanitize_document({ "type" => "invoice", "title" => "Rechnung 24.03.2023", "total_amount" => "20.11", "currency" => "EUR", "extra" => "ignored" })
+    result = EntryDataParser.sanitize_document({ "type" => "invoice", "types" => [ "invoice", "lab_report" ], "title" => "Rechnung 24.03.2023", "total_amount" => "20.11", "currency" => "EUR", "extra" => "ignored" })
 
-    assert_equal({ "type" => "invoice", "title" => "Rechnung 24.03.2023", "total_amount" => 20.11, "currency" => "EUR" }, result)
+    assert_equal({ "type" => "invoice", "title" => "Rechnung 24.03.2023", "total_amount" => 20.11, "currency" => "EUR", "types" => [ "invoice", "lab_report" ] }, result)
   end
 
   test "drops hallucinated document metadata when entry has no attachments" do

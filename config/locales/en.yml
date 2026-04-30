@@ -631,6 +631,12 @@ en:
       doc_type: "Type"
       all_years: "All years"
       all_types: "All types"
+    reparse:
+      button: "Reparse all documents"
+      document_button: "Reparse document"
+      confirm: "Reparse all uploaded documents for this person? Existing parsed output will be refreshed."
+      queued: "%{count} document entries queued for reparsing."
+      not_ready: "Configure a working LLM model before reparsing documents."
     list:
       label: "Archive"
       title: "Uploaded documents"

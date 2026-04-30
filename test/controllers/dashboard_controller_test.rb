@@ -254,6 +254,23 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Todo"
   end
 
+  test "planning widget renders full scrollable appointment and todo lists" do
+    person = Person.create!(name: "Scroll Planner", birth_date: Date.new(2024, 1, 1))
+
+    5.times do |index|
+      scheduled_for = (Time.zone.today + index.days + 1).to_time.change(hour: 10).iso8601
+      person.entries.create!(occurred_at: Time.current + index.minutes, input: "appointment #{index}", facts: [ "Appointment #{index}" ], parseable_data: [ { "type" => "appointment", "value" => "appointment #{index}", "scheduled_for" => scheduled_for } ])
+      person.entries.create!(occurred_at: Time.current + index.minutes, input: "todo #{index}", facts: [ "Todo #{index}" ], parseable_data: [ { "type" => "todo", "value" => "todo #{index}" } ])
+    end
+
+    get person_overview_url(person_slug: person.name)
+
+    assert_response :success
+    assert_select "#overview_planning .overflow-y-auto", 2
+    assert_includes @response.body, "Appointment 4"
+    assert_includes @response.body, "todo 4"
+  end
+
   test "overview appointment and note widgets prefer facts text" do
     person = Person.create!(name: "FactsFirst", birth_date: Date.new(2024, 1, 1))
     person.entries.create!(
@@ -347,7 +364,29 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "doctor-invoice.pdf"
     assert_includes @response.body, "Doctor invoice from March 2026"
     assert_includes @response.body, "20,11 EUR"
-    assert_includes @response.body, I18n.t("entries.reparse.trigger")
+    assert_includes @response.body, I18n.t("files.reparse.document_button")
+    assert_includes @response.body, I18n.t("files.reparse.button")
+  end
+
+  test "files tab can queue all document entries for reparse" do
+    AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
+    person = Person.create!(name: "Bulk Files", birth_date: Date.new(2024, 1, 1))
+    other_person = Person.create!(name: "Other Files", birth_date: Date.new(2024, 1, 1))
+    document_entry = person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 8, 0), input: "Doctor invoice", extracted_data: { "facts" => [ { "text" => "Old document fact", "kind" => "note" } ], "document" => { "type" => "invoice" }, "llm" => {} }, parse_status: "parsed")
+    document_entry.documents.attach(io: StringIO.new(fake_pdf_content("Doctor invoice")), filename: "doctor-invoice.pdf", content_type: "application/pdf")
+    plain_entry = person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 9, 0), input: "Plain note", extracted_data: { "facts" => [ { "text" => "Keep me", "kind" => "note" } ], "document" => {}, "llm" => {} }, parse_status: "parsed")
+    other_document_entry = other_person.entries.create!(occurred_at: Time.zone.local(2026, 3, 29, 10, 0), input: "Other invoice", extracted_data: { "facts" => [ { "text" => "Other fact", "kind" => "note" } ], "document" => { "type" => "invoice" }, "llm" => {} }, parse_status: "parsed")
+    other_document_entry.documents.attach(io: StringIO.new(fake_pdf_content("Other invoice")), filename: "other-invoice.pdf", content_type: "application/pdf")
+
+    assert_enqueued_with(job: EntryReparseBatchJob) do
+      post person_files_reparse_url(person_slug: person.name)
+    end
+
+    assert_redirected_to person_files_path(person_slug: person.name)
+    assert_equal "pending", document_entry.reload.parse_status
+    assert_equal [], document_entry.fact_objects
+    assert_equal "parsed", plain_entry.reload.parse_status
+    assert_equal "parsed", other_document_entry.reload.parse_status
   end
 
   test "file detail page shows in-app viewer and parsed sidebar" do
@@ -389,7 +428,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes @response.body, "failed-invoice.pdf"
-    assert_includes @response.body, I18n.t("entries.reparse.trigger")
+    assert_includes @response.body, I18n.t("files.reparse.document_button")
     assert_includes @response.body, I18n.t("entries.tags.parse_error")
   end
 

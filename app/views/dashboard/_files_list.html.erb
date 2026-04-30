@@ -53,7 +53,7 @@
                         <%= button_to reparse_person_entry_path(entry.person, entry), method: :patch,
                             class: "shrink-0 rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-800",
                             form_class: "contents", data: { turbo_frame: "_top" } do %>
-                          <%= t("entries.reparse.trigger") %>
+                          <%= t("files.reparse.document_button") %>
                         <% end %>
                       <% end %>
                     </div>
@@ -87,6 +87,9 @@
                         <%= link_to person_file_path(person_slug: entry.person.name, entry_id: entry.id, year: params[:year], doc_type: params[:doc_type]), class: "line-clamp-2 text-xs font-semibold text-slate-800 hover:text-amber-800", data: { turbo_frame: "_top" } do %>
                           <%= entry.document_title.presence || first_doc&.filename&.to_s || t("files.list.document_only") %>
                         <% end %>
+                        <% if document_type_labels(entry).present? %>
+                          <p class="mt-1 text-[10px] font-medium text-slate-500"><%= document_type_labels(entry).join(" + ") %></p>
+                        <% end %>
                         <% if entry.invoice_total_label.present? %>
                           <p class="mt-1 text-[10px] font-semibold text-emerald-700"><%= entry.invoice_total_label %></p>
                         <% end %>
@@ -100,7 +103,7 @@
                             <%= button_to reparse_person_entry_path(entry.person, entry), method: :patch,
                                 class: "inline-flex items-center justify-center rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:border-amber-300 hover:text-amber-700",
                                 form_class: "contents", data: { turbo_frame: "_top" } do %>
-                              <%= t("entries.reparse.trigger") %>
+                              <%= t("files.reparse.document_button") %>
                             <% end %>
                           <% end %>
                         </div>

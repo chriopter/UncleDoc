@@ -83,6 +83,26 @@ class DashboardController < ApplicationController
     raise ActiveRecord::RecordNotFound
   end
 
+  def queue_file_reparse
+    person = Person.find_by!(name: params[:person_slug])
+
+    unless EntryDataParser.ready?
+      redirect_to person_files_path(person_slug: person.name), alert: t("files.reparse.not_ready")
+      return
+    end
+
+    result = EntryReparseScheduler.call(
+      scope: person.entries.with_documents,
+      batch_size: EntryReparseBatchJob::DEFAULT_BATCH_SIZE,
+      max_pending: EntryReparseBatchJob::DEFAULT_MAX_PENDING,
+      delay_seconds: EntryReparseBatchJob::DEFAULT_DELAY.to_i,
+      person_id: person.id,
+      documents_only: true
+    )
+
+    redirect_to person_files_path(person_slug: person.name), notice: t("files.reparse.queued", count: result.marked_count)
+  end
+
   def healthkit
     @person = Person.find_by!(name: params[:person_slug])
     @healthkit_syncs = @person.healthkit_syncs.order(updated_at: :desc)
@@ -158,7 +178,7 @@ class DashboardController < ApplicationController
 
   def available_file_filters(entries)
     years = entries.map { |e| e.display_time.year }.uniq.sort.reverse
-    types = entries.filter_map(&:document_type).uniq.sort
+    types = entries.flat_map(&:document_types).uniq.sort
     { years: years, types: types }
   end
 
@@ -171,7 +191,7 @@ class DashboardController < ApplicationController
     end
 
     if params[:doc_type].present?
-      scope = scope.select { |e| (e.document_type.presence || "other") == params[:doc_type] }
+      scope = scope.select { |e| e.document_types.include?(params[:doc_type]) || (e.document_types.blank? && params[:doc_type] == "other") }
     end
 
     scope

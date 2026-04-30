@@ -246,8 +246,14 @@ class Entry < ApplicationRecord
     document_value.is_a?(Hash) ? document_value.deep_stringify_keys : {}
   end
 
+  def document_types
+    ([ document_metadata["type"] ] + Array(document_metadata["types"])).filter_map do |type|
+      type.to_s.strip.presence
+    end.uniq
+  end
+
   def document_type
-    document_metadata["type"].presence
+    document_types.first
   end
 
   def document_title

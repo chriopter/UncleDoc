@@ -127,14 +127,6 @@
                             <p class="truncate text-[11px] text-slate-400"><%= current_user.email_address %></p>
                           </div>
                         </div>
-                        <% if current_user.can_administer? %>
-                          <%= link_to settings_path_for, class: "flex w-full items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-white/80" do %>
-                            <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-amber-700 shadow-sm ring-1 ring-black/5">
-                              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="<%= shell_nav_icon(t('nav.settings')) %>" /></svg>
-                            </span>
-                            <span><%= t("nav.settings") %></span>
-                          <% end %>
-                        <% end %>
                         <%= button_to session_path, method: :delete, class: "flex w-full items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-white/80" do %>
                           <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-amber-700 shadow-sm ring-1 ring-black/5">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3h9m0 0-3-3m3 3-3 3" /></svg>

@@ -1,11 +1,11 @@
-<% appointments = appointment_entries(person, limit: 3) %>
-<% todos = todo_entries(person, limit: 3) %>
+<% appointments = appointment_entries(person) %>
+<% todos = todo_entries(person) %>
 <%= render "shared/widget", id: "overview_planning", label: t("person.overview.planning.label"), title: t("person.overview.planning.title"), color: "amber", card_classes: local_assigns[:card_classes] do %>
   <div class="grid gap-4 lg:grid-cols-2">
     <div>
       <p class="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700"><%= t("entries.data_labels.appointment") %></p>
       <% if appointments.present? %>
-        <div class="space-y-2">
+        <div class="max-h-72 space-y-2 overflow-y-auto pr-1">
           <% appointments.each do |entry| %>
             <div class="rounded-xl border border-amber-100 bg-amber-50/60 px-3 py-2">
               <p class="text-[10px] font-semibold tabular-nums text-amber-600"><%= t("person.overview.appointments.scheduled_for", time: l(entry.appointment_calendar_time, format: "%-d.%m %H:%M")) %></p>
@@ -24,7 +24,7 @@
     <div>
       <p class="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700"><%= t("entries.data_labels.todo") %></p>
       <% if todos.present? %>
-        <div class="space-y-2">
+        <div class="max-h-72 space-y-2 overflow-y-auto pr-1">
           <% todos.each do |entry| %>
             <div class="flex items-start gap-2 rounded-xl border border-emerald-100 bg-emerald-50/60 px-3 py-2 <%= entry.todo_done? ? 'opacity-50' : '' %>">
               <%= button_to toggle_todo_person_entry_path(entry.person, entry), method: :patch, class: "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border #{entry.todo_done? ? 'border-emerald-400 bg-emerald-400 text-white' : 'border-emerald-300'}" do %>

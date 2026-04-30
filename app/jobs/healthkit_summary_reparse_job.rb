@@ -14,7 +14,8 @@ class HealthkitSummaryReparseJob < ApplicationJob
       batch_size: BATCH_SIZE,
       max_pending: MAX_PENDING,
       delay_seconds: DELAY_SECONDS,
-      source: Entry::SOURCES[:healthkit]
+      source: Entry::SOURCES[:healthkit],
+      person_id: person.id
     )
   end
 end

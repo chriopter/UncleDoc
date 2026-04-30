@@ -93,7 +93,7 @@
       <div class="min-w-0">
         <% if entry.document_type.present? || entry.document_title.present? %>
           <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("entries.document_metadata.title") %></p>
-          <p class="mb-3 text-sm leading-relaxed text-slate-700 break-words"><%= [entry.document_title, entry.document_type].compact.join(" • ") %></p>
+          <p class="mb-3 text-sm leading-relaxed text-slate-700 break-words"><%= [entry.document_title, document_type_labels(entry).presence&.join(" + ")].compact.join(" • ") %></p>
           <% if entry.invoice_total_label.present? %>
             <p class="mb-3 text-sm font-semibold text-emerald-700"><%= t("entries.document_metadata.invoice_total") %>: <%= entry.invoice_total_label %></p>
           <% end %>

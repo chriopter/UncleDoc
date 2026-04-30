@@ -286,9 +286,15 @@ class EntryDataParser
   def self.sanitize_document(value)
     return {} unless value.is_a?(Hash)
 
-    document = value.deep_stringify_keys.slice("type", "title", "total_amount", "currency").transform_values do |item|
+    normalized = value.deep_stringify_keys
+    document = normalized.slice("type", "title", "total_amount", "currency").transform_values do |item|
       item.to_s.strip.presence
     end.compact
+    types = ([ document["type"] ] + Array(normalized["types"])).filter_map do |type|
+      type.to_s.strip.presence
+    end.uniq
+    document["type"] ||= types.first
+    document["types"] = types if types.many?
 
     if document["total_amount"].present?
       normalized_amount = normalize_value(document["total_amount"])
