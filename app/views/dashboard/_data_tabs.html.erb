@@ -1,0 +1,13 @@
+<% active_tab = local_assigns.fetch(:active_tab, "protocol") %>
+
+<nav class="inline-flex rounded-full border border-amber-100 bg-white/90 p-1 text-sm font-semibold shadow-sm ring-1 ring-black/5" aria-label="<%= t("dashboard.data.tabs.label") %>">
+  <%= link_to person_log_path(person_slug: person.name), class: "rounded-full px-4 py-2 transition #{active_tab == 'protocol' ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-amber-50 hover:text-slate-950'}" do %>
+    <%= t("dashboard.data.tabs.protocol") %>
+  <% end %>
+  <%= link_to person_log_path(person_slug: person.name, tab: "healthkit"), class: "rounded-full px-4 py-2 transition #{active_tab == 'healthkit' ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-amber-50 hover:text-slate-950'}" do %>
+    <%= t("dashboard.data.tabs.healthkit") %>
+  <% end %>
+  <%= link_to person_log_path(person_slug: person.name, tab: "record"), class: "rounded-full px-4 py-2 transition #{active_tab == 'record' ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-amber-50 hover:text-slate-950'}" do %>
+    <%= t("dashboard.data.tabs.record") %>
+  <% end %>
+</nav>

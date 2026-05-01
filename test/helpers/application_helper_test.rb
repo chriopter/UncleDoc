@@ -22,4 +22,31 @@ class ApplicationHelperTest < ActionView::TestCase
     assert_includes html, "Mein Eindruck"
     assert_includes html, "nicht schwer krank"
   end
+
+  test "chat timeline anchors chat-created document entries after the upload message" do
+    AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
+    person = Person.create!(name: "Upload Uma", birth_date: Date.new(2024, 1, 1))
+    chat = person.build_chat
+    ResearchChatRuntime.prepare!(chat, setting: AppSetting.current)
+
+    travel_to Time.zone.local(2026, 4, 30, 13, 12, 0) do
+      user_message = chat.add_message(role: :user, content: "1 Dokument angehängt")
+      person.entries.create!(
+        occurred_at: Time.zone.local(2025, 12, 30, 9, 0, 0),
+        input: "Schiene",
+        facts: [ "Retentionsschiene Rechnung" ],
+        parseable_data: [],
+        source_ref: "chat:message:#{user_message.id}",
+        parse_status: "parsed"
+      )
+      chat.add_message(role: :assistant, content: "Gespeichert und aus dem Dokument geparst.")
+    end
+
+    timeline = chat_timeline_items(person, chat)
+
+    assert_equal [ :message, :activity, :message ], timeline.map { |item| item[:kind] }
+    assert_equal "1 Dokument angehängt", timeline.first[:record].content
+    assert_equal "Schiene", timeline.second[:record].input
+    assert_equal "Gespeichert und aus dem Dokument geparst.", timeline.third[:record].content
+  end
 end

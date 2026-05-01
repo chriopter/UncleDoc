@@ -56,13 +56,13 @@ class EntriesController < ApplicationController
   end
 
   def toggle_todo
-    return redirect_back fallback_location: person_overview_path(person_slug: @person.name) unless @entry.todo?
+    return redirect_back fallback_location: person_root_path(person_slug: @person.name) unless @entry.todo?
 
     @entry.update!(todo_done: !@entry.todo_done?, todo_done_at: @entry.todo_done? ? nil : Time.current)
 
     respond_to do |format|
-      format.html { redirect_back fallback_location: person_overview_path(person_slug: @person.name) }
-      format.turbo_stream { redirect_back fallback_location: person_overview_path(person_slug: @person.name) }
+      format.html { redirect_back fallback_location: person_root_path(person_slug: @person.name) }
+      format.turbo_stream { redirect_back fallback_location: person_root_path(person_slug: @person.name) }
     end
   end
 

@@ -1,0 +1,70 @@
+<% display_time = entry.display_time || entry.created_at %>
+<% summary_text = entry.document_title.presence || entry.fact_summary.presence || entry.input.presence || (entry.documents_attached? ? t("entries.documents.document_only") : nil) %>
+
+<div id="<%= dom_id(entry, :chat_activity) %>" class="flex justify-center">
+  <details class="group w-full max-w-[92%] rounded-2xl border border-orange-200 bg-orange-50/80 text-orange-950 shadow-sm ring-1 ring-orange-100">
+    <summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+      <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="rounded-full bg-orange-200/70 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-orange-800">
+            <%= l(display_time, format: "%d.%m. %H:%M") %>
+          </span>
+          <% if entry.pending_parse? %>
+            <span class="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-800"><%= t("entries.parse_status.pending_short") %></span>
+          <% elsif entry.failed_parse? %>
+            <span class="rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-bold text-rose-700"><%= t("entries.parse_status.failed_short") %></span>
+          <% elsif entry.skipped_parse? %>
+            <span class="rounded-full bg-white/70 px-2.5 py-1 text-[10px] font-bold text-orange-700"><%= t("entries.parse_status.skipped_short") %></span>
+          <% end %>
+        </div>
+        <p class="mt-2 line-clamp-6 break-words text-sm font-bold leading-snug text-slate-950 [overflow-wrap:anywhere]"><%= summary_text %></p>
+        <% if entry.fact_items.present? && entry.input.present? %>
+          <p class="mt-1 line-clamp-1 break-words text-xs text-orange-800/75 [overflow-wrap:anywhere]"><%= entry.input %></p>
+        <% end %>
+      </div>
+
+      <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-orange-700 shadow-sm ring-1 ring-orange-200 transition group-open:rotate-180">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+        </svg>
+      </div>
+    </summary>
+
+    <div class="border-t border-orange-200/80 bg-white/70 px-4 py-3">
+      <div class="grid gap-4">
+        <section>
+          <p class="mb-1 text-[10px] font-black uppercase tracking-[0.18em] text-orange-700"><%= t("activerecord.attributes.entry.occurred_at") %></p>
+          <p class="text-sm leading-relaxed text-slate-700"><%= display_time.present? ? l(display_time, format: :long) : t("chat.unknown_date") %></p>
+        </section>
+
+        <% if entry.document_type.present? || entry.document_title.present? || entry.invoice_total_label.present? %>
+          <section>
+            <p class="mb-1 text-[10px] font-black uppercase tracking-[0.18em] text-orange-700"><%= t("entries.document_metadata.title") %></p>
+            <p class="text-sm leading-relaxed text-slate-700"><%= [entry.document_title, document_type_labels(entry).presence&.join(" + ")].compact.join(" • ") %></p>
+            <% if entry.invoice_total_label.present? %>
+              <p class="mt-1 text-sm font-semibold text-emerald-700"><%= t("entries.document_metadata.invoice_total") %>: <%= entry.invoice_total_label %></p>
+            <% end %>
+          </section>
+        <% end %>
+
+        <section>
+          <p class="mb-1 text-[10px] font-black uppercase tracking-[0.18em] text-orange-700"><%= t("entries.raw_input.title") %></p>
+          <p class="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700 [overflow-wrap:anywhere]"><%= entry.input %></p>
+        </section>
+
+        <% if entry.fact_objects.present? %>
+          <section>
+            <p class="mb-1 text-[10px] font-black uppercase tracking-[0.18em] text-orange-700"><%= t("entries.parsed_data.title") %></p>
+            <%= render "entries/data_details", entry: entry %>
+          </section>
+        <% end %>
+
+        <% if entry.documents_attached? %>
+          <section>
+            <%= render "entries/documents", entry: entry %>
+          </section>
+        <% end %>
+      </div>
+    </div>
+  </details>
+</div>

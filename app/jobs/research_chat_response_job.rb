@@ -32,6 +32,9 @@ class ResearchChatResponseJob < ApplicationJob
       ResearchChatContext.refresh!(chat, locale:) if ResearchChatContext.refresh_needed?(chat)
 
       llm_chat = chat.to_llm
+      if (user_message = user_message_for(chat, assistant_message))
+        llm_chat.with_tool(RecordHealthEntryTool.new(person: chat.person, message: user_message), calls: :one)
+      end
       llm_chat.on_new_message { nil }
       llm_chat.on_end_message { |_message| nil }
       streamed_content = +""
@@ -56,5 +59,15 @@ class ResearchChatResponseJob < ApplicationJob
         message_kind: "message"
       )
     end
+  end
+
+  private
+
+  def user_message_for(chat, assistant_message)
+    chat.messages
+      .where(role: "user")
+      .where("id < ?", assistant_message.id)
+      .order(:id)
+      .last
   end
 end

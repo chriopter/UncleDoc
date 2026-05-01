@@ -2,22 +2,19 @@ module DashboardHelper
   def shell_nav_items(current_person, request_path)
     return [ { label: t("nav.home"), path: root_path, active: current_page?(root_path) } ] unless current_person
 
-    data_active = request_path.include?("/log") || request_path.include?("/files") || request_path.include?("/healthkit")
+    data_active = request_path.include?("/log")
+    files_active = request_path.include?("/files")
 
     items = [
-      { label: t("nav.overview"), path: person_overview_path(person_slug: current_person.name), active: request_path.include?("/overview") }
+      { label: t("nav.overview"), path: person_root_path(person_slug: current_person.name), active: request_path == person_root_path(person_slug: current_person.name) || request_path == root_path }
     ]
 
     if current_person.baby_mode?
-      items << { label: t("nav.baby"), path: person_baby_path(person_slug: current_person.name), active: request_path.include?("/baby"), child: true }
+      items << { label: t("nav.baby"), path: person_baby_path(person_slug: current_person.name), active: request_path.include?("/baby") }
     end
 
-    items << { label: t("nav.calendar"), path: person_calendar_path(person_slug: current_person.name), active: request_path.include?("/calendar"), child: true }
-
-    items << { label: t("nav.research"), path: person_research_path(person_slug: current_person.name), active: request_path.include?("/research") }
+    items << { label: t("nav.files"), path: person_files_path(person_slug: current_person.name), active: files_active }
     items << { label: t("nav.data"), path: person_log_path(person_slug: current_person.name), active: data_active }
-    items << { label: t("nav.files"), path: person_files_path(person_slug: current_person.name), active: request_path.include?("/files"), child: true }
-    items << { label: t("nav.healthkit"), path: person_healthkit_path(person_slug: current_person.name), active: request_path.include?("/healthkit"), child: true }
 
     items
   end
@@ -125,10 +122,10 @@ module DashboardHelper
     case label
     when t("nav.overview")
       "M3 12h7V3H3zm11 9h7v-7h-7zm0-18v7h7V3zM3 21h7v-7H3z"
+    when t("nav.summary")
+      "M6.75 3v2.25M17.25 3v2.25M3.75 8.25h16.5M5.25 5.25h13.5A1.5 1.5 0 0 1 20.25 6.75v12a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-12a1.5 1.5 0 0 1 1.5-1.5Z"
     when t("nav.log")
       "M8 7h8M8 12h8m-8 5h5M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"
-    when t("nav.research")
-      "M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
     when t("nav.data")
       "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
     when t("nav.files")
@@ -223,6 +220,6 @@ module DashboardHelper
   end
 
   def healthkit_pagination_path(person, view:, page:)
-    person_healthkit_path(person_slug: person.name, view:, page:)
+    person_log_path(person_slug: person.name, tab: "healthkit", view:, page:)
   end
 end

@@ -36,7 +36,8 @@ de:
     menu: "Menü"
     app_settings: "App-Einstellungen"
     home: "Startseite"
-    overview: "Übersicht"
+    overview: "Cockpit"
+    summary: "Übersicht"
     baby: "Baby"
     files: "Dokumente"
     timeline: "Zeitlinie"
@@ -45,12 +46,11 @@ de:
     calendar: "Kalender"
     back: "Zurück"
     log: "Protokoll"
-    research: "Recherche"
     data: "Daten"
     healthkit: "HealthKit"
     db: "DB"
     sections:
-      overview: "Übersicht"
+      overview: "Cockpit"
       research: "Recherche"
       data: "Daten"
 
@@ -96,6 +96,27 @@ de:
 
   # Dashboard / Log
   dashboard:
+    cockpit:
+      tabs:
+        label: "Cockpit-Bereiche"
+        chat: "Chat"
+        overview: "Übersicht"
+    summary:
+      label: "Übersicht"
+      title: "Übersicht für %{name}"
+    data:
+      tabs:
+        label: "Datenansicht"
+        protocol: "Protokoll"
+        healthkit: "HealthKit"
+        record: "Akte"
+    record:
+      label: "Patientenakte"
+      title: "Akte für %{name}"
+      description: "Vollständiger Chat-Kontext inklusive Patientenakte und Regeln, wie er an das LLM übergeben wird."
+      entry_count:
+        one: "1 Eintrag"
+        other: "%{count} Einträge"
     welcome:
       title: "Willkommen"
       subtitle: "Wählen Sie ein Familienmitglied aus, um sein Protokoll anzuzeigen"
@@ -120,6 +141,7 @@ de:
       empty_subtitle: "Fügen Sie oben Ihren ersten Eintrag hinzu, um Gesundheitsereignisse zu dokumentieren."
     healthkit:
       label: "HealthKit"
+      sync_title: "HealthKit-Sync"
       title: "HealthKit für %{name}"
       subtitle: "Prüfen Sie den Sync-Status, sehen Sie die generierten Zusammenfassungs-Vorschauen und vergleichen Sie sie mit den rohen synchronisierten HealthKit-Daten."
       views:
@@ -194,17 +216,25 @@ de:
       payload_preview_note: "Payload nur als Vorschau"
 
   chat:
-    title: "%{name} — Gesundheits-Chat"
+    title: "%{name} — Cockpit"
     subtitle: "%{count} Einträge in der Patientenakte"
-    welcome: "Hallo! Ich habe die vollständige Patientenakte für %{name}. Frag mich alles — Zusammenfassungen, Muster, Medikamentenhistorie, anstehende Termine oder alles andere aus dem Protokoll."
-    placeholder: "Frage zur Patientenakte stellen…"
+    welcome: "Hallo! Ich kann Fragen beantworten, Gesundheitsnotizen speichern und angehängte Dokumente für %{name} parsen."
+    placeholder: "Frage stellen, Notiz erfassen oder Dokumente anhängen..."
     send: "Nachricht senden"
+    attach_documents: "Dokumente anhängen"
+    drop_documents: "Dokumente zum Anhängen loslassen"
+    files_selected:
+      one: "1 Datei ausgewählt"
+      other: "%{count} Dateien ausgewählt"
     assistant_thinking: "Denkt nach..."
     system_prompt_label: "System-Prompt & Patientenakte"
     context_refreshed: "Patientenakte aktualisiert. Weitere Antworten verwenden die neuesten Daten."
     empty_record: "Für %{name} sind noch keine Gesundheitseinträge gespeichert."
     unknown_date: "unbekanntes Datum"
     request_failed: "Die Chat-Anfrage ist fehlgeschlagen. Prüfen Sie die LLM-Einstellungen und versuchen Sie es erneut."
+    attachment_only_message:
+      one: "1 Dokument angehängt"
+      other: "%{count} Dokumente angehängt"
 
   log_summary:
     label: "KI"
@@ -235,7 +265,7 @@ de:
       healthkit_month: "HK Monats"
     tags:
       appointment: "Termin"
-      todo: "Todo"
+      todo: "Ziel/Aufgabe"
       document: "Dokument"
       parse_error: "Parse Fehler"
       pending: "Ausstehend"
@@ -243,6 +273,7 @@ de:
     filters:
       label: "Filter"
       date: "Datum"
+      sort: "Sortierung"
       source: "Quelle"
       parseable_type: "Geparster Typ"
       all_dates: "Alle Daten"
@@ -253,6 +284,7 @@ de:
     fact_labels:
       temperature: "Temperatur"
       pulse: "Puls"
+      oxygen_saturation: "Sauerstoffsättigung"
       blood_pressure: "Blutdruck"
       weight: "Gewicht"
       height: "Körpergröße"
@@ -263,7 +295,7 @@ de:
       medication: "Medikament"
       vaccination: "Impfung"
       appointment: "Termin"
-      todo: "Aufgabe"
+      todo: "Ziel/Aufgabe"
       note: "Notiz"
       symptom: "Symptom"
       lab_result: "Laborwert"
@@ -301,6 +333,7 @@ de:
     data_labels:
       temperature: "Temperatur"
       pulse: "Puls"
+      oxygen_saturation: "Sauerstoffsättigung"
       blood_pressure: "Blutdruck"
       weight: "Gewicht"
       height: "Körpergröße"
@@ -311,10 +344,30 @@ de:
       medication: "Medikament"
       vaccination: "Impfung"
       appointment: "Termin"
-      todo: "Aufgabe"
+      todo: "Ziel/Aufgabe"
+      summary: "Zusammenfassung"
       note: "Notiz"
       lab_result: "Laborwert"
       healthkit_summary: "Apple-Health-Zusammenfassung"
+    fact_fields:
+      kind: "Typ"
+      metric: "Messwert"
+      value: "Wert"
+      unit: "Einheit"
+      result: "Ergebnis"
+      ref: "Referenz"
+      flag: "Markierung"
+      side: "Seite"
+      dose: "Dosis"
+      wet: "Nass"
+      solid: "Stuhl"
+      rash: "Ausschlag"
+      location: "Ort"
+      quality: "Qualität"
+      systolic: "Systolisch"
+      diastolic: "Diastolisch"
+      scheduled_for: "Geplant für"
+      due_at: "Fällig am"
     data_values:
       wet: "nass"
       solid: "fest"
@@ -611,7 +664,9 @@ de:
     upload_label: "Upload"
     upload_title: "Dokument hinzufügen"
     empty: "Noch keine Dateien"
-    empty_subtitle: "Laden Sie oben das erste Dokument hoch."
+    empty_subtitle: "Laden Sie das erste Dokument über den Chat hoch."
+    actions:
+      label: "Dokument-Aktionen"
     stats:
       documents_count: "%{count} Dateien"
       entries_count: "%{count} Einträge"
@@ -794,7 +849,7 @@ de:
     overview:
       planning:
         label: "Planung"
-        title: "Termine & Aufgaben"
+        title: "Termine, Ziele & Aufgaben"
       vitals:
         empty: "Keine Einträge in diesem Zeitraum."
         temperature:
@@ -816,11 +871,13 @@ de:
         title: "Termine"
         scheduled_for: "Geplant %{time}"
         logged_on: "Eingetragen %{date}"
+        show_all: "Alle %{count} Termine anzeigen"
         empty: "Noch keine Termine vorhanden."
       todos:
-        title: "Aufgaben"
+        title: "Ziele & Aufgaben"
         done_at: "Erledigt %{time}"
-        empty: "Noch keine Aufgaben vorhanden."
+        show_all: "Alle %{count} Ziele & Aufgaben anzeigen"
+        empty: "Noch keine Ziele oder Aufgaben vorhanden."
       family_member: "Familienmitglied"
       edit_person: "Person bearbeiten"
       birth_date: "Geboren"

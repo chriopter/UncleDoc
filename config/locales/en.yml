@@ -36,7 +36,8 @@ en:
     menu: "Menu"
     app_settings: "App Settings"
     home: "Home"
-    overview: "Overview"
+    overview: "Cockpit"
+    summary: "Overview"
     baby: "Baby"
     files: "Files"
     timeline: "Timeline"
@@ -45,12 +46,11 @@ en:
     calendar: "Calendar"
     back: "Back"
     log: "Log"
-    research: "Research"
     data: "Data"
     healthkit: "HealthKit"
     db: "DB"
     sections:
-      overview: "Overview"
+      overview: "Cockpit"
       research: "Research"
       data: "Data"
 
@@ -96,6 +96,27 @@ en:
 
   # Dashboard / Log
   dashboard:
+    cockpit:
+      tabs:
+        label: "Cockpit sections"
+        chat: "Chat"
+        overview: "Overview"
+    summary:
+      label: "Overview"
+      title: "Overview for %{name}"
+    data:
+      tabs:
+        label: "Data view"
+        protocol: "Log"
+        healthkit: "HealthKit"
+        record: "Record"
+    record:
+      label: "Patient record"
+      title: "Record for %{name}"
+      description: "Complete chat context including the patient record and rules as passed to the LLM."
+      entry_count:
+        one: "1 entry"
+        other: "%{count} entries"
     welcome:
       title: "Welcome"
       subtitle: "Select a family member to view their log"
@@ -120,6 +141,7 @@ en:
       empty_subtitle: "Add your first entry above to start documenting health events."
     healthkit:
       label: "HealthKit"
+      sync_title: "HealthKit Sync"
       title: "HealthKit for %{name}"
       subtitle: "Check sync state, inspect generated summary previews, and compare them with raw synced HealthKit records."
       views:
@@ -194,17 +216,25 @@ en:
       payload_preview_note: "payload preview only"
 
   chat:
-    title: "%{name} — Health Chat"
-    subtitle: "%{count} entries in Patientenakte"
-    welcome: "Hello! I have the complete health record for %{name}. Ask me anything — summaries, patterns, medication history, upcoming appointments, or anything else from the log."
-    placeholder: "Ask a question about the health record…"
+    title: "%{name} — Cockpit"
+    subtitle: "%{count} entries in the health record"
+    welcome: "Hello! I can answer questions, save health notes, and parse attached documents for %{name}."
+    placeholder: "Ask, log a note, or attach documents..."
     send: "Send message"
+    attach_documents: "Attach documents"
+    drop_documents: "Drop documents to attach"
+    files_selected:
+      one: "1 file selected"
+      other: "%{count} files selected"
     assistant_thinking: "Thinking..."
     system_prompt_label: "System prompt & Patientenakte"
     context_refreshed: "Health record updated. Future replies use the latest data."
     empty_record: "No health entries are saved yet for %{name}."
     unknown_date: "unknown date"
     request_failed: "The chat request failed. Check your LLM settings and try again."
+    attachment_only_message:
+      one: "1 document attached"
+      other: "%{count} documents attached"
 
   log_summary:
     label: "AI"
@@ -235,7 +265,7 @@ en:
       healthkit_month: "HK Monthly"
     tags:
       appointment: "Event"
-      todo: "Todo"
+      todo: "Goal/task"
       document: "Document"
       parse_error: "Parse Error"
       pending: "Pending"
@@ -243,6 +273,7 @@ en:
     filters:
       label: "Filters"
       date: "Date"
+      sort: "Sort"
       source: "Source"
       parseable_type: "Parsed type"
       all_dates: "All dates"
@@ -253,6 +284,7 @@ en:
     fact_labels:
       temperature: "Temperature"
       pulse: "Pulse"
+      oxygen_saturation: "Oxygen saturation"
       blood_pressure: "Blood pressure"
       weight: "Weight"
       height: "Height"
@@ -263,7 +295,7 @@ en:
       medication: "Medication"
       vaccination: "Vaccination"
       appointment: "Appointment"
-      todo: "Todo"
+      todo: "Goal/task"
       note: "Note"
       symptom: "Symptom"
       lab_result: "Lab Result"
@@ -301,6 +333,7 @@ en:
     data_labels:
       temperature: "Temperature"
       pulse: "Pulse"
+      oxygen_saturation: "Oxygen saturation"
       blood_pressure: "Blood pressure"
       weight: "Weight"
       height: "Height"
@@ -311,10 +344,30 @@ en:
       medication: "Medication"
       vaccination: "Vaccination"
       appointment: "Appointment"
-      todo: "Todo"
+      todo: "Goal/task"
+      summary: "Summary"
       note: "Note"
       lab_result: "Lab Result"
       healthkit_summary: "Apple Health Summary"
+    fact_fields:
+      kind: "Type"
+      metric: "Metric"
+      value: "Value"
+      unit: "Unit"
+      result: "Result"
+      ref: "Reference"
+      flag: "Flag"
+      side: "Side"
+      dose: "Dose"
+      wet: "Wet"
+      solid: "Solid"
+      rash: "Rash"
+      location: "Location"
+      quality: "Quality"
+      systolic: "Systolic"
+      diastolic: "Diastolic"
+      scheduled_for: "Scheduled for"
+      due_at: "Due at"
     data_values:
       wet: "wet"
       solid: "solid"
@@ -611,7 +664,9 @@ en:
     upload_label: "Upload"
     upload_title: "Add document"
     empty: "No files yet"
-    empty_subtitle: "Upload the first document from the form above."
+    empty_subtitle: "Upload the first document from Chat."
+    actions:
+      label: "Document actions"
     stats:
       documents_count: "%{count} files"
       entries_count: "%{count} entries"
@@ -794,7 +849,7 @@ en:
     overview:
       planning:
         label: "Planning"
-        title: "Appointments & todos"
+        title: "Appointments, goals & tasks"
       vitals:
         empty: "No entries in this range."
         temperature:
@@ -816,11 +871,13 @@ en:
         title: "Appointments"
         scheduled_for: "Scheduled %{time}"
         logged_on: "Logged %{date}"
+        show_all: "Show all %{count} appointments"
         empty: "No appointments yet."
       todos:
-        title: "Todos"
+        title: "Goals & tasks"
         done_at: "Done %{time}"
-        empty: "No todos yet."
+        show_all: "Show all %{count} goals & tasks"
+        empty: "No goals or tasks yet."
       family_member: "Family Member"
       edit_person: "Edit person"
       birth_date: "Born"

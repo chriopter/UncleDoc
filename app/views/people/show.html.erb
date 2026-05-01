@@ -1,3 +1,9 @@
-<section class="w-full space-y-6">
-  <%= render "shared/overview_grid", person: @person, entry: (@entry || Entry.new), entries: @entries %>
+<section class="h-full min-h-0 w-full min-w-0">
+  <%= render "dashboard/chat_panel",
+    person: @person,
+    chat: @chat,
+    message: @message,
+    context_preview: @chat_context_preview,
+    card_classes: "h-full min-h-0",
+    show_context_preview: false %>
 </section>

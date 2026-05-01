@@ -1,73 +1,74 @@
 <%= turbo_stream_from [@person, :entries] %>
 
 <section class="space-y-5">
-  <div class="grid grid-cols-1 items-stretch gap-5 md:grid-cols-3">
-    <%# Upload composer — left column %>
-    <section class="rounded-[2rem] border border-slate-200 bg-white p-5 ring-1 ring-black/5 md:col-span-1 flex flex-col">
-      <div class="mb-4 border-b border-slate-200 pb-3">
-        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"><%= t("files.upload_label") %></p>
-        <h2 class="mt-0.5 text-lg font-bold text-slate-950"><%= t("files.upload_title") %></h2>
-      </div>
-      <%= render "entries/inline_form", entry: Entry.new, person: @person %>
-    </section>
-
-    <%# Header + filters — right column %>
-    <section class="rounded-[2rem] border border-slate-200 bg-white p-5 ring-1 ring-black/5 md:col-span-2 flex flex-col">
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+    <div class="px-5 py-5 sm:px-6">
+      <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div class="flex min-w-0 items-center gap-3">
           <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-sm font-black text-amber-800 ring-1 ring-amber-200/80">
             <%= @person.name.first.upcase %>
           </div>
           <div class="min-w-0">
             <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("files.label") %></p>
-            <h1 class="truncate text-xl font-black tracking-tight text-slate-950"><%= t("files.title", name: @person.name) %></h1>
+            <div class="group relative max-w-full">
+              <h1 class="truncate text-xl font-black tracking-tight text-slate-950"><%= t("files.title", name: @person.name) %></h1>
+              <%= render "dashboard/files_stats", document_count: @document_count, document_entries: @document_entries %>
+            </div>
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
-          <%= render "dashboard/files_stats", document_count: @document_count, document_entries: @document_entries %>
-          <%= button_to person_files_reparse_path(person_slug: @person.name),
-              method: :post,
-              class: "inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100",
-              data: { turbo_confirm: t("files.reparse.confirm") } do %>
-            <%= t("files.reparse.button") %>
-          <% end %>
+        <div class="flex flex-wrap items-center gap-2 xl:justify-end">
+          <details class="relative">
+            <summary class="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-white hover:text-slate-950 [&::-webkit-details-marker]:hidden" aria-label="<%= t("files.actions.label") %>">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35A1.724 1.724 0 0 0 5.383 7.75c-.94-1.543.826-3.31 2.37-2.37 1 .608 2.296.07 2.572-1.065Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15.25a3.25 3.25 0 1 0 0-6.5 3.25 3.25 0 0 0 0 6.5Z" />
+              </svg>
+            </summary>
+            <div class="absolute right-0 z-20 mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg ring-1 ring-black/5">
+              <%= button_to person_files_reparse_path(person_slug: @person.name),
+                  method: :post,
+                  class: "flex w-full items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm font-semibold text-amber-800 transition hover:bg-amber-100",
+                  data: { turbo_confirm: t("files.reparse.confirm") } do %>
+                <%= t("files.reparse.button") %>
+              <% end %>
+            </div>
+          </details>
         </div>
       </div>
 
-      <div class="mt-auto border-t border-slate-100 pt-4 mt-4">
-        <p class="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("entries.filters.label") %></p>
-        <%= form_with url: person_files_path(person_slug: @person.name), method: :get, local: true, class: "flex flex-wrap items-end gap-3", data: { controller: "auto-submit" } do |form| %>
-          <div>
-            <%= form.label :year, t("files.filters.year"), class: "mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500" %>
+      <div class="mt-4">
+        <%= form_with url: person_files_path(person_slug: @person.name), method: :get, local: true, class: "flex flex-wrap items-end gap-2", data: { controller: "auto-submit" } do |form| %>
+          <div class="min-w-0">
+            <%= form.label :year, t("files.filters.year"), class: "sr-only" %>
             <%= form.select :year,
                 options_for_select([[t("files.filters.all_years"), nil]] + @available_file_filters[:years].map { |y| [y.to_s, y] }, params[:year]),
                 {},
-                class: "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200",
+                class: "h-10 rounded-xl border border-slate-200 bg-white px-3 pr-9 text-sm font-medium text-slate-700 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200",
                 data: { action: "change->auto-submit#submit" } %>
           </div>
 
-          <div>
-            <%= form.label :doc_type, t("files.filters.doc_type"), class: "mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500" %>
+          <div class="min-w-0">
+            <%= form.label :doc_type, t("files.filters.doc_type"), class: "sr-only" %>
             <%= form.select :doc_type,
                 options_for_select(
                   [[t("files.filters.all_types"), nil]] + @available_file_filters[:types].map { |type| [t("files.document_types.#{type}", default: type.humanize), type] },
                   params[:doc_type]
                 ),
                 {},
-                class: "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200",
+                class: "h-10 min-w-48 rounded-xl border border-slate-200 bg-white px-3 pr-9 text-sm font-medium text-slate-700 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200",
                 data: { action: "change->auto-submit#submit" } %>
           </div>
 
           <div>
-            <%= link_to t("entries.filters.reset"), person_files_path(person_slug: @person.name), class: "inline-flex rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-slate-950" %>
+            <%= link_to t("entries.filters.reset"), person_files_path(person_slug: @person.name), class: "inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-500 transition hover:bg-white hover:text-slate-950" %>
           </div>
         <% end %>
       </div>
-    </section>
-  </div>
+    </div>
 
-  <section class="rounded-[2rem] border border-slate-200 bg-white p-5 ring-1 ring-black/5">
-    <%= render "dashboard/files_list", document_entries: @document_entries, grouped_document_entries: @grouped_document_entries %>
+    <div class="border-t border-slate-200 px-5 py-5 sm:px-6">
+      <%= render "dashboard/files_list", document_entries: @document_entries, grouped_document_entries: @grouped_document_entries %>
+    </div>
   </section>
 </section>

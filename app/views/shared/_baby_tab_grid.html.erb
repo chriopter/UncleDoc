@@ -1,9 +1,9 @@
 <section class="space-y-6">
   <%= turbo_stream_from [person, :entries] %>
 
-  <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+  <div class="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
     <%= render "shared/baby_actions_widget", person: person %>
-    <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort], card_classes: "md:col-span-2 xl:col-span-2", entry_limit: 5 %>
+    <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort], card_classes: "lg:col-span-2 2xl:col-span-2", entry_limit: 5 %>
     <%= render "shared/baby_feeding_tracker_widget", person: person %>
     <%= render "shared/baby_diaper_tracker_widget", person: person %>
     <%= render "shared/baby_sleep_tracker_widget", person: person %>

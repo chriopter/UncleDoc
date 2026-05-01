@@ -1,29 +1,23 @@
 <%= turbo_frame_tag "healthkit_records_table_frame" do %>
-  <section class="rounded-[2rem] border border-slate-200 bg-white shadow-sm ring-1 ring-black/5">
-    <div class="rounded-t-[2rem] flex flex-col gap-3 border-b border-slate-200 bg-slate-950 px-5 py-4 text-white md:flex-row md:items-center md:justify-between">
-      <div>
-        <h3 class="text-lg font-bold"><%= table[:name] %></h3>
-        <p class="mt-1 text-xs text-slate-300">
-          <%= t("db.table.loaded_count", count: table[:rendered_count]) %>
-          <% if table[:count].present? %>
-            · <%= t(table[:count] == 1 ? "db.table.count" : "db.table.count_plural", count: table[:count]) %>
-          <% end %>
-          <% if table[:order_column].present? %>
-            · <%= t("db.table.sorted_by", column: table[:order_column]) %>
-          <% end %>
-          <% if table[:truncated_columns].present? %>
-            · <%= t("dashboard.healthkit.payload_preview_note") %>
-          <% end %>
-        </p>
-      </div>
+  <section class="bg-white">
+    <div class="border-y border-slate-200 bg-white px-5 py-3 sm:px-6">
+      <p class="text-xs font-medium text-slate-500">
+        <%= t("db.table.loaded_count", count: table[:rendered_count]) %>
+        <% if table[:count].present? %>
+          · <%= t(table[:count] == 1 ? "db.table.count" : "db.table.count_plural", count: table[:count]) %>
+        <% end %>
+        <% if table[:order_column].present? %>
+          · <%= t("db.table.sorted_by", column: table[:order_column]) %>
+        <% end %>
+      </p>
     </div>
 
     <div class="overflow-x-auto">
       <table class="w-max min-w-full divide-y divide-slate-200 text-left text-sm">
-        <thead class="bg-slate-50 text-slate-600">
+        <thead class="bg-slate-50 text-slate-500">
           <tr>
             <% table[:columns].each do |column| %>
-              <th class="min-w-[10rem] px-4 py-3 font-semibold whitespace-nowrap"><%= column %></th>
+              <th class="min-w-[10rem] px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] whitespace-nowrap"><%= column %></th>
             <% end %>
           </tr>
         </thead>

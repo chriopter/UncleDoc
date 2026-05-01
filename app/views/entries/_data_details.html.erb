@@ -1,34 +1,22 @@
 <% if entry.fact_objects.present? %>
-  <div class="overflow-hidden rounded-xl border border-slate-100 bg-white">
+  <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
     <% entry.fact_objects.each_with_index do |fact, index| %>
-      <% fields = fact.reject { |k, v| v.nil? || (v.is_a?(String) && v.blank?) } %>
-      <% next if fields.empty? %>
-      <% label_key = fact["kind"] == "measurement" ? fact["metric"].to_s.downcase : fact["kind"].to_s.downcase %>
-      <% label = t("entries.data_labels.#{label_key}", default: label_key.humanize) %>
+      <% text = fact["text"].to_s.strip %>
+      <% next if text.blank? %>
+      <% fields = entry_fact_display_fields(fact) %>
 
-      <% primary_keys = %w[text result unit ref value dose] %>
-      <% primary = fields.select { |k, _| primary_keys.include?(k) }.sort_by { |k, _| primary_keys.index(k) || 99 } %>
-      <% secondary = fields.reject { |k, _| primary_keys.include?(k) } %>
+      <div class="<%= index.positive? ? 'border-t border-slate-100' : '' %> px-4 py-3">
+        <p class="text-sm font-semibold leading-6 text-slate-900"><%= text %></p>
 
-      <div class="<%= index.positive? ? 'border-t border-slate-100' : '' %> px-4 py-2">
-        <p class="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700"><%= label %></p>
-        <div class="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-          <% primary.each do |key, value| %>
-            <span class="inline-flex items-baseline gap-1">
-              <span class="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-600/70"><%= key %></span>
-              <span class="text-sm font-medium text-slate-800"><%= value %></span>
-            </span>
-          <% end %>
-        </div>
-        <% if secondary.present? %>
-          <div class="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
-            <% secondary.each do |key, value| %>
-              <span class="inline-flex items-baseline gap-1">
-                <span class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-300"><%= key %></span>
-                <span class="text-xs text-slate-400"><%= value %></span>
-              </span>
+        <% if fields.present? %>
+          <dl class="mt-2 grid gap-2">
+            <% fields.each do |key, value| %>
+              <div class="text-sm leading-5 text-slate-700">
+                <dt class="inline font-semibold text-slate-500"><%= entry_fact_field_label(key) %>:</dt>
+                <dd class="inline break-words"><%= entry_fact_field_value(key, value) %></dd>
+              </div>
             <% end %>
-          </div>
+          </dl>
         <% end %>
       </div>
     <% end %>

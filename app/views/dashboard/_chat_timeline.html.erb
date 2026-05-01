@@ -1,0 +1,19 @@
+<% timeline_items = chat_timeline_items(person, chat) %>
+
+<div id="chat_timeline" class="space-y-3">
+  <% if timeline_items.any? %>
+    <% timeline_items.each do |item| %>
+      <% if item[:kind] == :activity %>
+        <%= render "dashboard/chat_activity", entry: item[:record] %>
+      <% else %>
+        <%= render item[:record].to_partial_path, message: item[:record] %>
+      <% end %>
+    <% end %>
+  <% else %>
+    <div id="chat_welcome" class="flex justify-start">
+      <div class="max-w-[85%] rounded-2xl rounded-tl-md border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed text-slate-700 shadow-sm">
+        <div data-role="content" class="whitespace-pre-wrap"><%= t("chat.welcome", name: person.name) %></div>
+      </div>
+    </div>
+  <% end %>
+</div>

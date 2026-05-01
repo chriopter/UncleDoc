@@ -4,34 +4,29 @@ class DashboardController < ApplicationController
     @people = Person.recent_first
 
     if current_person
+      @cockpit_tab = params[:tab].to_s == "overview" ? "overview" : "chat"
       @entry = Entry.new
       @entry_sort = entry_sort_mode(params)
       @entries = current_person.entries.includes(documents_attachments: :blob).merge(Entry.sorted_by(@entry_sort))
+      @chat = current_person.chat
+      @message = Message.new
+      @chat_context_preview = @chat&.context_message&.content || ResearchChatContext.system_prompt_for(current_person)
     end
   end
 
   def log
     @person = Person.find_by!(name: params[:person_slug])
-    @entry_sort = entry_sort_mode(params)
-    @available_log_filters = available_log_filters(@person)
-    @entries = filtered_entries(@person, @entry_sort)
-  end
+    @data_tab = params[:tab].to_s.in?(%w[healthkit record]) ? params[:tab].to_s : "protocol"
 
-  def research
-    @person = Person.find_by!(name: params[:person_slug])
-    @chat = @person.chat
-    @message = Message.new
-    @chat_context_preview = @chat&.context_message&.content || ResearchChatContext.system_prompt_for(@person)
-  end
-
-  def calendar
-    @person = Person.find_by!(name: params[:person_slug])
-    @year = (params[:year] || Time.zone.today.year).to_i
-    @appointments = @person.entries
-      .merge(Entry.by_parseable_data_type("appointment"))
-      .to_a
-      .select { |entry| entry.appointment_calendar_time&.year == @year }
-      .sort_by { |entry| [ entry.appointment_calendar_time || entry.appointment_logged_at, entry.created_at ] }
+    if @data_tab == "healthkit"
+      prepare_healthkit_view(@person)
+    elsif @data_tab == "record"
+      @patient_record_prompt = ResearchChatContext.system_prompt_for(@person)
+    else
+      @entry_sort = entry_sort_mode(params)
+      @available_log_filters = available_log_filters(@person)
+      @entries = filtered_entries(@person, @entry_sort)
+    end
   end
 
   def files
@@ -103,31 +98,18 @@ class DashboardController < ApplicationController
     redirect_to person_files_path(person_slug: person.name), notice: t("files.reparse.queued", count: result.marked_count)
   end
 
-  def healthkit
-    @person = Person.find_by!(name: params[:person_slug])
-    @healthkit_syncs = @person.healthkit_syncs.order(updated_at: :desc)
-    @healthkit_record_count = @person.healthkit_records.count
-    @healthkit_record_type_count = @person.healthkit_records.distinct.count(:record_type)
-    healthkit_summary_scope = @person.entries.healthkit_generated
-    @healthkit_summary_count = healthkit_summary_scope.count
-    @healthkit_daily_summary_count = healthkit_summary_scope.where("source_ref LIKE ?", "healthkit:day:%").count
-    @healthkit_monthly_summary_count = healthkit_summary_scope.where("source_ref LIKE ?", "healthkit:month:%").count
-    @healthkit_latest_sync = @healthkit_syncs.max_by { |sync| sync.last_synced_at || sync.updated_at || Time.zone.at(0) }
-    @healthkit_last_successful_sync_at = @healthkit_syncs.filter_map(&:last_successful_sync_at).max
-  end
-
   def queue_healthkit_summary_sync
     person = Person.find_by!(name: params[:person_slug])
     HealthkitSummarySyncJob.perform_later(person.id)
 
-    redirect_to person_healthkit_path(person_slug: person.name), notice: t("dashboard.healthkit.flash.sync_queued")
+    redirect_to person_log_path(person_slug: person.name, tab: "healthkit"), notice: t("dashboard.healthkit.flash.sync_queued")
   end
 
   def queue_healthkit_reparse
     person = Person.find_by!(name: params[:person_slug])
     HealthkitSummaryReparseJob.perform_now(person.id)
 
-    redirect_to person_healthkit_path(person_slug: person.name), notice: t("dashboard.healthkit.flash.reparse_queued")
+    redirect_to person_log_path(person_slug: person.name, tab: "healthkit"), notice: t("dashboard.healthkit.flash.reparse_queued")
   end
 
   def summarize_log
@@ -163,6 +145,18 @@ class DashboardController < ApplicationController
   end
 
   private
+
+  def prepare_healthkit_view(person)
+    @healthkit_syncs = person.healthkit_syncs.order(updated_at: :desc)
+    @healthkit_record_count = person.healthkit_records.count
+    @healthkit_record_type_count = person.healthkit_records.distinct.count(:record_type)
+    healthkit_summary_scope = person.entries.healthkit_generated
+    @healthkit_summary_count = healthkit_summary_scope.count
+    @healthkit_daily_summary_count = healthkit_summary_scope.where("source_ref LIKE ?", "healthkit:day:%").count
+    @healthkit_monthly_summary_count = healthkit_summary_scope.where("source_ref LIKE ?", "healthkit:month:%").count
+    @healthkit_latest_sync = @healthkit_syncs.max_by { |sync| sync.last_synced_at || sync.updated_at || Time.zone.at(0) }
+    @healthkit_last_successful_sync_at = @healthkit_syncs.filter_map(&:last_successful_sync_at).max
+  end
 
   def group_document_entries_by_year(entries)
     entries

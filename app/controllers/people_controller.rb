@@ -3,10 +3,7 @@ class PeopleController < ApplicationController
 
   def show
     @person = Person.find_by!(name: params[:person_slug])
-    @entry_sort = params[:sort].to_s == "entered" ? "entered" : "occurred"
-    @entries = @person.entries.merge(Entry.sorted_by(@entry_sort)).limit(5)
-    @entry_count = @person.entries.count
-    @entry = Entry.new
+    prepare_cockpit_chat(@person)
   end
 
   def baby
@@ -58,7 +55,7 @@ class PeopleController < ApplicationController
     @person.build_user if @person.user.nil?
 
     if @person.update(person_params)
-      redirect_to request.referer || person_overview_path(person_slug: @person.name), notice: t("people.flash.updated")
+      redirect_to request.referer || person_root_path(person_slug: @person.name), notice: t("people.flash.updated")
     else
       redirect_to request.referer || settings_path(section: "users"), alert: t("people.flash.update_error")
     end
@@ -82,6 +79,12 @@ class PeopleController < ApplicationController
   end
 
   private
+
+  def prepare_cockpit_chat(person)
+    @chat = person.chat
+    @message = Message.new
+    @chat_context_preview = @chat&.context_message&.content || ResearchChatContext.system_prompt_for(person)
+  end
 
   def person_params
     params.require(:person).permit(

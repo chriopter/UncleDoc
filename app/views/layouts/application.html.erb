@@ -35,15 +35,16 @@
   <% on_settings = controller_name == "settings" %>
   <% current_settings_section = params[:section].presence || "users" %>
   <% on_db = on_settings && current_settings_section.in?(["db", "db_table"]) %>
+  <% on_cockpit = current_person.present? && !on_settings && ((controller_name == "people" && action_name == "show") || (controller_name == "dashboard" && action_name == "show")) %>
 
-  <body class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.20),_transparent_22%),radial-gradient(circle_at_bottom_right,_rgba(244,114,182,0.12),_transparent_24%),linear-gradient(180deg,_#fffaf1_0%,_#f4efe4_100%)] text-slate-900 antialiased <%= 'overflow-x-hidden' if native_app_request? %>">
+  <body class="<%= on_cockpit ? 'h-[100dvh] overflow-hidden overscroll-none' : 'min-h-screen' %> bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.20),_transparent_22%),radial-gradient(circle_at_bottom_right,_rgba(244,114,182,0.12),_transparent_24%),linear-gradient(180deg,_#fffaf1_0%,_#f4efe4_100%)] text-slate-900 antialiased <%= 'overflow-x-hidden' if native_app_request? %>">
     <%# Skip to content link for accessibility %>
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:rounded-xl focus:bg-amber-500 focus:px-4 focus:py-3 focus:text-white focus:text-sm focus:font-semibold focus:shadow-lg">
       <%= t("accessibility.skip_to_content") %>
     </a>
 
-    <main id="main-content" class="mx-auto min-h-screen w-full <%= on_db ? 'max-w-none px-4 md:px-6 xl:px-8' : 'max-w-[96rem] px-4 md:px-6' %> pt-[max(1rem,calc(var(--uncledoc-safe-top)+0.75rem))] pb-4 md:pt-6 md:pb-6">
-      <div class="flex min-h-[calc(100vh-2rem)] flex-col gap-6 xl:flex-row">
+    <main id="main-content" class="mx-auto <%= on_cockpit ? 'h-[100dvh] overflow-hidden' : 'min-h-screen' %> w-full <%= on_db ? 'max-w-none px-4 md:px-6 xl:px-8' : 'max-w-[96rem] px-4 md:px-6' %> pt-[max(1rem,calc(var(--uncledoc-safe-top)+0.75rem))] pb-4 md:pt-6 md:pb-6">
+      <div class="flex <%= on_cockpit ? 'h-full min-h-0' : 'min-h-[calc(100vh-2rem)]' %> flex-col gap-6 xl:flex-row">
 
         <%# ── Mobile / tablet top bar (below xl) ── %>
         <header class="sticky z-40 pb-3 xl:hidden" style="top: calc(var(--uncledoc-safe-top) + 0.5rem);">
@@ -61,7 +62,7 @@
                     <% shell_mobile_nav_groups(current_person, request.path).each do |group| %>
                       <div class="rounded-[1.5rem] <%= group[:children].any? ? 'bg-amber-50/70 px-2 py-2' : '' %>">
                         <%= link_to group[:path], class: "flex items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold #{group[:active] ? 'bg-amber-100 text-amber-900 shadow-sm ring-1 ring-amber-200/80' : 'text-slate-700 hover:bg-white/80'}" do %>
-                          <span class="flex h-9 w-9 items-center justify-center rounded-2xl #{group[:active] ? 'bg-white text-amber-700 shadow-sm ring-1 ring-amber-200/80' : 'bg-white text-amber-700 shadow-sm ring-1 ring-black/5'}">
+                          <span class="flex h-9 w-9 items-center justify-center rounded-2xl <%= group[:active] ? 'bg-white text-amber-700 shadow-sm ring-1 ring-amber-200/80' : 'bg-white text-amber-700 shadow-sm ring-1 ring-black/5' %>">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                               <path stroke-linecap="round" stroke-linejoin="round" d="<%= shell_nav_icon(group[:label]) %>" />
                             </svg>
@@ -91,6 +92,7 @@
 
                   <div class="mt-2 border-t border-amber-100/80 pt-3 space-y-0.5">
                     <% if on_settings %>
+                      <p class="px-3 pb-1 pt-0.5 text-[11px] font-black uppercase tracking-[0.18em] text-amber-700"><%= t("nav.settings") %></p>
                       <% shell_settings_items(request.path).each do |item| %>
                         <% if item[:child] %>
                           <%= link_to item[:path], class: "ml-7 block rounded-xl px-3 py-2 text-sm font-medium #{item[:active] ? 'bg-amber-50 text-amber-800' : 'text-slate-500 hover:bg-white/80 hover:text-slate-900'}" do %>
@@ -98,7 +100,7 @@
                           <% end %>
                         <% else %>
                           <%= link_to item[:path], class: "flex items-center gap-3 rounded-[1.15rem] px-3 py-3 text-sm font-semibold #{item[:active] ? 'bg-amber-100 text-amber-900 shadow-sm ring-1 ring-amber-200/80' : 'text-slate-700 hover:bg-white/80'}" do %>
-                            <span class="flex h-9 w-9 items-center justify-center rounded-2xl #{item[:active] ? 'bg-white text-amber-700 shadow-sm ring-1 ring-amber-200/80' : 'bg-white text-amber-700 shadow-sm ring-1 ring-black/5'}">
+                            <span class="flex h-9 w-9 items-center justify-center rounded-2xl <%= item[:active] ? 'bg-white text-amber-700 shadow-sm ring-1 ring-amber-200/80' : 'bg-white text-amber-700 shadow-sm ring-1 ring-black/5' %>">
                               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="<%= shell_nav_icon(item[:label]) %>" />
                               </svg>
@@ -161,7 +163,7 @@
                   <div data-dropdown-target="menu" class="absolute left-0 top-full z-[9999] mt-3 hidden min-w-full overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/95 p-2.5 shadow-[0_28px_80px_-34px_rgba(15,23,42,0.42)] ring-1 ring-black/5 backdrop-blur">
                     <div class="space-y-1">
                       <% family_members.each do |person| %>
-                        <%= link_to person_overview_path(person_slug: person.name), class: "flex items-center justify-between rounded-[1.15rem] px-3 py-3 text-sm font-medium #{current_person == person ? 'bg-amber-100 text-amber-900 shadow-sm ring-1 ring-amber-200/80' : 'text-slate-700 hover:bg-amber-50/70'}" do %>
+                        <%= link_to person_root_path(person_slug: person.name), class: "flex items-center justify-between rounded-[1.15rem] px-3 py-3 text-sm font-medium #{current_person == person ? 'bg-amber-100 text-amber-900 shadow-sm ring-1 ring-amber-200/80' : 'text-slate-700 hover:bg-amber-50/70'}" do %>
                           <span class="truncate"><%= person.name %></span>
                           <% if current_person == person %>
                             <span class="ml-2 text-xs text-amber-600">●</span>
@@ -202,7 +204,7 @@
                   <% if family_members.any? %>
                     <div class="space-y-0.5">
                       <% family_members.each do |person| %>
-                        <%= link_to person_overview_path(person_slug: person.name), class: "flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium #{current_person == person ? 'bg-amber-100 text-amber-900' : 'text-slate-700 hover:bg-amber-50'}" do %>
+                        <%= link_to person_root_path(person_slug: person.name), class: "flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium #{current_person == person ? 'bg-amber-100 text-amber-900' : 'text-slate-700 hover:bg-amber-50'}" do %>
                           <span class="truncate"><%= person.name %></span>
                           <% if current_person == person %>
                             <span class="ml-2 text-xs text-amber-600">●</span>
@@ -279,7 +281,7 @@
             <%# ── Settings panel ── %>
             <div class="flex flex-1 flex-col <%= 'hidden' unless on_settings && !on_db %>">
               <div class="mb-6">
-                <%= link_to (current_person ? person_overview_path(person_slug: current_person.name) : root_path), class: "group flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-950" do %>
+                <%= link_to (current_person ? person_root_path(person_slug: current_person.name) : root_path), class: "group flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-950" do %>
                   <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
                   </svg>
@@ -342,7 +344,7 @@
           </div>
         </aside>
 
-        <div class="min-w-0 flex-1 <%= on_db ? 'overflow-x-auto pb-2' : '' %>">
+        <div class="min-w-0 flex-1 <%= on_cockpit ? 'min-h-0' : '' %> <%= on_db ? 'overflow-x-auto pb-2' : '' %>">
           <% if notice.present? || alert.present? %>
             <div class="mb-4 flex flex-col gap-2">
               <% if notice.present? %>
@@ -354,7 +356,7 @@
             </div>
           <% end %>
 
-          <div class="<%= on_db ? 'min-w-max' : '' %>">
+          <div class="<%= on_db ? 'min-w-max' : '' %> <%= on_cockpit ? 'h-full min-h-0' : '' %>">
             <%= yield %>
           </div>
         </div>

@@ -92,10 +92,12 @@ class EntryDataParser
 
   def self.request_completion(input, preference, entry: nil)
     if entry_documents(entry).present?
+      document_input = input_with_extracted_document_text(input, entry)
+
       begin
-        return request_multimodal_completion(input, preference, entry: entry)
+        return request_multimodal_completion(document_input, preference, entry: entry)
       rescue StandardError
-        fallback_input = fallback_document_input(input, entry)
+        fallback_input = fallback_document_input(document_input, entry)
         return request_text_completion(fallback_input, preference, entry: entry) if fallback_input.present?
 
         raise
@@ -496,6 +498,10 @@ class EntryDataParser
   end
 
   def self.fallback_document_input(input, entry)
+    input_with_extracted_document_text(input, entry)
+  end
+
+  def self.input_with_extracted_document_text(input, entry)
     extracted = DocumentTextExtractor.extract_many(entry_documents(entry))
     return input if extracted.blank?
     return extracted if input.blank?

@@ -1,6 +1,14 @@
 require "test_helper"
 
 class LogSummaryGeneratorTest < ActiveSupport::TestCase
+  test "base UncleDoc prompt treats appointments goals and tasks as patient context" do
+    prompt = LogSummaryGenerator.system_prompt
+
+    assert_includes prompt, "appointments, open goals, and open tasks"
+    assert_includes prompt, "first-class patient-record context"
+    assert_includes prompt, "new logged activity supports or conflicts with an open goal"
+  end
+
   test "formats structured baby entries for llm prompts" do
     person = Person.create!(name: "Demo Mila", birth_date: Date.new(2025, 1, 1), baby_mode: true)
     entry = person.entries.create!(

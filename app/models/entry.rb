@@ -21,6 +21,7 @@ class Entry < ApplicationRecord
 
   after_initialize :normalize_defaults
   after_commit :refresh_research_chat_context_later, on: [ :create, :update, :destroy ]
+  after_commit :broadcast_chat_timeline, on: [ :create, :update, :destroy ]
 
   scope :recent_first, -> { order(occurred_at: :desc, created_at: :desc) }
   scope :entered_first, -> { order(created_at: :desc, occurred_at: :desc) }
@@ -469,5 +470,16 @@ class Entry < ApplicationRecord
     return unless person&.chat.present?
 
     ResearchChatContextRefreshJob.perform_later(person.id, UserPreference.current.locale)
+  end
+
+  def broadcast_chat_timeline
+    return unless person.present?
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "person_chat_#{person_id}",
+      target: "chat_timeline",
+      partial: "dashboard/chat_timeline",
+      locals: { person: person, chat: person.chat }
+    )
   end
 end

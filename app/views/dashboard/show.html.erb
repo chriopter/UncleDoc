@@ -1,6 +1,27 @@
-<section class="w-full space-y-6">
+<section class="<%= current_person ? 'h-full min-h-0 w-full' : 'w-full space-y-6' %>">
   <% if current_person %>
-    <%= render "shared/overview_grid", person: current_person, entry: @entry, entries: @entries, sort: @entry_sort %>
+    <section class="flex h-full min-h-0 w-full flex-col gap-4">
+      <%= render "dashboard/cockpit_tabs", person: current_person, active_tab: @cockpit_tab %>
+
+      <% if @cockpit_tab == "overview" %>
+        <div class="min-h-0 flex-1 overflow-y-auto pr-1">
+          <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 xl:items-start">
+          <%= render "shared/planning_widget", person: current_person, card_classes: "md:col-span-2 xl:col-span-3" %>
+          <%= render "shared/weight_activity_widget", person: current_person %>
+          <%= render "shared/vital_activity_widget", person: current_person, type: :pulse %>
+          <%= render "shared/vital_activity_widget", person: current_person, type: :blood_pressure %>
+          </div>
+        </div>
+      <% else %>
+        <%= render "dashboard/chat_panel",
+          person: current_person,
+          chat: @chat,
+          message: @message || Message.new,
+          context_preview: @chat_context_preview,
+          card_classes: "h-full min-h-0",
+          show_context_preview: false %>
+      <% end %>
+    </section>
   <% else %>
     <div class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm ring-1 ring-black/5 backdrop-blur text-center py-12">
       <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700"><%= t("dashboard.welcome.title") %></p>

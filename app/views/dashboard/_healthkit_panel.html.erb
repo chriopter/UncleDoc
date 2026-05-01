@@ -1,0 +1,88 @@
+<%= turbo_stream_from [@person, :entries] %>
+
+<% latest_status = @healthkit_latest_sync&.effective_status || "not_synced" %>
+<% latest_sync_text = @healthkit_latest_sync&.last_synced_at ? l(@healthkit_latest_sync.last_synced_at, format: :long) : t("dashboard.healthkit.empty_value") %>
+<% metric_items = [
+  [t("dashboard.healthkit.stats.sync_state"), t("dashboard.healthkit.sync_states.#{latest_status}"), healthkit_sync_badge_class(latest_status)],
+  [t("dashboard.healthkit.stats.raw_records"), number_with_delimiter(@healthkit_record_count), "border-slate-200 bg-white text-slate-800"],
+  [t("dashboard.healthkit.stats.summaries"), t("dashboard.healthkit.stats.summary_split", daily: @healthkit_daily_summary_count, monthly: @healthkit_monthly_summary_count), "border-slate-200 bg-white text-slate-800"],
+  [t("dashboard.healthkit.syncs_label"), t("dashboard.healthkit.stats.devices_value", count: @healthkit_syncs.size), "border-slate-200 bg-white text-slate-800"],
+  [t("dashboard.healthkit.stats.last_sync"), latest_sync_text, "border-slate-200 bg-white text-slate-800"]
+] %>
+
+<section id="healthkit_panel" class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+  <div class="px-5 py-5 sm:px-6">
+    <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+      <div class="min-w-0 space-y-1">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500"><%= t("dashboard.healthkit.label") %></p>
+        <h1 class="text-2xl font-black tracking-tight text-slate-950"><%= t("dashboard.healthkit.sync_title") %></h1>
+        <p class="text-sm font-medium text-slate-500"><%= t("dashboard.healthkit.title", name: @person.name) %></p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 xl:justify-end">
+        <%= link_to person_log_path(person_slug: @person.name, source: "healthkit"), class: "inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 transition hover:bg-white hover:text-slate-950" do %>
+          <%= t("dashboard.healthkit.view_all_entries") %>
+        <% end %>
+        <%= button_to person_healthkit_sync_summaries_path(person_slug: @person.name), method: :post, class: "inline-flex min-h-11 items-center justify-center rounded-xl border border-orange-200 bg-orange-50 px-4 text-sm font-semibold text-orange-700 transition hover:bg-orange-100", form: { class: "inline", data: { turbo_confirm: t("dashboard.healthkit.rebuild_confirm") } } do %>
+          <%= t("dashboard.healthkit.rebuild_button") %>
+        <% end %>
+        <%= button_to person_healthkit_reparse_path(person_slug: @person.name), method: :post, class: "inline-flex min-h-11 items-center justify-center rounded-xl border border-orange-200 bg-orange-50 px-4 text-sm font-semibold text-orange-700 transition hover:bg-orange-100", form: { class: "inline", data: { turbo_confirm: t("dashboard.healthkit.reparse_confirm") } } do %>
+          <%= t("dashboard.healthkit.reparse_button") %>
+        <% end %>
+        <% if @healthkit_syncs.any? || @healthkit_record_count.positive? || @healthkit_summary_count.positive? %>
+          <%= button_to ios_healthkit_reset_path(person_uuid: @person.uuid), method: :delete, class: "inline-flex min-h-11 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100", form: { class: "inline", data: { turbo_confirm: t("dashboard.healthkit.reset_confirm") } } do %>
+            <%= t("dashboard.healthkit.reset_button") %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50/70">
+      <dl class="grid divide-y divide-slate-200 sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-5">
+        <% metric_items.each do |label, value, badge_class| %>
+          <div class="px-4 py-3">
+            <dt class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= label %></dt>
+            <dd class="mt-2 inline-flex max-w-full rounded-full border px-2.5 py-0.5 text-sm font-semibold <%= badge_class %>">
+              <span class="truncate"><%= value %></span>
+            </dd>
+          </div>
+        <% end %>
+      </dl>
+
+      <div class="border-t border-slate-200 px-4 py-3">
+        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("dashboard.healthkit.syncs_title") %></p>
+        <% if @healthkit_syncs.any? %>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <% @healthkit_syncs.each do |sync| %>
+              <% sync_status = sync.effective_status %>
+              <span class="inline-flex max-w-full items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold <%= healthkit_sync_badge_class(sync_status) %>">
+                <span class="truncate"><%= sync.device_id %></span>
+                <span class="text-[10px] uppercase tracking-[0.12em]"><%= t("dashboard.healthkit.sync_states.#{sync_status}") %></span>
+              </span>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="mt-2 text-sm font-medium text-slate-500"><%= t("dashboard.healthkit.empty_syncs") %></p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="border-t border-slate-200 bg-slate-50/60">
+    <div class="px-5 py-4 sm:px-6">
+      <div class="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400"><%= t("dashboard.healthkit.label") %></p>
+          <h2 class="mt-1 text-lg font-bold text-slate-950"><%= t("dashboard.healthkit.raw_title") %></h2>
+        </div>
+        <p class="text-sm text-slate-500"><%= t("dashboard.healthkit.payload_preview_note") %></p>
+      </div>
+    </div>
+
+    <%= turbo_frame_tag "healthkit_records_table_frame", src: person_healthkit_records_path(person_slug: @person.name, page: 1) do %>
+      <div class="px-5 py-8 text-center text-sm text-slate-500">
+        <%= t("db.table.loading_more") %>
+      </div>
+    <% end %>
+  </div>
+</section>

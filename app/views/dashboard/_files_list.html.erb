@@ -5,9 +5,17 @@
        end %>
     <div class="space-y-10">
       <% grouped_document_entries.each do |year, type_groups| %>
+        <% year_entries = type_groups.values.flatten %>
+        <% year_document_count = year_entries.sum(&:document_count) %>
         <div>
           <div class="mb-5 flex items-center gap-4">
-            <h2 class="text-2xl font-black tracking-tight text-slate-950"><%= year %></h2>
+            <div class="group relative">
+              <h2 class="text-2xl font-black tracking-tight text-slate-950"><%= year %></h2>
+              <div class="pointer-events-none absolute left-0 top-full z-10 mt-2 hidden w-max items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-3 py-1.5 shadow-sm group-hover:flex">
+                <span class="text-xs font-semibold text-slate-400"><%= t("files.stats.documents_count", count: year_document_count) %></span>
+                <span class="text-xs font-semibold text-slate-400"><%= t("files.stats.entries_count", count: year_entries.size) %></span>
+              </div>
+            </div>
             <div class="h-px flex-1 bg-slate-200"></div>
           </div>
 
@@ -51,9 +59,13 @@
                       </span>
                       <% unless entry.babywidget_generated? %>
                         <%= button_to reparse_person_entry_path(entry.person, entry), method: :patch,
-                            class: "shrink-0 rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-800",
+                            class: "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700",
                             form_class: "contents", data: { turbo_frame: "_top" } do %>
-                          <%= t("files.reparse.document_button") %>
+                          <span class="sr-only"><%= t("files.reparse.document_button") %></span>
+                          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992V4.356" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.49 9.023A8.25 8.25 0 1 0 21 12" />
+                          </svg>
                         <% end %>
                       <% end %>
                     </div>
@@ -65,28 +77,33 @@
                     <% parsed_entries.each do |entry| %>
                       <% first_doc = entry.documents.first %>
                       <% thumbnail_path = file_thumbnail_path_for(entry) %>
-                      <div class="group relative flex flex-col rounded-xl border <%= params[:entry_id].to_i == entry.id ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-200' %> bg-white p-3 transition hover:border-amber-300 hover:shadow-sm">
+                      <div class="group relative flex cursor-pointer flex-col rounded-xl border <%= params[:entry_id].to_i == entry.id ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-200' %> bg-white p-3 transition hover:border-amber-300 hover:shadow-sm">
+                        <%= link_to person_file_path(person_slug: entry.person.name, entry_id: entry.id, year: params[:year], doc_type: params[:doc_type]),
+                            class: "absolute inset-0 z-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-300 focus:ring-offset-2",
+                            aria: { label: t("files.viewer.open_inline") },
+                            data: { turbo_frame: "_top" } do %>
+                          <span class="sr-only"><%= t("files.viewer.open_inline") %></span>
+                        <% end %>
+
                         <% if first_doc %>
-                          <%= link_to person_file_path(person_slug: entry.person.name, entry_id: entry.id, year: params[:year], doc_type: params[:doc_type]), class: "mb-2 block", data: { turbo_frame: "_top" } do %>
-                            <div class="flex aspect-[1/1.4142] items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-                              <% if thumbnail_path.present? %>
-                                <%= image_tag thumbnail_path, class: "h-full w-full object-cover", loading: "lazy", alt: entry.document_title.presence || first_doc.filename.to_s %>
-                              <% else %>
-                                <div class="flex flex-col items-center gap-2 text-slate-400">
-                                  <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                                  </svg>
-                                  <span class="px-3 text-center text-[10px] font-semibold uppercase tracking-[0.14em]"><%= first_doc.filename.extension_without_delimiter.to_s.presence || "doc" %></span>
-                                </div>
-                              <% end %>
-                            </div>
-                          <% end %>
+                          <div class="mb-2 flex aspect-[1/1.4142] items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                            <% if thumbnail_path.present? %>
+                              <%= image_tag thumbnail_path, class: "h-full w-full object-cover", loading: "lazy", alt: entry.document_title.presence || first_doc.filename.to_s %>
+                            <% else %>
+                              <div class="flex flex-col items-center gap-2 text-slate-400">
+                                <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                                </svg>
+                                <span class="px-3 text-center text-[10px] font-semibold uppercase tracking-[0.14em]"><%= first_doc.filename.extension_without_delimiter.to_s.presence || "doc" %></span>
+                              </div>
+                            <% end %>
+                          </div>
                         <% end %>
 
                         <p class="text-[10px] text-slate-400"><%= l(entry.display_time, format: :short) %></p>
-                        <%= link_to person_file_path(person_slug: entry.person.name, entry_id: entry.id, year: params[:year], doc_type: params[:doc_type]), class: "line-clamp-2 text-xs font-semibold text-slate-800 hover:text-amber-800", data: { turbo_frame: "_top" } do %>
+                        <p class="line-clamp-2 text-xs font-semibold text-slate-800 transition group-hover:text-amber-800">
                           <%= entry.document_title.presence || first_doc&.filename&.to_s || t("files.list.document_only") %>
-                        <% end %>
+                        </p>
                         <% if document_type_labels(entry).present? %>
                           <p class="mt-1 text-[10px] font-medium text-slate-500"><%= document_type_labels(entry).join(" + ") %></p>
                         <% end %>
@@ -97,13 +114,16 @@
                           <p class="mt-1 truncate text-[10px] text-slate-400"><%= first_doc.filename.to_s %></p>
                         <% end %>
 
-                        <div class="mt-2 flex items-center gap-2">
-                          <%= link_to t("files.viewer.open_inline"), person_file_path(person_slug: entry.person.name, entry_id: entry.id, year: params[:year], doc_type: params[:doc_type]), class: "inline-flex flex-1 items-center justify-center rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:border-amber-300 hover:text-amber-700", data: { turbo_frame: "_top" } %>
+                        <div class="mt-2 flex items-center justify-end">
                           <% unless entry.babywidget_generated? %>
                             <%= button_to reparse_person_entry_path(entry.person, entry), method: :patch,
-                                class: "inline-flex items-center justify-center rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-medium text-slate-500 transition hover:border-amber-300 hover:text-amber-700",
+                                class: "relative z-20 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700",
                                 form_class: "contents", data: { turbo_frame: "_top" } do %>
-                              <%= t("files.reparse.document_button") %>
+                              <span class="sr-only"><%= t("files.reparse.document_button") %></span>
+                              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992V4.356" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M20.49 9.023A8.25 8.25 0 1 0 21 12" />
+                              </svg>
                             <% end %>
                           <% end %>
                         </div>

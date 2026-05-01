@@ -1,7 +1,7 @@
 require "test_helper"
 
 class EntryDataParserTest < ActiveSupport::TestCase
-  test "falls back to extracted document text when multimodal request fails" do
+  test "passes extracted document text to multimodal request and fallback" do
     person = Person.create!(name: "Parser Fallback", birth_date: Date.new(2020, 1, 1))
     entry = person.entries.create!(input: "seed", occurred_at: Time.current, facts: [], parseable_data: [], parse_status: "pending")
     entry.documents.attach(io: StringIO.new("Ibuprofen 400mg invoice"), filename: "invoice.txt", content_type: "text/plain")
@@ -19,8 +19,12 @@ class EntryDataParserTest < ActiveSupport::TestCase
     chat_singleton.alias_method :__original_chat_call_for_fallback_test, :call
 
     captured_message = nil
+    captured_multimodal_prompt = nil
 
-    multimodal_singleton.define_method(:call) { |**| raise StandardError, "multimodal failed" }
+    multimodal_singleton.define_method(:call) do |**kwargs|
+      captured_multimodal_prompt = kwargs[:prompt]
+      raise StandardError, "multimodal failed"
+    end
     chat_singleton.define_method(:call) do |**kwargs|
       captured_message = kwargs[:messages].last[:content]
 
@@ -33,6 +37,7 @@ class EntryDataParserTest < ActiveSupport::TestCase
 
     result = EntryDataParser.call(input: "", preference:, entry: entry)
 
+    assert_includes captured_multimodal_prompt, "Ibuprofen 400mg invoice"
     assert_includes captured_message, "Ibuprofen 400mg invoice"
     assert_equal [ "Medication ibuprofen 400 mg" ], result.fact_texts
     assert_equal "medication", result.parseable_data.first["type"]
@@ -106,6 +111,15 @@ class EntryDataParserTest < ActiveSupport::TestCase
     assert_includes prompt, '"types": ["lab_report", "invoice"]'
     assert_includes prompt, "2022-01 Erkältung AU.pdf"
     assert_includes prompt, '"kind": "symptom"'
+  end
+
+  test "parser prompt maps goals to todo facts" do
+    prompt = EntryDataParser.system_prompt
+
+    assert_includes prompt, "Goals and targets are also `todo`"
+    assert_includes prompt, 'quality: "goal"'
+    assert_includes prompt, "I want to lose 20 kg"
+    assert_includes prompt, '"kind": "todo"'
   end
 
   test "sanitizes document metadata" do

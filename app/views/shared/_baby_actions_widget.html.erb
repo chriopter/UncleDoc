@@ -3,9 +3,15 @@
 <% feeding_timer_elapsed = baby_feeding_timer_elapsed_label(feeding_timer_started_at) %>
 <% sleep_timer_started_at = baby_sleep_timer_started_at_for(person) %>
 <% sleep_timer_elapsed = baby_sleep_timer_elapsed_label(sleep_timer_started_at) %>
+<% quick_tile_base = "flex min-h-14 w-full min-w-0 items-center justify-center rounded-2xl px-2.5 py-2 text-center text-sm font-semibold leading-tight shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-2" %>
+<% quick_tile_content = "flex min-w-0 items-center justify-center gap-2" %>
+<% quick_tile_icon = "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-sm shadow-sm" %>
+<% quick_tile_label = "min-w-0 truncate" %>
+<% play_mark = "block h-0 w-0 border-y-[6px] border-l-[9px] border-y-transparent border-l-current" %>
+
 <%= render "shared/widget", id: "overview_baby_actions", label: t("baby.badge"), title: t("baby.quick_actions.title"), color: "pink", card_classes: local_assigns[:card_classes] do %>
-  <section class="flex flex-col gap-3 rounded-[1.5rem] bg-gradient-to-br from-pink-50/70 via-white to-amber-50/70 p-1.5" data-controller="feeding-mode" data-feeding-mode-default-value="breast">
-    <div class="rounded-[1.35rem] bg-white/60 p-4">
+  <section class="flex flex-col gap-3 rounded-[1.5rem] bg-gradient-to-br from-pink-50/70 via-white to-amber-50/70 p-2 sm:p-2.5" data-controller="feeding-mode" data-feeding-mode-default-value="breast">
+    <div class="rounded-[1.35rem] bg-white/70 p-3.5 sm:p-4">
       <div class="mb-3 flex items-start justify-between gap-3">
         <div>
           <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -20,53 +26,53 @@
         <% end %>
       </div>
 
-      <div data-feeding-mode-target="panel" data-panel="breast" class="grid grid-cols-3 gap-2">
+      <div data-feeding-mode-target="panel" data-panel="breast" class="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <% if feeding_timer_started_at && feeding_timer_side == "left" %>
-          <%= button_to person_baby_feeding_timer_path(person), method: :delete, class: "rounded-2xl bg-emerald-100 px-3 py-2.5 text-left text-xs font-semibold text-emerald-950 shadow-sm transition hover:bg-emerald-200" do %>
-            <span class="flex items-center gap-2"><span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-200 text-emerald-800">&#10074;&#10074;</span><span><%= t("baby.feeding.sides.left") %></span></span>
+          <%= button_to person_baby_feeding_timer_path(person), method: :delete, form: { class: "min-w-0" }, class: "#{quick_tile_base} bg-emerald-100 text-emerald-950 hover:bg-emerald-200 focus:ring-emerald-400" do %>
+            <span class="<%= quick_tile_content %>"><span class="<%= quick_tile_icon %> bg-emerald-200 text-emerald-800"><span class="h-3 w-1 rounded-full bg-current"></span><span class="ml-1 h-3 w-1 rounded-full bg-current"></span></span><span class="<%= quick_tile_label %>"><%= t("baby.feeding.sides.left") %></span></span>
           <% end %>
         <% elsif feeding_timer_started_at %>
-          <button type="button" disabled class="rounded-2xl bg-slate-100 px-3 py-2.5 text-left text-xs font-semibold text-slate-500">
-            <span class="flex items-center gap-2"><span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-slate-200">&#9654;</span><span><%= t("baby.feeding.sides.left") %></span></span>
+          <button type="button" disabled class="<%= quick_tile_base %> bg-slate-100 text-slate-500 shadow-none">
+            <span class="<%= quick_tile_content %>"><span class="<%= quick_tile_icon %> bg-slate-200"><span class="<%= play_mark %>"></span></span><span class="<%= quick_tile_label %>"><%= t("baby.feeding.sides.left") %></span></span>
           </button>
         <% else %>
-          <%= button_to person_baby_feeding_timer_path(person, side: "left"), method: :post, class: "rounded-2xl bg-emerald-50 px-3 py-2.5 text-left text-xs font-semibold text-emerald-900 transition hover:bg-emerald-100" do %>
-            <span class="flex items-center gap-2"><span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm">&#9654;</span><span><%= t("baby.feeding.sides.left") %></span></span>
+          <%= button_to person_baby_feeding_timer_path(person, side: "left"), method: :post, form: { class: "min-w-0" }, class: "#{quick_tile_base} bg-emerald-50 text-emerald-900 hover:bg-emerald-100 focus:ring-emerald-400" do %>
+            <span class="<%= quick_tile_content %>"><span class="<%= quick_tile_icon %> text-emerald-700"><span class="<%= play_mark %>"></span></span><span class="<%= quick_tile_label %>"><%= t("baby.feeding.sides.left") %></span></span>
           <% end %>
         <% end %>
 
         <% if feeding_timer_started_at && feeding_timer_side == "right" %>
-          <%= button_to person_baby_feeding_timer_path(person), method: :delete, class: "rounded-2xl bg-emerald-100 px-3 py-2.5 text-left text-xs font-semibold text-emerald-950 shadow-sm transition hover:bg-emerald-200" do %>
-            <span class="flex items-center gap-2"><span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-200 text-emerald-800">&#10074;&#10074;</span><span><%= t("baby.feeding.sides.right") %></span></span>
+          <%= button_to person_baby_feeding_timer_path(person), method: :delete, form: { class: "min-w-0" }, class: "#{quick_tile_base} bg-emerald-100 text-emerald-950 hover:bg-emerald-200 focus:ring-emerald-400" do %>
+            <span class="<%= quick_tile_content %>"><span class="<%= quick_tile_icon %> bg-emerald-200 text-emerald-800"><span class="h-3 w-1 rounded-full bg-current"></span><span class="ml-1 h-3 w-1 rounded-full bg-current"></span></span><span class="<%= quick_tile_label %>"><%= t("baby.feeding.sides.right") %></span></span>
           <% end %>
         <% elsif feeding_timer_started_at %>
-          <button type="button" disabled class="rounded-2xl bg-slate-100 px-3 py-2.5 text-left text-xs font-semibold text-slate-500">
-            <span class="flex items-center gap-2"><span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-slate-200">&#9654;</span><span><%= t("baby.feeding.sides.right") %></span></span>
+          <button type="button" disabled class="<%= quick_tile_base %> bg-slate-100 text-slate-500 shadow-none">
+            <span class="<%= quick_tile_content %>"><span class="<%= quick_tile_icon %> bg-slate-200"><span class="<%= play_mark %>"></span></span><span class="<%= quick_tile_label %>"><%= t("baby.feeding.sides.right") %></span></span>
           </button>
         <% else %>
-          <%= button_to person_baby_feeding_timer_path(person, side: "right"), method: :post, class: "rounded-2xl bg-emerald-50 px-3 py-2.5 text-left text-xs font-semibold text-emerald-900 transition hover:bg-emerald-100" do %>
-            <span class="flex items-center gap-2"><span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm">&#9654;</span><span><%= t("baby.feeding.sides.right") %></span></span>
+          <%= button_to person_baby_feeding_timer_path(person, side: "right"), method: :post, form: { class: "min-w-0" }, class: "#{quick_tile_base} bg-emerald-50 text-emerald-900 hover:bg-emerald-100 focus:ring-emerald-400" do %>
+            <span class="<%= quick_tile_content %>"><span class="<%= quick_tile_icon %> text-emerald-700"><span class="<%= play_mark %>"></span></span><span class="<%= quick_tile_label %>"><%= t("baby.feeding.sides.right") %></span></span>
           <% end %>
         <% end %>
 
-        <button type="button" class="rounded-2xl bg-amber-50 px-3 py-2.5 text-left text-xs font-semibold text-amber-900 transition hover:bg-amber-100" data-feeding-mode-target="button" data-panel="bottle" data-action="feeding-mode#showPanel">
-          <span class="flex items-center gap-2"><span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-white text-amber-700 shadow-sm">&#129371;</span><span><%= t("baby.feeding.modes.bottle") %></span></span>
+        <button type="button" class="<%= quick_tile_base %> col-span-2 bg-amber-50 text-amber-900 hover:bg-amber-100 focus:ring-amber-400 sm:col-span-1" data-feeding-mode-target="button" data-panel="bottle" data-action="feeding-mode#showPanel">
+          <span class="<%= quick_tile_content %>"><span class="<%= quick_tile_icon %> text-amber-700">ml</span><span class="<%= quick_tile_label %>"><%= t("baby.feeding.modes.bottle") %></span></span>
         </button>
       </div>
 
       <div data-feeding-mode-target="panel" data-panel="bottle" class="hidden space-y-2">
-        <%= form_with url: person_baby_bottle_action_path(person), class: "flex gap-2" do |f| %>
-          <%= f.number_field :amount_ml, min: 1, step: 1, placeholder: "ml", class: "block min-w-0 flex-1 rounded-2xl border-0 bg-amber-50 px-3 py-2 text-xs focus:border-amber-500 focus:ring-amber-500" %>
-          <%= f.submit t("baby.bottle.button"), class: "rounded-2xl bg-amber-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-amber-600" %>
+        <%= form_with url: person_baby_bottle_action_path(person), class: "grid grid-cols-[minmax(0,1fr)_auto] gap-2" do |f| %>
+          <%= f.number_field :amount_ml, min: 1, step: 1, placeholder: "ml", class: "block min-h-12 min-w-0 rounded-2xl border-0 bg-amber-50 px-4 py-2 text-base font-semibold text-amber-950 focus:border-amber-500 focus:ring-amber-500" %>
+          <%= f.submit t("baby.bottle.button"), class: "min-h-12 rounded-2xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2" %>
         <% end %>
-        <button type="button" class="w-full rounded-2xl bg-emerald-50 px-3 py-2.5 text-left text-xs font-semibold text-emerald-900 transition hover:bg-emerald-100" data-feeding-mode-target="button" data-panel="breast" data-action="feeding-mode#showPanel">
-          <span class="flex items-center gap-2"><span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm">&#8592;</span><span><%= t("baby.feeding.modes.breast") %></span></span>
+        <button type="button" class="<%= quick_tile_base %> bg-emerald-50 text-emerald-900 hover:bg-emerald-100 focus:ring-emerald-400" data-feeding-mode-target="button" data-panel="breast" data-action="feeding-mode#showPanel">
+          <span class="<%= quick_tile_content %>"><span class="<%= quick_tile_icon %> text-emerald-700">&#8592;</span><span class="<%= quick_tile_label %>"><%= t("baby.feeding.modes.breast") %></span></span>
         </button>
       </div>
     </div>
 
     <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
-      <div class="rounded-[1.35rem] bg-white/60 p-4">
+      <div class="rounded-[1.35rem] bg-white/70 p-3.5 sm:p-4">
         <div class="mb-3 flex items-start justify-between gap-3">
           <div>
             <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -81,17 +87,17 @@
           <% end %>
         </div>
         <% if sleep_timer_started_at %>
-          <%= button_to person_baby_sleep_timer_path(person), method: :delete, class: "w-full rounded-2xl bg-indigo-100 px-3 py-2.5 text-left text-xs font-semibold text-indigo-950 shadow-sm transition hover:bg-indigo-200" do %>
-            <span class="flex items-center gap-2"><span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-indigo-200 text-indigo-800">&#10074;&#10074;</span><span><%= t("baby.sleep.timer.stop") %></span></span>
+          <%= button_to person_baby_sleep_timer_path(person), method: :delete, form: { class: "min-w-0" }, class: "#{quick_tile_base} bg-indigo-100 text-indigo-950 hover:bg-indigo-200 focus:ring-indigo-400" do %>
+            <span class="<%= quick_tile_content %>"><span class="<%= quick_tile_icon %> bg-indigo-200 text-indigo-800"><span class="h-3 w-1 rounded-full bg-current"></span><span class="ml-1 h-3 w-1 rounded-full bg-current"></span></span><span class="<%= quick_tile_label %>"><%= t("baby.sleep.timer.stop") %></span></span>
           <% end %>
         <% else %>
-          <%= button_to person_baby_sleep_timer_path(person), method: :post, class: "w-full rounded-2xl bg-indigo-50 px-3 py-2.5 text-left text-xs font-semibold text-indigo-900 transition hover:bg-indigo-100" do %>
-            <span class="flex items-center gap-2"><span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-white text-indigo-700 shadow-sm">&#9654;</span><span><%= t("baby.sleep.timer.start") %></span></span>
+          <%= button_to person_baby_sleep_timer_path(person), method: :post, form: { class: "min-w-0" }, class: "#{quick_tile_base} bg-indigo-50 text-indigo-900 hover:bg-indigo-100 focus:ring-indigo-400" do %>
+            <span class="<%= quick_tile_content %>"><span class="<%= quick_tile_icon %> text-indigo-700"><span class="<%= play_mark %>"></span></span><span class="<%= quick_tile_label %>"><%= t("baby.sleep.timer.start") %></span></span>
           <% end %>
         <% end %>
       </div>
 
-      <div class="rounded-[1.35rem] bg-white/60 p-4">
+      <div class="rounded-[1.35rem] bg-white/70 p-3.5 sm:p-4">
         <div class="mb-3">
           <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <p class="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700"><%= t("baby.diaper.title") %></p>
@@ -100,15 +106,15 @@
             <% end %>
           </div>
         </div>
-        <div class="grid grid-cols-3 gap-2">
-          <%= button_to person_baby_diaper_action_path(person), params: { kind: "wet" }, class: "rounded-2xl bg-blue-50 px-3 py-2.5 text-left text-xs font-semibold text-blue-900 transition hover:bg-blue-100" do %>
-            <span class="flex items-center gap-2"><span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm">W</span><span><%= t("baby.diaper.buttons.wet") %></span></span>
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <%= button_to person_baby_diaper_action_path(person), params: { kind: "wet" }, form: { class: "min-w-0" }, class: "#{quick_tile_base} bg-blue-50 text-blue-900 hover:bg-blue-100 focus:ring-blue-400" do %>
+            <span class="<%= quick_tile_content %>"><span class="<%= quick_tile_icon %> text-blue-700">W</span><span class="<%= quick_tile_label %>"><%= t("baby.diaper.buttons.wet") %></span></span>
           <% end %>
-          <%= button_to person_baby_diaper_action_path(person), params: { kind: "solid" }, class: "rounded-2xl bg-blue-50 px-3 py-2.5 text-left text-xs font-semibold text-blue-900 transition hover:bg-blue-100" do %>
-            <span class="flex items-center gap-2"><span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm">S</span><span><%= t("baby.diaper.buttons.solid") %></span></span>
+          <%= button_to person_baby_diaper_action_path(person), params: { kind: "solid" }, form: { class: "min-w-0" }, class: "#{quick_tile_base} bg-blue-50 text-blue-900 hover:bg-blue-100 focus:ring-blue-400" do %>
+            <span class="<%= quick_tile_content %>"><span class="<%= quick_tile_icon %> text-blue-700">S</span><span class="<%= quick_tile_label %>"><%= t("baby.diaper.buttons.solid") %></span></span>
           <% end %>
-          <%= button_to person_baby_diaper_action_path(person), params: { kind: "both" }, class: "rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 px-3 py-2.5 text-left text-xs font-semibold text-white transition hover:from-blue-600 hover:to-blue-700" do %>
-            <span class="flex items-center gap-2"><span class="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-white/20 text-white">+</span><span><%= t("baby.diaper.buttons.both") %></span></span>
+          <%= button_to person_baby_diaper_action_path(person), params: { kind: "both" }, form: { class: "col-span-2 min-w-0 sm:col-span-1" }, class: "#{quick_tile_base} bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 focus:ring-blue-400" do %>
+            <span class="<%= quick_tile_content %>"><span class="<%= quick_tile_icon %> bg-white/20 text-white">+</span><span class="<%= quick_tile_label %>"><%= t("baby.diaper.buttons.both") %></span></span>
           <% end %>
         </div>
       </div>

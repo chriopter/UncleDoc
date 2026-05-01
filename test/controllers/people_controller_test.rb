@@ -97,7 +97,7 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
       }
     }
 
-    assert_redirected_to %r{(settings/users|/Mila%20Rose/overview)}
+    assert_redirected_to %r{(settings/users|/Mila%20Rose)}
     person.reload
     assert_equal "Mila Rose", person.name
     assert_equal Time.zone.parse("2024-03-11T08:30"), person.birth_date
@@ -106,12 +106,4 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     assert person.user.admin?
   end
 
-  test "shows newborn age in days on overview" do
-    person = Person.create!(name: "Baby", birth_date: Time.zone.now - 5.days)
-
-    get person_overview_url(person_slug: person.name)
-
-    assert_response :success
-    assert_includes @response.body, "5 days old"
-  end
 end

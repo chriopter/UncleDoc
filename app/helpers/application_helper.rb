@@ -201,15 +201,50 @@ module ApplicationHelper
     end.uniq.first(limit)
   end
 
+  def entry_fact_display_label(fact)
+    label_key = fact["kind"] == "measurement" ? fact["metric"].to_s.downcase : fact["kind"].to_s.downcase
+    t("entries.data_labels.#{label_key}", default: label_key.humanize)
+  end
+
+  def entry_fact_display_fields(fact)
+    fields = fact.reject { |key, value| %w[text kind].include?(key.to_s) || value.nil? || (value.is_a?(String) && value.blank?) }
+    fields = fields.merge("kind" => entry_fact_display_label(fact))
+    preferred_order = %w[kind value result unit dose metric ref flag side wet solid rash location quality systolic diastolic scheduled_for due_at]
+
+    fields.sort_by { |key, _| [ preferred_order.index(key.to_s) || preferred_order.length, key.to_s ] }
+  end
+
+  def entry_fact_field_label(key)
+    t("entries.fact_fields.#{key}", default: key.to_s.humanize)
+  end
+
+  def entry_fact_field_value(key, value)
+    return t("entries.boolean.#{value}") if value == true || value == false
+
+    if key.to_s == "side"
+      localized = t("entries.data_values.side_#{value}", default: nil)
+      return localized if localized.present?
+    end
+
+    if key.to_s == "metric"
+      return t("entries.data_labels.#{value.to_s.downcase}", default: value.to_s.humanize)
+    end
+
+    return value.join(", ") if value.is_a?(Array)
+    return value.to_json if value.is_a?(Hash)
+
+    value
+  end
+
   def overview_widget_params(overrides = {})
-    params.permit(:sort, :recent_range, :feeding_range, :diaper_range, :sleep_range, :weight_range, :height_range).to_h.symbolize_keys.merge(overrides).compact
+    params.permit(:tab, :sort, :recent_range, :feeding_range, :diaper_range, :sleep_range, :weight_range, :height_range, :temperature_range, :pulse_range, :blood_pressure_range).to_h.symbolize_keys.merge(overrides).compact
   end
 
   def person_widgets_path(person, overrides = {})
     path_params = { person_slug: person.name, **overview_widget_params(overrides) }
     case params[:action]
     when "baby" then person_baby_path(**path_params)
-    else person_overview_path(**path_params)
+    else person_root_path(**path_params)
     end
   end
 
@@ -264,6 +299,7 @@ module ApplicationHelper
       .where(occurred_at: ..Time.zone.now)
 
     candidates = scope.limit([ limit * 10, 24 ].max).to_a
+    candidates = person.entries.merge(Entry.sorted_by(sort_mode)).limit([ limit * 10, 24 ].max).to_a if candidates.empty?
     helpful_entries = candidates.select { |entry| overview_recent_entry_helpful?(entry) }
     selected_entries = helpful_entries.first(limit)
 
@@ -650,6 +686,29 @@ module ApplicationHelper
     end
   end
 
+  def chat_timeline_items(person, chat)
+    messages = chat.present? ? compact_chat_messages(chat.visible_messages.with_attached_attachments) : []
+    entries = person.entries.includes(documents_attachments: :blob).order(:occurred_at, :created_at)
+    messages_by_id = messages.index_by(&:id)
+
+    items = messages.map do |message|
+      { kind: :message, record: message, timestamp: message.created_at || Time.at(0), rank: chat_message_timeline_rank(message), id: message.id.to_i }
+    end
+
+    items += entries.map do |entry|
+      source_message = chat_source_message_for(entry, messages_by_id)
+      {
+        kind: :activity,
+        record: entry,
+        timestamp: source_message&.created_at || entry.display_time || entry.created_at || Time.at(0),
+        rank: source_message.present? ? 1 : 0,
+        id: entry.id.to_i
+      }
+    end
+
+    items.sort_by { |item| [ item[:timestamp], item[:rank], item[:id] ] }
+  end
+
   def file_thumbnail_path_for(entry)
     return unless entry.present?
 
@@ -660,6 +719,18 @@ module ApplicationHelper
   end
 
   private
+
+  def chat_source_message_for(entry, messages_by_id)
+    message_id = entry.source_ref.to_s[/\Achat:message:(\d+)\z/, 1]
+    messages_by_id[message_id.to_i] if message_id.present?
+  end
+
+  def chat_message_timeline_rank(message)
+    return 0 if message.role == "user"
+    return 3 if message.role == "assistant"
+
+    2
+  end
 
   def render_markdown_block(lines)
     return if lines.empty?

@@ -111,6 +111,9 @@ Use canonical metric names such as:
 - `medication` is not a measurement.
 - `vaccination` is not a measurement.
 - Future reminders or follow-ups are `todo`.
+- Goals and targets are also `todo`. Examples: losing weight, running a 5k, exercising more often, drinking enough water, or building a sleep routine.
+- When a `todo` is a longer-term goal rather than a one-off task, add `quality: "goal"`.
+- If a goal has a clear deadline or target date, add `due_at`.
 - Planned visits are `appointment`.
 - For planned visits, store the planned date/time in the appointment fact as `scheduled_for`.
 - Keep top-level `occurred_at` for when the event actually happened or when a document clearly describes a past event. Do not move `occurred_at` into the future just because an appointment is scheduled in the future.
@@ -170,7 +173,7 @@ Always do all of the following:
 - Map `Windel` to `measurement` with `metric: "diaper"`.
 - Map `Impfung` to `vaccination`.
 - Map `Termin`, `doctor appointment`, or similar visit planning to `appointment`.
-- Map actionable reminders, checks, and pinned follow-ups to `todo`.
+- Map actionable reminders, checks, pinned follow-ups, goals, and targets to `todo`.
 - Map symptoms and feelings to `symptom`.
 - Map lab sheet rows like `Hemoglobin 15.2 g/dl` to `measurement` facts with a useful `metric`, `result`, and optional `ref`.
 
@@ -181,6 +184,8 @@ Always do all of the following:
 - `Doctor appointment on 5.4. at 10:30 in the hospital` -> `facts`: `[ { "text": "Doctor appointment on 5.4. at 10:30 in the hospital", "kind": "appointment", "value": "doctor appointment", "scheduled_for": "2026-04-05T10:30:00Z", "location": "hospital" } ]`
 - `todo bring vaccination card` -> `facts`: `[ { "text": "Bring vaccination card", "kind": "todo", "value": "bring vaccination card" } ]`
 - `ask about feeding amount` -> `facts`: `[ { "text": "Ask about feeding amount", "kind": "todo", "value": "ask about feeding amount", "quality": "pinned" } ]`
+- `I want to lose 20 kg` -> `facts`: `[ { "text": "Goal: lose 20 kg", "kind": "todo", "value": "lose 20 kg", "quality": "goal" } ]`
+- `Ich will dreimal pro Woche Sport machen` -> `facts`: `[ { "text": "Ziel: dreimal pro Woche Sport machen", "kind": "todo", "value": "dreimal pro Woche Sport machen", "quality": "goal" } ]`
 - `Blood pressure 120/80` -> `facts`: `[ { "text": "Blood pressure 120/80 mmHg", "kind": "measurement", "metric": "blood_pressure", "systolic": 120, "diastolic": 80, "unit": "mmHg" } ]`
 - `Hemoglobin 15.2 g/dl (13.5-17.5)` -> `facts`: `[ { "text": "Hemoglobin 15.2 g/dl", "kind": "measurement", "metric": "hemoglobin", "result": 15.2, "unit": "g/dl", "ref": "13.5-17.5" } ]`
 - `Apple Health monthly summary for March 2026. Entry source: healthkit.` -> `facts`: `[ { "text": "Apple Health monthly summary", "kind": "summary", "value": "Apple Health", "quality": "monthly" } ]`

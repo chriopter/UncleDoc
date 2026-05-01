@@ -1,21 +1,24 @@
 <% current_range = overview_period_mode(params, :weight) %>
 <% series = weight_activity_series(person, period: current_range) %>
+<% wt = widget_theme("violet") %>
 <%= render "shared/widget", id: "overview_weight_activity", label: t("entries.data_labels.weight"), title: t("person.overview.weight.title"), color: "violet", card_classes: local_assigns[:card_classes] || chart_widget_card_classes do %>
   <div class="mb-3 flex items-center justify-between">
-    <div class="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1 text-[11px] font-semibold text-slate-600">
+    <div class="inline-flex rounded-full border border-slate-200 bg-white/80 p-1 text-[11px] font-semibold text-slate-600">
       <% overview_period_options.each do |label, value| %>
         <%= link_to label, person_widgets_path(person, weight_range: value), class: "rounded-full px-3 py-1 transition #{current_range == value ? 'bg-white text-slate-950 shadow-sm' : 'hover:bg-white'}", data: { turbo_preserve_scroll: true } %>
       <% end %>
     </div>
     <% if series.present? %>
-      <% min_v = series.map { |p| p[:value] }.min; max_v = series.map { |p| p[:value] }.max %>
-      <p class="text-[10px] font-semibold text-slate-500"><%= number_with_precision(min_v, precision: min_v % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> - <%= number_with_precision(max_v, precision: max_v % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> <%= series.last[:unit] %></p>
+      <% latest = series.last %>
+      <div class="text-[10px] font-semibold text-slate-500">
+        <%= number_with_precision(latest[:value], precision: latest[:value] % 1 == 0 ? 0 : 1, strip_insignificant_zeros: true) %> <%= latest[:unit] %>
+      </div>
     <% end %>
   </div>
   <% if series.present? %>
     <%= render "shared/line_chart", series: series, color: "violet", gradient_id: "weight" %>
   <% else %>
-    <div class="flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-violet-200 bg-violet-50/50 px-4 py-10 text-center text-sm text-slate-500">
+    <div class="flex min-h-40 items-center justify-center rounded-2xl border border-dashed <%= wt[:border] %> <%= wt[:bg_accent] %> px-4 py-10 text-center text-sm text-slate-500">
       <%= weight_activity_available?(person) ? t("person.overview.weight.empty_range") : t("person.overview.weight.empty") %>
     </div>
   <% end %>

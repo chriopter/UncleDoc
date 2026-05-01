@@ -98,13 +98,13 @@ class HealthkitControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, other_person.healthkit_records.count
   end
 
-  test "html reset redirects back to the person's healthkit page" do
+  test "html reset redirects back to the data healthkit tab" do
     person = Person.create!(name: "Reset Redirect", birth_date: Date.new(2024, 3, 10))
     HealthkitSync.create!(person: person, device_id: "device-a", status: "synced")
 
     delete "/ios/healthkit/reset", params: { person_uuid: person.uuid }
 
-    assert_redirected_to person_healthkit_path(person_slug: person.name)
+    assert_redirected_to person_log_path(person_slug: person.name, tab: "healthkit")
     follow_redirect!
     assert_includes @response.body, "HealthKit data was reset."
   end

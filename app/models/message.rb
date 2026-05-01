@@ -26,10 +26,10 @@ class Message < ApplicationRecord
   private
 
   def broadcast_created_message
-    broadcast_append_to stream_name,
-      target: "chat_messages",
-      partial: to_partial_path,
-      locals: { message: self }
+    broadcast_replace_to stream_name,
+      target: "chat_timeline",
+      partial: "dashboard/chat_timeline",
+      locals: { person: chat.person, chat: chat }
   end
 
   def broadcast_updated_message

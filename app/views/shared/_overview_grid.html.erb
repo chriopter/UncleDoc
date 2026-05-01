@@ -1,10 +1,18 @@
 <section class="space-y-6">
   <%= turbo_stream_from [person, :entries] %>
 
-  <div class="grid grid-cols-1 items-stretch gap-6 md:grid-cols-3">
-    <%= render "shared/overview_composer", person: person, card_classes: "md:col-span-1" %>
-    <%= render "shared/overview_recent_activity", person: person, entries: entries, sort: local_assigns[:sort], card_classes: "md:col-span-2", entry_limit: 3 %>
-  </div>
+  <%= render "shared/widget", id: "overview_identity", color: "amber" do %>
+    <div class="flex flex-wrap items-center gap-2">
+      <h2 class="text-lg font-black tracking-tight text-slate-950"><%= person.name %></h2>
+      <% if person.birth_date %>
+        <span class="text-xs font-medium text-slate-400"><%= person_age_label(person.birth_date) %></span>
+      <% end %>
+      <% if person.baby_mode? %>
+        <span class="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-semibold text-pink-700"><%= t("baby.badge") %></span>
+      <% end %>
+    </div>
+    <%= render "shared/overview_person_meta", person: person, entries: entries %>
+  <% end %>
 
   <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 xl:items-start">
     <%= render "shared/planning_widget", person: person, card_classes: "md:col-span-2 xl:col-span-4" %>

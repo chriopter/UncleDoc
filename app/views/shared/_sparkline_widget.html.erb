@@ -16,7 +16,7 @@
 <% smooth_line = chart_smooth_path(plot_points) %>
 <% area_fill = chart_area_path(plot_points) %>
 
-<%= link_to person_overview_path(person_slug: person.name), class: "group block rounded-[2rem] border bg-white p-5 shadow-sm ring-1 transition hover:shadow-md #{widget_theme(config[:color])[:border]} #{widget_theme(config[:color])[:ring]} #{local_assigns[:card_classes]}" do %>
+<%= link_to person_root_path(person_slug: person.name), class: "group block rounded-[2rem] border bg-white p-5 shadow-sm ring-1 transition hover:shadow-md #{widget_theme(config[:color])[:border]} #{widget_theme(config[:color])[:ring]} #{local_assigns[:card_classes]}" do %>
   <div class="mb-2 flex items-center justify-between">
     <p class="text-[11px] font-semibold uppercase tracking-[0.18em] <%= ct[:label_color] %>"><%= config[:label] %></p>
     <% if series.present? %>

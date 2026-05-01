@@ -32,17 +32,13 @@ Rails.application.routes.draw do
   # Stateful person URLs
   scope "/:person_slug", constraints: { person_slug: /(?!settings|up|manifest|service-worker|people)[^\/]+/ } do
     root "dashboard#show", as: :person_root
-    get "overview", to: "people#show", as: :person_overview
-    get "calendar", to: "dashboard#calendar", as: :person_calendar
     get "baby", to: "people#baby", as: :person_baby
     get "log", to: "dashboard#log", as: :person_log
-    get "research", to: "dashboard#research", as: :person_research
     get "files", to: "dashboard#files", as: :person_files
     post "files/reparse", to: "dashboard#queue_file_reparse", as: :person_files_reparse
     get "files/:entry_id", to: "dashboard#file", as: :person_file
     get "files/:entry_id/content", to: "dashboard#file_content", as: :person_file_content
     get "files/:entry_id/thumbnail", to: "dashboard#file_thumbnail", as: :person_file_thumbnail
-    get "healthkit", to: "dashboard#healthkit", as: :person_healthkit
     post "healthkit/sync_summaries", to: "dashboard#queue_healthkit_summary_sync", as: :person_healthkit_sync_summaries
     post "healthkit/reparse", to: "dashboard#queue_healthkit_reparse", as: :person_healthkit_reparse
     get "healthkit/records", to: "dashboard#healthkit_records_page", as: :person_healthkit_records

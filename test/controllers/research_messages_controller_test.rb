@@ -1,4 +1,5 @@
 require "test_helper"
+require "rack/test"
 
 class ResearchMessagesControllerTest < ActionDispatch::IntegrationTest
   include ActiveJob::TestHelper
@@ -6,6 +7,14 @@ class ResearchMessagesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @person = Person.create!(name: "Demo Nora", birth_date: Date.new(2024, 1, 1))
     AppSetting.current.update!(llm_provider: "ollama", llm_model: "llama3")
+  end
+
+  def text_upload(name: "report.txt", content: "Report body")
+    tempfile = Tempfile.new([ File.basename(name, ".txt"), ".txt" ])
+    tempfile.write(content)
+    tempfile.rewind
+
+    Rack::Test::UploadedFile.new(tempfile.path, "text/plain", false, original_filename: name)
   end
 
   test "posting a chat message saves the user turn and enqueues the response job" do
@@ -18,7 +27,27 @@ class ResearchMessagesControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "How is she doing?" ], @person.chat.messages.visible.where(role: "user").pluck(:content)
     assert_equal 1, @person.chat.messages.visible.where(role: "assistant", message_kind: "streaming").count
     assert_includes response.body, "research_chat_form"
-    assert_includes response.body, "chat_welcome"
+    assert_includes response.body, "chat_timeline"
+    assert_not_includes response.body, "chat_welcome"
+  end
+
+  test "posting attachments saves them on the user turn" do
+    upload = text_upload(name: "arztbrief.txt", content: "Befund und Rechnung")
+
+    assert_enqueued_with(job: ResearchChatResponseJob) do
+      post person_chat_path(person_slug: @person.name), params: {
+        message: {
+          content: "",
+          attachments: [ upload ]
+        }
+      }, as: :turbo_stream
+    end
+
+    assert_response :success
+    user_message = @person.chat.messages.visible.where(role: "user").last
+    assert_equal I18n.t("chat.attachment_only_message", count: 1), user_message.content
+    assert_equal [ "arztbrief.txt" ], user_message.attachments.map { |attachment| attachment.filename.to_s }
+    assert_includes response.body, "arztbrief.txt"
   end
 
   test "posting without model configuration shows an inline error" do
@@ -54,6 +83,7 @@ class ResearchMessagesControllerTest < ActionDispatch::IntegrationTest
 
     assistant_message = chat.messages.create!(role: :assistant, content: "", message_kind: "streaming")
     fake_llm_chat = Object.new
+    fake_llm_chat.define_singleton_method(:with_tool) { |_tool, calls: nil| self }
     fake_llm_chat.define_singleton_method(:on_new_message) { |&block| @on_new = block }
     fake_llm_chat.define_singleton_method(:on_end_message) { |&block| @on_end = block }
     fake_llm_chat.define_singleton_method(:complete) do |&block|

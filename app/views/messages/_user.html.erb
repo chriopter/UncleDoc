@@ -2,6 +2,15 @@
 <div id="<%= dom_id(user) %>" class="flex justify-end">
   <div class="max-w-[85%] rounded-2xl rounded-tr-md bg-slate-950 px-4 py-3 text-sm leading-relaxed text-white">
     <div class="whitespace-pre-wrap"><%= user.content %></div>
+    <% if user.attachments.attached? %>
+      <div class="mt-2 space-y-1">
+        <% user.attachments.each do |attachment| %>
+          <div class="rounded-lg bg-white/10 px-2 py-1 text-[11px] font-medium text-slate-200">
+            <%= attachment.filename.to_s %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
     <p class="mt-2 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400"><%= user.created_at&.strftime("%H:%M") %></p>
   </div>
 </div>

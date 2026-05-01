@@ -1,5 +1,15 @@
-<section class="flex h-[calc(100vh-6rem)] min-h-[32rem] w-full flex-col rounded-[2rem] border border-slate-200 bg-white ring-1 ring-black/5">
+<% card_classes = local_assigns[:card_classes].presence || "h-[calc(100vh-6rem)] min-h-[32rem]" %>
+<% show_context_preview = local_assigns.fetch(:show_context_preview, true) %>
+
+<section class="relative flex w-full flex-col rounded-[2rem] border border-slate-200 bg-white ring-1 ring-black/5 transition <%= card_classes %>"
+         data-controller="chat-input"
+         data-action="dragenter->chat-input#showDropTarget dragover->chat-input#allowDrop dragleave->chat-input#hideDropTarget drop->chat-input#dropFiles">
   <%= turbo_stream_from "person_chat_#{person.id}" %>
+
+  <div class="pointer-events-none absolute inset-3 z-30 hidden items-center justify-center rounded-[1.75rem] border-2 border-dashed border-amber-300 bg-amber-50/90 text-sm font-semibold text-amber-900"
+       data-chat-input-target="dropOverlay">
+    <%= t("chat.drop_documents") %>
+  </div>
 
   <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-3.5">
     <div class="flex items-center gap-3">
@@ -13,20 +23,12 @@
     </div>
   </div>
 
-  <% if context_preview.present? %>
+  <% if show_context_preview && context_preview.present? %>
     <%= render "dashboard/chat_context_preview", context_preview: context_preview %>
   <% end %>
 
   <div id="chat_messages" class="flex-1 space-y-3 overflow-y-auto bg-slate-50/50 px-4 py-5 sm:px-5" data-controller="chat-feed">
-    <% if chat.present? && chat.visible_messages.exists? %>
-      <%= render compact_chat_messages(chat.visible_messages) %>
-    <% else %>
-      <div id="chat_welcome" class="flex justify-start">
-        <div class="max-w-[85%] rounded-2xl rounded-tl-md border border-slate-200 bg-white px-4 py-3 text-sm leading-relaxed text-slate-700 shadow-sm">
-          <div data-role="content" class="whitespace-pre-wrap"><%= t("chat.welcome", name: person.name) %></div>
-        </div>
-      </div>
-    <% end %>
+    <%= render "dashboard/chat_timeline", person: person, chat: chat %>
   </div>
 
   <%= render "dashboard/chat_form", person: person, message: message, error_message: nil %>
