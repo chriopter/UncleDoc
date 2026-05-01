@@ -105,5 +105,4 @@ class PeopleControllerTest < ActionDispatch::IntegrationTest
     assert_equal "mila.rose@example.com", person.user.email_address
     assert person.user.admin?
   end
-
 end
